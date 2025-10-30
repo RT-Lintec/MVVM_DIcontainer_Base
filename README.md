@@ -1,0 +1,1 @@
+# MVVM, DI container Base

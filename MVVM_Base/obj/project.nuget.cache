@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "l5dhe4hANB8=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\takahashi\\source\\repos\\MVVM_Base\\MVVM_Base\\MVVM_Base.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\takahashi\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.0\\communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\9.0.10\\microsoft.extensions.dependencyinjection.9.0.10.nupkg.sha512",
+    "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.10\\microsoft.extensions.dependencyinjection.abstractions.9.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="MVVM_Base.View.viewMain"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:MVVM_Base">
+    
+    <Grid Background="LightYellow">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="これは Main 画面です" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        
+        <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,10">
+            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
+            <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
+            <TextBox Text="{Binding Breed, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>
+            <Button Content="Add Dog" Command="{Binding AddDogCommand}" Width="100"/>
+        </StackPanel>
+
+        <ListView Grid.Row="2" ItemsSource="{Binding Animals}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="120"/>
+                    <GridViewColumn Header="Age" DisplayMemberBinding="{Binding Age}" Width="50"/>
+                    <GridViewColumn Header="Breed" DisplayMemberBinding="{Binding Breed}" Width="120"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</UserControl>

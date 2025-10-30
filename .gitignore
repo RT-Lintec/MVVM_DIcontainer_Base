@@ -1,0 +1,9 @@
+# pch 不要
+*.pch
+
+# pdb 不要
+*.pdb
+
+.vs/
+.git/
+Debug/
