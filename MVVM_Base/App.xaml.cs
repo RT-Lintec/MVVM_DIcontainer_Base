@@ -2,7 +2,7 @@
 using MVVM_Base.DiContainer;
 using MVVM_Base.View;
 
-namespace MVVM_Base.WPF
+namespace MVVM_Base
 {
     /// <summary>
     /// エントリポイント

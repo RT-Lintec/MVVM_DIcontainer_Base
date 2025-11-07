@@ -1,12 +1,27 @@
 {
   "version": 2,
-  "dgSpecHash": "l5dhe4hANB8=",
+  "dgSpecHash": "rNfvza3y1/I=",
   "success": true,
   "projectFilePath": "C:\\Users\\takahashi\\source\\repos\\MVVM_Base\\MVVM_Base\\MVVM_Base.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\takahashi\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.0\\communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "C:\\Users\\takahashi\\.nuget\\packages\\fontawesome.sharp\\6.6.0\\fontawesome.sharp.6.6.0.nupkg.sha512",
+    "C:\\Users\\takahashi\\.nuget\\packages\\fontawesomewpfnuget\\1.0.0\\fontawesomewpfnuget.1.0.0.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\9.0.10\\microsoft.extensions.dependencyinjection.9.0.10.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.10\\microsoft.extensions.dependencyinjection.abstractions.9.0.10.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "パッケージ 'FontAwesomeWPFNuget 1.0.0' はプロジェクトのターゲット フレームワーク 'net8.0-windows7.0' ではなく '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' を使用して復元されました。このパッケージは、使用しているプロジェクトとの完全な互換性がない可能性があります。",
+      "projectPath": "C:\\Users\\takahashi\\source\\repos\\MVVM_Base\\MVVM_Base\\MVVM_Base.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\takahashi\\source\\repos\\MVVM_Base\\MVVM_Base\\MVVM_Base.csproj",
+      "libraryId": "FontAwesomeWPFNuget",
+      "targetGraphs": [
+        "net8.0-windows7.0"
+      ]
+    }
+  ]
 }

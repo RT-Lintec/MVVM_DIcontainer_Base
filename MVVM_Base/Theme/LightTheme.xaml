@@ -1,0 +1,33 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp">
+
+    <!-- 基本カラー -->
+    <!--<Color x:Key="TitleBarColor1">#FFFAB450</Color>
+    <Color x:Key="TitleBarColor2">#FFFFA0DC</Color>-->
+    <Color x:Key="LeftWindowColor1">#FDE8CF</Color>
+    <Color x:Key="LeftWindowColor12">#3F7FFF</Color>
+    <Color x:Key="LeftWindowColor2">#CDE8FF</Color>
+    <Color x:Key="LeftWindowColor22">#2020F0</Color>
+    <Color x:Key="AccentColor">#0F0FF4</Color>
+    <Color x:Key="ButtonThemeColor">#FFD700</Color>
+    <Color x:Key="BlacketColor">#6FF0FA</Color>
+
+    <Color x:Key="TitleBarAnimFrom1">#FFFAB450</Color>
+    <Color x:Key="TitleBarAnimTo1">#FF64FA96</Color>
+    <Color x:Key="TitleBarAnimFrom2">#FFFFA0DC</Color>
+    <Color x:Key="TitleBarAnimTo2">#FF64A0FA</Color>
+
+    <!-- SolidColorBrush 変換 -->
+    <!--<SolidColorBrush x:Key="TitleBarColor1Brush" Color="{StaticResource TitleBarColor1}"/>
+    <SolidColorBrush x:Key="TitleBarColor2Brush" Color="{StaticResource TitleBarColor2}"/>-->
+    <SolidColorBrush x:Key="LeftWindowColor1Brush" Color="{DynamicResource LeftWindowColor1}"/>
+    <SolidColorBrush x:Key="LeftWindowColor2Brush" Color="{DynamicResource LeftWindowColor2}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
+    <SolidColorBrush x:Key="ButtonThemeColorBrush" Color="{StaticResource ButtonThemeColor}"/>
+    <SolidColorBrush x:Key="BlacketColorBrush" Color="{DynamicResource BlacketColor}"/>
+    
+    <!-- アイコンテンプレート定義 -->
+    <fa:IconChar x:Key="ThemeIcon">Sun</fa:IconChar>
+
+</ResourceDictionary>

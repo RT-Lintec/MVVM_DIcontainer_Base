@@ -1,0 +1,30 @@
+﻿<Application x:Class="MVVM_Base.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+
+                <!-- スタイル類 -->
+                <ResourceDictionary Source="Style/Page.xaml" />
+                <ResourceDictionary Source="Style/ToggleButton.xaml" />
+                <ResourceDictionary Source="Style/ToggleButtonIcon.xaml" />
+                <ResourceDictionary Source="Style/ToggleButtonText.xaml" />
+                <ResourceDictionary Source="Style/ButtonEnd.xaml" />
+                <ResourceDictionary Source="Style/ButtonColorTheme.xaml" />
+
+                <!-- ✅ テーマスロット経由で読み込む（構造は維持） -->
+                <ResourceDictionary Source="Theme/DarkTheme.xaml" />
+
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- ✅ テーマスロットを「ポインタ」として残す -->
+            <ResourceDictionary x:Key="ThemeResources">
+                <ResourceDictionary.MergedDictionaries>
+                    <ResourceDictionary Source="Theme/DarkTheme.xaml" />
+                </ResourceDictionary.MergedDictionaries>
+            </ResourceDictionary>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

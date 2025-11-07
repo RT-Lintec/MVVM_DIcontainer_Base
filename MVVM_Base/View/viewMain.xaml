@@ -1,7 +1,8 @@
 ﻿<UserControl x:Class="MVVM_Base.View.viewMain"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:MVVM_Base">
+             xmlns:local="clr-namespace:MVVM_Base"
+             Style="{StaticResource Page_Style}">
     
     <Grid Background="LightYellow">
         <Grid.RowDefinitions>

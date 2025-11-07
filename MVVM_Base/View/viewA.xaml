@@ -4,8 +4,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:local="clr-namespace:MVVM_Base"
-             mc:Ignorable="d">
+             mc:Ignorable="d"
+             Style="{StaticResource Page_Style}">
     <Grid>
-        <TextBlock Text="これは A 画面です" FontSize="20"/>
+        <Border>
+            <!--<Border.Background>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#41518f" Offset="0"/>
+                    <GradientStop Color="#2c386c" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>-->
+        </Border>
+        <TextBlock Text="これは A 画面です" Foreground="#DBDBDB" FontSize="20"/>
     </Grid>
 </UserControl>
