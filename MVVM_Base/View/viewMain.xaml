@@ -4,14 +4,14 @@
              xmlns:local="clr-namespace:MVVM_Base"
              Style="{StaticResource Page_Style}">
     
-    <Grid Background="LightYellow">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="2*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="これは Main 画面です" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock Grid.Row="0" Text="これは Main 画面です" Foreground="{DynamicResource TextColorBrush}" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         
         <StackPanel Grid.Row="1" Orientation="Vertical" Margin="0,0,0,10">
             <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,5"/>

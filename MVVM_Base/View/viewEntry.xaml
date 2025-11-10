@@ -17,7 +17,7 @@
             <Grid Height="35" DockPanel.Dock="Top" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop x:Name="TitleBarGradientStop1" Color="{DynamicResource TitleBarAnimFrom1}"  Offset="0"/>
+                        <GradientStop x:Name="TitleBarGradientStop1" Color="{DynamicResource TitleBarAnimFrom1}" Offset="0"/>
                         <GradientStop x:Name="TitleBarGradientStop2" Color="{DynamicResource TitleBarAnimFrom2}" Offset="1"/>
                         <!--<GradientStop x:Name="TitleBarGradientStop1" Color="Purple" Offset="0"/>
                         <GradientStop x:Name="TitleBarGradientStop2" Color="Blue" Offset="1"/>-->

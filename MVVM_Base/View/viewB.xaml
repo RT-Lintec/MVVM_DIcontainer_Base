@@ -15,6 +15,6 @@
                 </LinearGradientBrush>
             </Border.Background>-->
         </Border>
-        <TextBlock Text="これは B 画面です" Foreground="#DBDBDB" FontSize="20"/>
+        <TextBlock Text="これは B 画面です" Foreground="{DynamicResource TextColorBrush}" FontSize="20"/>
     </Grid>
 </UserControl>

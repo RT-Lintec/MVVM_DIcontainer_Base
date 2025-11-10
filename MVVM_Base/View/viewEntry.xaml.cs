@@ -242,13 +242,15 @@ namespace MVVM_Base.View
         /// <param name="pos"></param>
         private void SpawnRipple(Point pos)
         {
+            var brush = Application.Current.Resources["RippleColorBrush"] as SolidColorBrush;
+
             // 波紋の基本設定 数値は適当
             var ellipse = new Ellipse
             {
                 Width = 5,
                 Height = 5,
                 //Stroke = Brushes.DeepSkyBlue,
-                Stroke = Brushes.Coral,
+                Stroke = brush,//Brushes.Coral,
                 StrokeThickness = 1,
                 Opacity = 0.6
             };
@@ -351,9 +353,8 @@ namespace MVVM_Base.View
 
             geom.Figures.Add(figure);
 
-            var resources = Application.Current.Resources;
-            //Color brktColor = (Color)resources["BlacketColor"];
-            var brush = Application.Current.Resources["BlacketColorBrush"] as SolidColorBrush;
+            //var resources = Application.Current.Resources;
+            var brush = Application.Current.Resources["TagColorBrush"] as SolidColorBrush;
 
             return new Path
             {
@@ -736,7 +737,11 @@ namespace MVVM_Base.View
                 Color oldAcsColor = (Color)resources["AccentColor"];
                 Color oldWcColor1 = (Color)resources["LeftWindowColor1"];
                 Color oldWcColor2 = (Color)resources["LeftWindowColor2"];
-                Color oldBrktColor2 = (Color)resources["BlacketColor"];
+                Color oldCtColor1 = (Color)resources["CheckToggleColor1"];
+                Color oldCtColor2 = (Color)resources["CheckToggleColor2"];
+                Color oldBrktColor2 = (Color)resources["BracketColor"];
+                Color oldTextColor = (Color)resources["TextColor"];
+                Color oldTagColor = (Color)resources["TagColor"];
 
                 // 変更後カラーの取得
                 var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{theme}Theme.xaml", UriKind.Relative) };
@@ -747,7 +752,11 @@ namespace MVVM_Base.View
                 Color newAcsColor = (Color)newDict["AccentColor"];
                 Color newWcColor1 = (Color)newDict["LeftWindowColor1"];
                 Color newWcColor2 = (Color)newDict["LeftWindowColor2"];
-                Color newBrktColor2 = (Color)newDict["BlacketColor"];
+                Color newCtColor1 = (Color)newDict["CheckToggleColor1"];
+                Color newCtColor2 = (Color)newDict["CheckToggleColor2"];
+                Color newBrktColor2 = (Color)newDict["BracketColor"];
+                Color newTextColor = (Color)newDict["TextColor"];
+                Color newTagColor = (Color)newDict["TagColor"];
 
                 // 既存キーの書き換え
                 resources["AccentColor"] = newDict["AccentColor"];
@@ -759,8 +768,14 @@ namespace MVVM_Base.View
                 resources["LeftWindowColor1Brush"] = newDict["LeftWindowColor1Brush"];
                 resources["LeftWindowColor2"] = newDict["LeftWindowColor2"];
                 resources["LeftWindowColor2Brush"] = newDict["LeftWindowColor2Brush"];
-                resources["BlacketColor"] = newDict["BlacketColor"];
+                //resources["CheckToggleColor1"] = newDict["CheckToggleColor1"];
+                //resources["CheckToggleColor2"] = newDict["CheckToggleColor2"];
+                resources["BracketColor"] = newDict["BracketColor"];
                 resources["BlacketColorBrush"] = newDict["BlacketColorBrush"];
+                resources["TextColor"] = newDict["TextColor"];
+                resources["TagColor"] = newDict["TagColor"];
+                resources["RippleColor"] = newDict["RippleColor"];
+                resources["RippleColorBrush"] = newDict["RippleColorBrush"];
 
                 // Storyboard をフィールドに保持
                 Storyboard tbStoryboard = new Storyboard();
@@ -972,6 +987,130 @@ namespace MVVM_Base.View
                         }
                     }
                 }
+
+                var brush7 = Application.Current.Resources["TextColorBrush"] as SolidColorBrush;
+
+                if (brush7 != null)
+                {
+                    // 凍結されている場合はクローンして再登録
+                    if (brush7.IsFrozen)
+                    {
+                        brush7 = brush7.Clone();
+                        Application.Current.Resources["TextColorBrush"] = brush7;
+                    }
+
+                    // アニメーション作成
+                    var anim7 = new ColorAnimation
+                    {
+                        From = oldTextColor,
+                        To = newTextColor,
+                        Duration = TimeSpan.FromSeconds(1),
+                        AutoReverse = false
+                    };
+
+                    // アニメーション開始
+                    brush7.BeginAnimation(SolidColorBrush.ColorProperty, anim7);
+                }
+
+                var brush8 = Application.Current.Resources["TagColorBrush"] as SolidColorBrush;
+
+                if (brush8 != null)
+                {
+                    // 凍結されている場合はクローンして再登録
+                    if (brush8.IsFrozen)
+                    {
+                        brush8 = brush8.Clone();
+                        Application.Current.Resources["TagColorBrush"] = brush8;
+                    }
+
+                    // アニメーション作成
+                    var anim8 = new ColorAnimation
+                    {
+                        From = oldTagColor,
+                        To = newTagColor,
+                        Duration = TimeSpan.FromSeconds(1),
+                        AutoReverse = false
+                    };
+
+                    // アニメーション開始
+                    brush8.BeginAnimation(SolidColorBrush.ColorProperty, anim8);
+                }
+
+                // Brush を取得
+                var brush9 = Application.Current.Resources["CheckToggleBrush"] as LinearGradientBrush;
+                if (brush9 != null)
+                {
+                    if (brush9.IsFrozen)
+                    {
+                        brush9 = brush9.Clone();
+                        Application.Current.Resources["CheckToggleBrush"] = brush9;
+                    }
+
+                    // GradientStop を取得
+                    var gs1 = brush9.GradientStops[0];
+                    var gs2 = brush9.GradientStops[1];
+
+                    // アニメーション作成
+                    var anim9 = new ColorAnimation(oldCtColor1, newCtColor1, TimeSpan.FromSeconds(1));
+                    var anim10 = new ColorAnimation(oldCtColor2, newCtColor2, TimeSpan.FromSeconds(1));
+
+                    anim10.Completed += (o, e) =>
+                    {
+                        resources["CheckToggleColor1"] = newDict["CheckToggleColor1"];
+                        resources["CheckToggleColor2"] = newDict["CheckToggleColor2"];
+                    };
+                    // GradientStop にアニメーションを適用
+                    gs1.BeginAnimation(GradientStop.ColorProperty, anim9);
+                    gs2.BeginAnimation(GradientStop.ColorProperty, anim10);
+                }
+
+                //var brush9 = Application.Current.Resources["CheckToggleColor1"] as SolidColorBrush;
+
+                //if (brush9 != null)
+                //{
+                //    // 凍結されている場合はクローンして再登録
+                //    if (brush9.IsFrozen)
+                //    {
+                //        brush9 = brush9.Clone();
+                //        Application.Current.Resources["CheckToggleColor1"] = brush9;
+                //    }
+
+                //    // アニメーション作成
+                //    var anim9 = new ColorAnimation
+                //    {
+                //        From = oldCtColor1,
+                //        To = newCtColor1,
+                //        Duration = TimeSpan.FromSeconds(1),
+                //        AutoReverse = false
+                //    };
+
+                //    // アニメーション開始
+                //    brush9.BeginAnimation(SolidColorBrush.ColorProperty, anim9);
+                //}
+
+                //var brush10 = Application.Current.Resources["CheckToggleColor2"] as SolidColorBrush;
+
+                //if (brush10 != null)
+                //{
+                //    // 凍結されている場合はクローンして再登録
+                //    if (brush10.IsFrozen)
+                //    {
+                //        brush10 = brush10.Clone();
+                //        Application.Current.Resources["CheckToggleColor2"] = brush10;
+                //    }
+
+                //    // アニメーション作成
+                //    var anim10 = new ColorAnimation
+                //    {
+                //        From = oldCtColor2,
+                //        To = newCtColor2,
+                //        Duration = TimeSpan.FromSeconds(1),
+                //        AutoReverse = false
+                //    };
+
+                //    // アニメーション開始
+                //    brush10.BeginAnimation(SolidColorBrush.ColorProperty, anim10);
+                //}
             }
         }
 
