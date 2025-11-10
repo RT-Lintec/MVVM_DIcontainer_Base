@@ -3,8 +3,6 @@
                     xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp">
 
     <!-- 基本カラー -->
-    <!--<Color x:Key="TitleBarColor1">#FFFAB450</Color>
-    <Color x:Key="TitleBarColor2">#FFFFA0DC</Color>-->
     <Color x:Key="LeftWindowColor1">#FDE8CF</Color>
     <Color x:Key="LeftWindowColor12">#3F7FFF</Color>
     <Color x:Key="LeftWindowColor2">#CDE8FF</Color>
@@ -24,8 +22,6 @@
     <Color x:Key="TitleBarAnimTo2">#FF64A0FA</Color>
 
     <!-- SolidColorBrush 変換 -->
-    <!--<SolidColorBrush x:Key="TitleBarColor1Brush" Color="{StaticResource TitleBarColor1}"/>
-    <SolidColorBrush x:Key="TitleBarColor2Brush" Color="{StaticResource TitleBarColor2}"/>-->
     <SolidColorBrush x:Key="LeftWindowColor1Brush" Color="{DynamicResource LeftWindowColor1}"/>
     <SolidColorBrush x:Key="LeftWindowColor2Brush" Color="{DynamicResource LeftWindowColor2}"/>
     <SolidColorBrush x:Key="CheckToggleColor1Brush" Color="{DynamicResource CheckToggleColor1}"/>

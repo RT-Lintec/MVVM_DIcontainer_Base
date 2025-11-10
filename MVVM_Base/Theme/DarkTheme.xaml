@@ -3,8 +3,6 @@
                     xmlns:fa="http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp">
 
     <!-- 基本カラー -->
-    <!--<Color x:Key="TitleBarColor1">#800080</Color>
-    <Color x:Key="TitleBarColor2">#C0502F</Color>-->
     <Color x:Key="LeftWindowColor1">#202020</Color>
     <Color x:Key="LeftWindowColor12">#FF7F3F</Color>
     <Color x:Key="LeftWindowColor2">#202050</Color>

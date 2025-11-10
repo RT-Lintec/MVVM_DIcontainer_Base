@@ -19,12 +19,9 @@
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                         <GradientStop x:Name="TitleBarGradientStop1" Color="{DynamicResource TitleBarAnimFrom1}" Offset="0"/>
                         <GradientStop x:Name="TitleBarGradientStop2" Color="{DynamicResource TitleBarAnimFrom2}" Offset="1"/>
-                        <!--<GradientStop x:Name="TitleBarGradientStop1" Color="Purple" Offset="0"/>
-                        <GradientStop x:Name="TitleBarGradientStop2" Color="Blue" Offset="1"/>-->
                     </LinearGradientBrush>
                 </Grid.Background>
                 <TextBlock Text="MVVM_Base" VerticalAlignment="Center" Margin="10" Foreground="White" FontSize="16"/>
-                <!--<Button Content="✕" HorizontalAlignment="Right" Margin="5" Width="30" Height="25" Click="CloseButton_Click"/>-->
                 <Border Width="60" Height="30" CornerRadius="15" Background="#444" HorizontalAlignment="Right" Margin="0 0 10 0">
                     <Canvas Width="60" Height="30" Background="Transparent">
                         <Button x:Name="ThemeToggleButton" Style="{StaticResource SlideColorTheme}" Click="ThemeToggleButton_Click" Canvas.Left="0" Canvas.Top="0" />
@@ -43,12 +40,6 @@
 
                 <!-- 左ナビ背景 -->
                 <Grid Grid.Column="0" Background="{DynamicResource LeftWindowColor1Brush}" MouseLeftButtonDown="Area_MouseLeftButtonDown">
-                    <!--<Grid.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="{DynamicResource LeftWindowColor1}" Offset="0.0" />
-                            <GradientStop Color="{DynamicResource LeftWindowColor12}" Offset="1.0" />
-                        </LinearGradientBrush>
-                    </Grid.Background>-->
                     <Grid VerticalAlignment="Stretch">
                         <Grid.RowDefinitions>
                             <RowDefinition />
@@ -133,12 +124,6 @@
 
                 <!-- 右画面背景 -->
                 <Grid Grid.Column="1" Background="{DynamicResource LeftWindowColor2Brush}" MouseLeftButtonDown="Area_MouseLeftButtonDown">
-                    <!--<Grid.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="{DynamicResource LeftWindowColor2}" Offset="0.0" />
-                            <GradientStop Color="{DynamicResource LeftWindowColor22}" Offset="1.0" />
-                        </LinearGradientBrush>
-                    </Grid.Background>-->
                     <ContentControl Content="{Binding CurrentView}" Background="Transparent"/>
                 </Grid>
 

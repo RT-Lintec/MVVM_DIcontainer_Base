@@ -17,8 +17,6 @@ using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
-
 namespace MVVM_Base.View
 {
     public partial class viewEntry : Window
@@ -164,18 +162,16 @@ namespace MVVM_Base.View
         private void NavToggleButton_Click(object sender, MouseButtonEventArgs e)
         {
             var button = (ToggleButton)sender;
-
-            // クリックされた座標をボタン内で取得
-            if (e == null) return;
+        
+            if (e == null)
+            {
+                return;
+            }
 
             Point clickPosInButton = e.GetPosition(button);
 
-            // ボタン座標 -> Canvas 座標に変換
-            Point pos = button.TranslatePoint(clickPosInButton, EffectCanvas);
-
-            //SpawnSpark(pos);
-            //SpawnRipple(pos);
-            LastPos = pos;
+            // クリックされた座標をボタン内で取得
+            LastPos = button.TranslatePoint(clickPosInButton, EffectCanvas);
         }
 
         /// <summary>
@@ -353,12 +349,11 @@ namespace MVVM_Base.View
 
             geom.Figures.Add(figure);
 
-            //var resources = Application.Current.Resources;
             var brush = Application.Current.Resources["TagColorBrush"] as SolidColorBrush;
 
             return new Path
             {
-                Stroke = brush,//new SolidColorBrush(Color.FromRgb(255, 192, 168)),//Brushes.WhiteSmoke,
+                Stroke = brush,
                 StrokeThickness = 2,
                 Data = geom
             };
@@ -438,11 +433,6 @@ namespace MVVM_Base.View
         /// </summary>
         private void AnimateTitleBar()
         {
-            Color from1 = GetThemeColor("TitleBarAnimFrom1", Colors.LightGray);
-            Color to1 = GetThemeColor("TitleBarAnimTo1", Colors.DarkGray);
-            Color from2 = GetThemeColor("TitleBarAnimFrom2", Colors.LightGray);
-            Color to2 = GetThemeColor("TitleBarAnimTo2", Colors.DarkGray);
-
             var tbStoryboard = new Storyboard()
             {
                 RepeatBehavior = RepeatBehavior.Forever,
@@ -452,8 +442,8 @@ namespace MVVM_Base.View
             // 1本目のグラデーションアニメーション
             var anim1 = new ColorAnimation
             {
-                From = from1,
-                To = to1,
+                From = GetThemeColor("TitleBarAnimFrom1", Colors.LightGray),
+                To = GetThemeColor("TitleBarAnimTo1", Colors.DarkGray),
                 Duration = TimeSpan.FromSeconds(tBarAnimInterval),
                 AutoReverse = true
             };
@@ -464,8 +454,8 @@ namespace MVVM_Base.View
             // 2本目のグラデーションアニメーション
             var anim2 = new ColorAnimation
             {
-                From = from2,
-                To = to2,
+                From = GetThemeColor("TitleBarAnimFrom2", Colors.LightGray),
+                To = GetThemeColor("TitleBarAnimTo2", Colors.DarkGray),
                 Duration = TimeSpan.FromSeconds(tBarAnimInterval),
                 AutoReverse = true
             };
@@ -493,27 +483,33 @@ namespace MVVM_Base.View
                     return ConvertToColor(themeSlot[key], fallback);
                 }
 
-                // スロットの MergedDictionaries を順に検索
+                // スロットのMergedDictionariesを順に検索
                 foreach (var md in themeSlot.MergedDictionaries)
                 {
                     if (md != null && md.Contains(key))
+                    {
                         return ConvertToColor(md[key], fallback);
+                    }
                 }
             }
 
-            // Applicationのtop-level MergedDictionariesを探索（念のため）
+            // Applicationのtop-level MergedDictionariesを探索
             foreach (var md in Application.Current.Resources.MergedDictionaries)
             {
                 if (md != null && md.Contains(key))
+                {
                     return ConvertToColor(md[key], fallback);
+                }
             }
 
             // 最終手段：TryFindResource（Application レベルの探索）
             var obj = Application.Current.TryFindResource(key);
             if (obj != null)
+            {
                 return ConvertToColor(obj, fallback);
+            }
 
-            // 見つからなければフォールバック
+            // null
             return fallback;
         }
 
@@ -534,7 +530,7 @@ namespace MVVM_Base.View
         /// <param name="e"></param>
         private void SlideThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
-            var thumb = (System.Windows.Controls.Primitives.Thumb)sender;
+            var thumb = (Thumb)sender;
             int enh = 2;
 
             // TranslateTransform を取得（初回は作る）
@@ -583,7 +579,7 @@ namespace MVVM_Base.View
         /// <param name="e"></param>
         private void SlideThumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
-            var thumb = (System.Windows.Controls.Primitives.Thumb)sender;
+            var thumb = (Thumb)sender;
             thumb.Background = new SolidColorBrush(Color.FromRgb(r_Thumb, g_Thumb, b_Thumb));
             //var tt = (TranslateTransform)thumb.RenderTransform;
             if (thumb.RenderTransform is not TranslateTransform tt)
@@ -639,7 +635,7 @@ namespace MVVM_Base.View
         /// </summary>
         /// <param name="thumb"></param>
         /// <param name="enabled"></param>
-        private void SetThumbBloom(System.Windows.Controls.Primitives.Thumb thumb, bool enabled)
+        private void SetThumbBloom(Thumb thumb, bool enabled)
         {
             if (enabled)
             {
@@ -671,13 +667,11 @@ namespace MVVM_Base.View
             }
         }
 
-
-
         /// <summary>
         /// endボタンのBloomクリア
         /// </summary>
         /// <param name="thumb"></param>
-        void ResetEffectParams(System.Windows.Controls.Primitives.Thumb thumb)
+        void ResetEffectParams(Thumb thumb)
         {
             if (_glowTimer != null)
             {
@@ -720,14 +714,14 @@ namespace MVVM_Base.View
                 string theme = _isDark ? "Dark" : "Light";
 
                 ApplyTheme(theme);
-                ColorThemeChange(btn, theme);
+                ThemeChange(btn, theme);
             }
         }
 
         /// <summary>
         /// 色変化をアニメーション付きで行う
         /// </summary>
-        private void ColorThemeChange(Button btn, string theme)
+        private void ThemeChange(Button btn, string theme)
         {
             if (theme != null)
             {
@@ -739,7 +733,6 @@ namespace MVVM_Base.View
                 Color oldWcColor2 = (Color)resources["LeftWindowColor2"];
                 Color oldCtColor1 = (Color)resources["CheckToggleColor1"];
                 Color oldCtColor2 = (Color)resources["CheckToggleColor2"];
-                Color oldBrktColor2 = (Color)resources["BracketColor"];
                 Color oldTextColor = (Color)resources["TextColor"];
                 Color oldTagColor = (Color)resources["TagColor"];
 
@@ -754,364 +747,189 @@ namespace MVVM_Base.View
                 Color newWcColor2 = (Color)newDict["LeftWindowColor2"];
                 Color newCtColor1 = (Color)newDict["CheckToggleColor1"];
                 Color newCtColor2 = (Color)newDict["CheckToggleColor2"];
-                Color newBrktColor2 = (Color)newDict["BracketColor"];
                 Color newTextColor = (Color)newDict["TextColor"];
                 Color newTagColor = (Color)newDict["TagColor"];
 
                 // 既存キーの書き換え
                 resources["AccentColor"] = newDict["AccentColor"];
                 resources["AccentBrush"] = newDict["AccentBrush"];
-                //resources["ButtonThemeColorBrush"] = newDict["ButtonThemeColorBrush"];
                 resources["ButtonThemeColor"] = newDict["ButtonThemeColor"];
                 resources["ThemeIcon"] = newDict["ThemeIcon"];
                 resources["LeftWindowColor1"] = newDict["LeftWindowColor1"];
                 resources["LeftWindowColor1Brush"] = newDict["LeftWindowColor1Brush"];
                 resources["LeftWindowColor2"] = newDict["LeftWindowColor2"];
                 resources["LeftWindowColor2Brush"] = newDict["LeftWindowColor2Brush"];
-                //resources["CheckToggleColor1"] = newDict["CheckToggleColor1"];
-                //resources["CheckToggleColor2"] = newDict["CheckToggleColor2"];
-                resources["BracketColor"] = newDict["BracketColor"];
-                resources["BlacketColorBrush"] = newDict["BlacketColorBrush"];
                 resources["TextColor"] = newDict["TextColor"];
                 resources["TagColor"] = newDict["TagColor"];
                 resources["RippleColor"] = newDict["RippleColor"];
                 resources["RippleColorBrush"] = newDict["RippleColorBrush"];
 
-                // Storyboard をフィールドに保持
-                Storyboard tbStoryboard = new Storyboard();
+                // タイトルバーのアニメーション
+                ThemeChangeTB(btn, TitleBarGradientStop1, TitleBarGradientStop2, newTbarColor1, newTbarColor2);
 
-                var anim1 = new ColorAnimation
+                // SolidColorBrush参照ブラシのアニメーション
+                ThemeChangeSCB("AccentBrush", oldAcsColor, newAcsColor);
+                ThemeChangeSCB("LeftWindowColor1Brush", oldWcColor1, newWcColor1);
+                ThemeChangeSCB("LeftWindowColor2Brush", oldWcColor2, newWcColor2);
+                ThemeChangeSCB("TextColorBrush", oldTextColor, newTextColor);
+                ThemeChangeSCB("TagColorBrush", oldTagColor, newTagColor);
+
+                // LinearGradientBrush参照ブラシのアニメーション
+                ThemeChangeLGB(newDict, "CheckToggleBrush", "CheckToggleColor1", "CheckToggleColor2", oldCtColor1, oldCtColor2, newCtColor1, newCtColor2);
+
+                // カラーテーマ変更ボタンのアニメーション
+                ThemeChangeButton(ThemeToggleButton, oldThemeColor, newThemeColor);               
+            }
+        }
+
+        /// <summary>
+        /// タイトルバーのアニメーション タイトルバーは一つしかないのでハードコード
+        /// </summary>
+        /// <param name="button"></param>
+        /// <param name="gs1"></param>
+        /// <param name="gs2"></param>
+        /// <param name="newColor1"></param>
+        /// <param name="newColor2"></param>
+        private void ThemeChangeTB(Button button, GradientStop gs1, GradientStop gs2, Color newColor1, Color newColor2)
+        {
+            // Storyboard をフィールドに保持
+            Storyboard tbStoryboard = new Storyboard();
+
+            var anim1 = new ColorAnimation
+            {
+                From = gs1.Color,
+                To = newColor1,
+                Duration = TimeSpan.FromSeconds(tBarAnimTransition),
+                AutoReverse = false
+            };
+
+            Storyboard.SetTargetName(anim1, "TitleBarGradientStop1");
+            Storyboard.SetTargetProperty(anim1, new PropertyPath("Color"));
+            tbStoryboard.Children.Add(anim1);
+
+            var anim2 = new ColorAnimation
+            {
+                From = gs2.Color,
+                To = newColor2,
+                Duration = TimeSpan.FromSeconds(tBarAnimTransition),
+                AutoReverse = false
+            };
+            Storyboard.SetTargetName(anim2, "TitleBarGradientStop2");
+            Storyboard.SetTargetProperty(anim2, new PropertyPath("Color"));
+            tbStoryboard.Children.Add(anim2);
+
+            // テーマ移行アニメーション完了と同時にテーマアニメーション開始
+            tbStoryboard.Completed += (s, e) =>
+            {
+                AnimateTitleBar();
+                if (button != null)
                 {
-                    From = TitleBarGradientStop1.Color,
-                    To = newTbarColor1,
-                    Duration = TimeSpan.FromSeconds(tBarAnimTransition),
-                    AutoReverse = false
-                };
-                Storyboard.SetTargetName(anim1, "TitleBarGradientStop1");
-                Storyboard.SetTargetProperty(anim1, new PropertyPath("Color"));
-                tbStoryboard.Children.Add(anim1);
+                    button.IsEnabled = true;
+                }
+            };
 
-                var anim2 = new ColorAnimation
-                {
-                    From = TitleBarGradientStop2.Color,
-                    To = newTbarColor2,
-                    Duration = TimeSpan.FromSeconds(tBarAnimTransition),
-                    AutoReverse = false
-                };
-                Storyboard.SetTargetName(anim2, "TitleBarGradientStop2");
-                Storyboard.SetTargetProperty(anim2, new PropertyPath("Color"));
-                tbStoryboard.Children.Add(anim2);
+            tbStoryboard.Begin(this);
+        }
 
-                // テーマ移行アニメーション完了と同時にテーマアニメーション開始
-                tbStoryboard.Completed += (s, e) =>
-                {
-                    AnimateTitleBar();
-                    if (btn != null)
-                    {
-                        btn.IsEnabled = true;
-                    }
-                };
+        /// <summary>
+        /// SolidColorBrush参照UIのテーマ変化アニメーション
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="oldColor"></param>
+        /// <param name="newColor"></param>
+        private void ThemeChangeSCB(string target, Color oldColor, Color newColor)
+        {
+            var brush = Application.Current.Resources[target] as SolidColorBrush;
 
-                // 強制開始ではなく Begin(this) だけ
-                tbStoryboard.Begin(this);
-
-
-
-
-                /////////////////////////テーマボタンテスト
-                // まず、ターゲットButtonを取得
-                var button = ThemeToggleButton;
-
-                // 背景ブラシがSolidColorBrushか確認
-                if (button.Background is not SolidColorBrush brush)
-                    return;
-
-                // 凍結解除（Resource由来Brushは大抵IsFrozen=true）
+            if (brush != null)
+            {
+                // 凍結されている場合はクローンして再登録
                 if (brush.IsFrozen)
                 {
                     brush = brush.Clone();
-                    button.Background = brush; // Buttonにクローンを再設定
+                    Application.Current.Resources[target] = brush;
                 }
 
                 // アニメーション作成
                 var anim = new ColorAnimation
                 {
-                    From = oldThemeColor,
-                    To = newThemeColor,
+                    From = oldColor,
+                    To = newColor,
                     Duration = TimeSpan.FromSeconds(1),
                     AutoReverse = false
                 };
 
-                //// Storyboard作成
-                //var sb = new Storyboard();
-                //sb.Children.Add(anim);
-
-                //// Buttonそのものをターゲットに指定します
-                //Storyboard.SetTarget(anim, button);
-                //Storyboard.SetTargetProperty(anim, new PropertyPath("(Button.Background).(SolidColorBrush.Color)"));
-
-                //// これでアニメーションが動作
-                //sb.Begin();
+                // アニメーション開始
                 brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
-
-
-
-                ///////////////////////////
-                // アクセント共有ブラシを取得
-                // アプリ全体のリソースからブラシを取得
-
-                var brush3 = Application.Current.Resources["AccentBrush"] as SolidColorBrush;
-
-                if (brush3 != null)
-                {
-                    // 凍結されている場合はクローンして再登録
-                    if (brush3.IsFrozen)
-                    {
-                        brush3 = brush3.Clone();
-                        Application.Current.Resources["AccentBrush"] = brush3;
-                    }
-
-                    // アニメーション作成
-                    var anim3 = new ColorAnimation
-                    {
-                        From = oldAcsColor,
-                        To = newAcsColor,
-                        Duration = TimeSpan.FromSeconds(1),
-                        AutoReverse = false
-                    };
-
-                    // アニメーション開始
-                    brush3.BeginAnimation(SolidColorBrush.ColorProperty, anim3);
-                }
-
-
-
-                var brush4 = Application.Current.Resources["LeftWindowColor1Brush"] as SolidColorBrush;
-
-                if (brush4 != null)
-                {
-                    // 凍結されている場合はクローンして再登録
-                    if (brush4.IsFrozen)
-                    {
-                        brush4 = brush4.Clone();
-                        Application.Current.Resources["LeftWindowColor1Brush"] = brush4;
-                    }
-
-                    // アニメーション作成
-                    var anim4 = new ColorAnimation
-                    {
-                        From = oldWcColor1,
-                        To = newWcColor1,
-                        Duration = TimeSpan.FromSeconds(1),
-                        AutoReverse = false
-                    };
-
-                    // アニメーション開始
-                    brush4.BeginAnimation(SolidColorBrush.ColorProperty, anim4);
-                }
-
-
-
-                var brush5 = Application.Current.Resources["LeftWindowColor2Brush"] as SolidColorBrush;
-
-                if (brush5 != null)
-                {
-                    // 凍結されている場合はクローンして再登録
-                    if (brush5.IsFrozen)
-                    {
-                        brush5 = brush5.Clone();
-                        Application.Current.Resources["LeftWindowColor2Brush"] = brush5;
-                    }
-
-                    // アニメーション作成
-                    var anim5 = new ColorAnimation
-                    {
-                        From = oldWcColor2,
-                        To = newWcColor2,
-                        Duration = TimeSpan.FromSeconds(1),
-                        AutoReverse = false
-                    };
-
-                    // アニメーション開始
-                    brush5.BeginAnimation(SolidColorBrush.ColorProperty, anim5);
-                }
-
-                //var brush6 = Application.Current.Resources["BlacketColorBrush"] as SolidColorBrush;
-
-                //if (brush6 != null)
-                //{
-                //    // 凍結されている場合はクローンして再登録
-                //    if (brush6.IsFrozen)
-                //    {
-                //        brush6 = brush6.Clone();
-                //        Application.Current.Resources["BlacketColorBrush"] = brush6;
-                //    }
-
-                //    // アニメーション作成
-                //    var anim6 = new ColorAnimation
-                //    {
-                //        From = oldWcColor2,
-                //        To = newWcColor2,
-                //        Duration = TimeSpan.FromSeconds(1),
-                //        AutoReverse = false
-                //    };
-
-                //    // アニメーション開始
-                //    brush6.BeginAnimation(SolidColorBrush.ColorProperty, anim5);
-                //}
-
-                if (pathDatas.paths != null && pathDatas.paths.Count() > 0)
-                {
-                    foreach (var path in pathDatas.paths)
-                    {
-                        if (path.Stroke is SolidColorBrush brush6)
-                        {
-                            // 凍結されている場合はクローンして再登録
-                            if (brush6.IsFrozen)
-                            {
-                                brush6 = brush6.Clone();
-                                path.Stroke = brush6;
-                            }
-
-                            // アニメーション作成
-                            var colorAnim = new ColorAnimation
-                            {
-                                From = oldBrktColor2,         // 現在色を取得する場合は brush.Color
-                                To = newBrktColor2,          // 変更後の色
-                                Duration = TimeSpan.FromSeconds(1),
-                                AutoReverse = false
-                            };
-
-                            // アニメーション開始
-                            brush6.BeginAnimation(SolidColorBrush.ColorProperty, colorAnim);
-                        }
-                    }
-                }
-
-                var brush7 = Application.Current.Resources["TextColorBrush"] as SolidColorBrush;
-
-                if (brush7 != null)
-                {
-                    // 凍結されている場合はクローンして再登録
-                    if (brush7.IsFrozen)
-                    {
-                        brush7 = brush7.Clone();
-                        Application.Current.Resources["TextColorBrush"] = brush7;
-                    }
-
-                    // アニメーション作成
-                    var anim7 = new ColorAnimation
-                    {
-                        From = oldTextColor,
-                        To = newTextColor,
-                        Duration = TimeSpan.FromSeconds(1),
-                        AutoReverse = false
-                    };
-
-                    // アニメーション開始
-                    brush7.BeginAnimation(SolidColorBrush.ColorProperty, anim7);
-                }
-
-                var brush8 = Application.Current.Resources["TagColorBrush"] as SolidColorBrush;
-
-                if (brush8 != null)
-                {
-                    // 凍結されている場合はクローンして再登録
-                    if (brush8.IsFrozen)
-                    {
-                        brush8 = brush8.Clone();
-                        Application.Current.Resources["TagColorBrush"] = brush8;
-                    }
-
-                    // アニメーション作成
-                    var anim8 = new ColorAnimation
-                    {
-                        From = oldTagColor,
-                        To = newTagColor,
-                        Duration = TimeSpan.FromSeconds(1),
-                        AutoReverse = false
-                    };
-
-                    // アニメーション開始
-                    brush8.BeginAnimation(SolidColorBrush.ColorProperty, anim8);
-                }
-
-                // Brush を取得
-                var brush9 = Application.Current.Resources["CheckToggleBrush"] as LinearGradientBrush;
-                if (brush9 != null)
-                {
-                    if (brush9.IsFrozen)
-                    {
-                        brush9 = brush9.Clone();
-                        Application.Current.Resources["CheckToggleBrush"] = brush9;
-                    }
-
-                    // GradientStop を取得
-                    var gs1 = brush9.GradientStops[0];
-                    var gs2 = brush9.GradientStops[1];
-
-                    // アニメーション作成
-                    var anim9 = new ColorAnimation(oldCtColor1, newCtColor1, TimeSpan.FromSeconds(1));
-                    var anim10 = new ColorAnimation(oldCtColor2, newCtColor2, TimeSpan.FromSeconds(1));
-
-                    anim10.Completed += (o, e) =>
-                    {
-                        resources["CheckToggleColor1"] = newDict["CheckToggleColor1"];
-                        resources["CheckToggleColor2"] = newDict["CheckToggleColor2"];
-                    };
-                    // GradientStop にアニメーションを適用
-                    gs1.BeginAnimation(GradientStop.ColorProperty, anim9);
-                    gs2.BeginAnimation(GradientStop.ColorProperty, anim10);
-                }
-
-                //var brush9 = Application.Current.Resources["CheckToggleColor1"] as SolidColorBrush;
-
-                //if (brush9 != null)
-                //{
-                //    // 凍結されている場合はクローンして再登録
-                //    if (brush9.IsFrozen)
-                //    {
-                //        brush9 = brush9.Clone();
-                //        Application.Current.Resources["CheckToggleColor1"] = brush9;
-                //    }
-
-                //    // アニメーション作成
-                //    var anim9 = new ColorAnimation
-                //    {
-                //        From = oldCtColor1,
-                //        To = newCtColor1,
-                //        Duration = TimeSpan.FromSeconds(1),
-                //        AutoReverse = false
-                //    };
-
-                //    // アニメーション開始
-                //    brush9.BeginAnimation(SolidColorBrush.ColorProperty, anim9);
-                //}
-
-                //var brush10 = Application.Current.Resources["CheckToggleColor2"] as SolidColorBrush;
-
-                //if (brush10 != null)
-                //{
-                //    // 凍結されている場合はクローンして再登録
-                //    if (brush10.IsFrozen)
-                //    {
-                //        brush10 = brush10.Clone();
-                //        Application.Current.Resources["CheckToggleColor2"] = brush10;
-                //    }
-
-                //    // アニメーション作成
-                //    var anim10 = new ColorAnimation
-                //    {
-                //        From = oldCtColor2,
-                //        To = newCtColor2,
-                //        Duration = TimeSpan.FromSeconds(1),
-                //        AutoReverse = false
-                //    };
-
-                //    // アニメーション開始
-                //    brush10.BeginAnimation(SolidColorBrush.ColorProperty, anim10);
-                //}
             }
+        }
+
+        /// <summary>
+        /// LinearGradientBrush参照UIのテーマ変化アニメーション
+        /// </summary>
+        /// <param name="newDict"></param>
+        /// <param name="targetBrush"></param>
+        /// <param name="targetColor1"></param>
+        /// <param name="targetColor2"></param>
+        /// <param name="oldColor1"></param>
+        /// <param name="oldColor2"></param>
+        /// <param name="newColor1"></param>
+        /// <param name="newColor2"></param>
+        private void ThemeChangeLGB(ResourceDictionary newDict, string targetBrush, string targetColor1, string targetColor2, Color oldColor1, Color oldColor2, Color newColor1, Color newColor2)
+        {
+            var resources = Application.Current.Resources;
+
+            // Brush を取得
+            var brushCheckToggle = Application.Current.Resources[targetBrush] as LinearGradientBrush;
+            if (brushCheckToggle != null)
+            {
+                if (brushCheckToggle.IsFrozen)
+                {
+                    brushCheckToggle = brushCheckToggle.Clone();
+                    Application.Current.Resources[targetBrush] = brushCheckToggle;
+                }
+
+                // GradientStop を取得
+                var gs1 = brushCheckToggle.GradientStops[0];
+                var gs2 = brushCheckToggle.GradientStops[1];
+
+                // アニメーション作成
+                var anim1 = new ColorAnimation(oldColor1, newColor1, TimeSpan.FromSeconds(1));
+                var anim2 = new ColorAnimation(oldColor2, newColor2, TimeSpan.FromSeconds(1));
+
+                anim2.Completed += (o, e) =>
+                {
+                    resources[targetColor1] = newDict[targetColor1];
+                    resources[targetColor2] = newDict[targetColor2];
+                };
+                // GradientStop にアニメーションを適用
+                gs1.BeginAnimation(GradientStop.ColorProperty, anim1);
+                gs2.BeginAnimation(GradientStop.ColorProperty, anim2);
+            }
+        }
+
+        private void ThemeChangeButton(Button button, Color oldColor, Color newColor)
+        {
+            if (button.Background is not SolidColorBrush brush)
+            {
+                return;
+            }
+
+            if (brush.IsFrozen)
+            {
+                brush = brush.Clone();
+                button.Background = brush;
+            }
+
+            var anim = new ColorAnimation
+            {
+                From = oldColor,
+                To = newColor,
+                Duration = TimeSpan.FromSeconds(1),
+                AutoReverse = false
+            };
+
+            brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
         }
 
         /// <summary>
@@ -1131,16 +949,16 @@ namespace MVVM_Base.View
                 case WM_NCHITTEST:
                     {
                         Point p = GetMousePosition();
-                        var r = new Rect(this.Left, this.Top, this.Width, this.Height);
+                        var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
                         handled = true;
 
-                        if (p.Y >= r.Top && p.Y < r.Top + RESIZE_BORDER)
+                        if (p.Y >= rect.Top && p.Y < rect.Top + RESIZE_BORDER)
                         {
-                            if (p.X < r.Left + RESIZE_BORDER)
+                            if (p.X < rect.Left + RESIZE_BORDER)
                             {
                                 return (IntPtr)HTTOPLEFT;
                             }
-                            else if (p.X > r.Right - RESIZE_BORDER)
+                            else if (p.X > rect.Right - RESIZE_BORDER)
                             {
                                 return (IntPtr)HTTOPRIGHT;
                             }
@@ -1149,13 +967,13 @@ namespace MVVM_Base.View
                                 return (IntPtr)HTTOP;
                             }
                         }
-                        else if (p.Y <= r.Bottom && p.Y > r.Bottom - RESIZE_BORDER)
+                        else if (p.Y <= rect.Bottom && p.Y > rect.Bottom - RESIZE_BORDER)
                         {
-                            if (p.X < r.Left + RESIZE_BORDER)
+                            if (p.X < rect.Left + RESIZE_BORDER)
                             {
                                 return (IntPtr)HTBOTTOMLEFT;
                             }
-                            else if (p.X > r.Right - RESIZE_BORDER)
+                            else if (p.X > rect.Right - RESIZE_BORDER)
                             {
                                 return (IntPtr)HTBOTTOMRIGHT;
                             }
@@ -1164,11 +982,11 @@ namespace MVVM_Base.View
                                 return (IntPtr)HTBOTTOM;
                             }
                         }
-                        else if (p.X >= r.Left && p.X < r.Left + RESIZE_BORDER)
+                        else if (p.X >= rect.Left && p.X < rect.Left + RESIZE_BORDER)
                         {
                             return (IntPtr)HTLEFT;
                         }
-                        else if (p.X <= r.Right && p.X > r.Right - RESIZE_BORDER)
+                        else if (p.X <= rect.Right && p.X > rect.Right - RESIZE_BORDER)
                         {
                             return (IntPtr)HTRIGHT;
                         }
