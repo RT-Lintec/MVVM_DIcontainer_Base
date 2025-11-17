@@ -1,4 +1,4 @@
-﻿using MVVM_Base.Services;
+﻿using MVVM_Base.Model;
 using MVVM_Base.View;
 using MVVM_Base.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,7 @@ namespace MVVM_Base.DiContainer
             var services = new ServiceCollection();
 
             // 共通サービス登録
-            services.AddSingleton<IAnimalService, AnimalService>();
+            //services.AddSingleton<IAnimalService, AnimalService>();
 
             // 各画面DIにサービス登録させる
             diEntry.Configure(services);
@@ -57,7 +57,11 @@ namespace MVVM_Base.DiContainer
             public static void Configure(IServiceCollection services)
             {
                 // vm
-                services.AddTransient<vmMain>();
+                services.AddSingleton<vmMain>();
+
+                services.AddSingleton<PortWatcherService>();
+
+                services.AddTransient<IMessageService, MessageBlocker>();
 
                 // view
                 services.AddTransient<viewMain>();

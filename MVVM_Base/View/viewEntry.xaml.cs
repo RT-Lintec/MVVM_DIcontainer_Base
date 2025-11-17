@@ -1,14 +1,9 @@
-﻿using MVVM_Base.Model;
-using MVVM_Base.ViewModel;
+﻿using MVVM_Base.ViewModel;
 using System.ComponentModel;
-//using System.Drawing;
-
-//using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-//using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -128,6 +123,10 @@ namespace MVVM_Base.View
                 IntPtr handle = (new WindowInteropHelper(this)).Handle;
                 HwndSource.FromHwnd(handle)?.AddHook(WndProc);
             };
+
+            // 起動時にMain画面を表示
+            vmEntry.ShowView(ViewType.Main);
+            
         }
 
         /// <summary>
@@ -754,7 +753,7 @@ namespace MVVM_Base.View
                 resources["AccentColor"] = newDict["AccentColor"];
                 resources["AccentBrush"] = newDict["AccentBrush"];
                 resources["ButtonThemeColor"] = newDict["ButtonThemeColor"];
-                resources["ThemeIcon"] = newDict["ThemeIcon"];
+                resources["ThemeIconKind"] = newDict["ThemeIconKind"];
                 resources["LeftWindowColor1"] = newDict["LeftWindowColor1"];
                 resources["LeftWindowColor1Brush"] = newDict["LeftWindowColor1Brush"];
                 resources["LeftWindowColor2"] = newDict["LeftWindowColor2"];

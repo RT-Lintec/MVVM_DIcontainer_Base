@@ -2,10 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using MVVM_Base.DiContainer;
 using MVVM_Base.View;
-using System.ComponentModel;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 
 namespace MVVM_Base.ViewModel
 {
@@ -91,13 +88,13 @@ namespace MVVM_Base.ViewModel
         /// コンストラクタ
         /// </summary>
         public vmEntry() { }
-
+        private viewMain _mainView;
         /// <summary>
         /// ビュー切り替え
         /// </summary>
         /// <param name="type"></param>
         [RelayCommand]
-        private void ShowView(ViewType type)
+        public void ShowView(ViewType type)
         {
             // 選択状態を一括で更新
             SelectView(type);
@@ -105,7 +102,7 @@ namespace MVVM_Base.ViewModel
             // CurrentView 切り替え
             CurrentView = type switch
             {
-                ViewType.Main => diRoot.Instance.GetService<viewMain>(),
+                ViewType.Main => _mainView ??= diRoot.Instance.GetService<viewMain>(),
                 ViewType.AView => diRoot.Instance.GetService<viewA>(),
                 ViewType.BView => diRoot.Instance.GetService<viewB>(),
                 _ => CurrentView
@@ -128,19 +125,6 @@ namespace MVVM_Base.ViewModel
         private void Save()
         {
             CurrentView = diRoot.Instance.GetService<viewB>();
-        }
-
-        [RelayCommand]
-        private void Exit(ViewType type)
-        {
-            // 選択状態を一括で更新
-            SelectView(type);
-
-            // Viewの終了処理なので、本来はViewに持たせたい
-            if (MessageBox.Show("End?", "確認", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
-            {
-                Application.Current.Shutdown();
-            }
         }
 
         [RelayCommand]

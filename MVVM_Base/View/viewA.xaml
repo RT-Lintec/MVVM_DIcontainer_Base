@@ -8,12 +8,7 @@
              Style="{StaticResource Page_Style}">
     <Grid>
         <Border>
-            <!--<Border.Background>
-                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                    <GradientStop Color="#41518f" Offset="0"/>
-                    <GradientStop Color="#2c386c" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>-->
+
         </Border>
         <TextBlock Text="これは A 画面です" Foreground="{DynamicResource TextColorBrush}" FontSize="20"/>
     </Grid>

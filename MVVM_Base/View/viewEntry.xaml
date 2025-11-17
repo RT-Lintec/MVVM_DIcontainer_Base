@@ -4,7 +4,7 @@
         xmlns:fa = "http://schemas.awesome.incremented/wpf/xaml/fontawesome.sharp"
         xmlns:local="clr-namespace:MVVM_Base.ViewModel"
         Title="Entry"
-        Height="450" Width="800"
+        Height="800" Width="800"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -60,7 +60,7 @@
                                 
                                 <StackPanel Orientation="Horizontal">
                                     <fa:IconImage Icon="Home" Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="Home" Style="{StaticResource menuToggleButtonText}"/>
+                                    <TextBlock Text="Entry" Style="{StaticResource menuToggleButtonText}"/>
                                 </StackPanel>
                             </ToggleButton>
 
@@ -105,8 +105,8 @@
                                 CommandParameter="{x:Static local:ViewType.Help}" >
                                 
                                 <StackPanel Orientation="Horizontal">
-                                    <fa:IconImage Icon="Info" Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="Help" Style="{StaticResource menuToggleButtonText}"/>
+                                    <fa:IconImage Icon="Gear" Style="{StaticResource menuToggleButtonIcon}" />
+                                    <TextBlock Text="Setting" Style="{StaticResource menuToggleButtonText}"/>
                                 </StackPanel>
                             </ToggleButton>
 

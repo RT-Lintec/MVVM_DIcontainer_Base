@@ -13,7 +13,6 @@
         <Setter Property="Height" Value="45"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Tag" Value ="{DynamicResource AccentBrush}"/>
-        <!--<Setter Property="Tag" Value="#7FFFD4"/>-->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
@@ -27,14 +26,6 @@
         <Style.Triggers>
             <Trigger Property="IsChecked" Value="True">
                 <Setter Property="Tag" Value="{DynamicResource TagColorBrush}"/>
-                <!--<Setter Property="Background">
-                    <Setter.Value>
-                        <LinearGradientBrush StartPoint="0, 0.5" EndPoint="1,0.5">
-                            <GradientStop Color="{DynamicResource CheckToggleColor1}" Offset="0"/>
-                            <GradientStop Color="{DynamicResource CheckToggleColor2}" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Setter.Value>
-                </Setter>-->
                 <Setter Property="Background" Value="{DynamicResource CheckToggleBrush}"/>
                 <Setter Property="Template">
                     <Setter.Value>
