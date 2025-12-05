@@ -387,6 +387,42 @@
                 </Setter>
             </Style>
 
+            <!-- 共通 ScrollBar スタイル -->
+            <Style TargetType="ScrollBar">
+                <Setter Property="Background" Value="{DynamicResource LeftWindowColor2Brush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid>
+                                <!-- 背景 -->
+                                <Border Background="{TemplateBinding Background}" 
+                                    BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}"/>
+
+                                <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}">
+                                    <Track.Thumb>
+                                        <Thumb Background="{TemplateBinding Background}" 
+                                           BorderBrush="{TemplateBinding BorderBrush}" 
+                                           BorderThickness="{TemplateBinding BorderThickness}"/>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="Orientation" Value="Vertical">
+                                    <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="true"/>
+                                </Trigger>
+                                <Trigger Property="Orientation" Value="Horizontal">
+                                    <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="false"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
         </ResourceDictionary>
         
         

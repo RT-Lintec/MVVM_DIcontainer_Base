@@ -14,7 +14,7 @@ namespace MVVM_Base.DiContainer
         private static readonly Lazy<diRoot> _instance =
             new Lazy<diRoot>(() => new diRoot());
 
-        private readonly IServiceProvider _provider;
+        private readonly IServiceProvider provider;
 
         public diRoot()
         {
@@ -29,10 +29,10 @@ namespace MVVM_Base.DiContainer
             diViewMain.Configure(services);
             diViewLinear.Configure(services);
 
-            _provider = services.BuildServiceProvider();
+            provider = services.BuildServiceProvider();
         }
 
-        public T GetService<T>() where T : notnull => _provider.GetRequiredService<T>();
+        public T GetService<T>() where T : notnull => provider.GetRequiredService<T>();
 
         public static diRoot Instance => _instance.Value;
 

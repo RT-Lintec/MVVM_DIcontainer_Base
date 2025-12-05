@@ -24,7 +24,7 @@ namespace MVVM_Base.Model
 
         private HashSet<string> currentPorts = new HashSet<string>();
 
-        private readonly object _lock = new object();
+        private readonly object lockObj = new object();
 
         // 公開イベント
         public event Action? messageShowAdded;
@@ -130,7 +130,7 @@ namespace MVVM_Base.Model
         /// </summary>
         private void CheckPortsNow()
         {
-            lock (_lock)
+            lock (lockObj)
             {
                 var ports = new HashSet<string>(SerialPort.GetPortNames());
 

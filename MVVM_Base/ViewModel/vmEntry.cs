@@ -24,56 +24,56 @@ namespace MVVM_Base.ViewModel
     {
 
         [ObservableProperty]
-        private UserControl _currentView;
+        private UserControl currentView;
 
         /// <summary>
         /// Mainボタン選択
         /// </summary>
-        private bool _isMainSelected;
+        private bool isMainSelected;
         public bool IsMainSelected
         {
-            get => _isMainSelected;
-            set => SetProperty(ref _isMainSelected, value);
+            get => isMainSelected;
+            set => SetProperty(ref isMainSelected, value);
         }
 
         /// <summary>
         /// A_Viewボタン選択
         /// </summary>
-        private bool _isLinearViewSelected;
+        private bool isLinearViewSelected;
         public bool IsLinearViewSelected
         {
-            get => _isLinearViewSelected;
-            set => SetProperty(ref _isLinearViewSelected, value);
+            get => isLinearViewSelected;
+            set => SetProperty(ref isLinearViewSelected, value);
         }
 
         /// <summary>
         /// B_Viewボタン選択
         /// </summary>
-        private bool _isBViewSelected;
+        private bool isBViewSelected;
         public bool IsBViewSelected
         {
-            get => _isBViewSelected;
-            set => SetProperty(ref _isBViewSelected, value);
+            get => isBViewSelected;
+            set => SetProperty(ref isBViewSelected, value);
         }
 
         /// <summary>
         /// Helpボタン選択
         /// </summary>
-        private bool _IsHelpSelected;
+        private bool isHelpSelected;
         public bool IsHelpSelected
         {
-            get => _IsHelpSelected;
-            set => SetProperty(ref _IsHelpSelected, value);
+            get => isHelpSelected;
+            set => SetProperty(ref isHelpSelected, value);
         }
 
         /// <summary>
         /// Endボタン選択
         /// </summary>
-        private bool _IsEndSelected;
+        private bool isEndSelected;
         public bool IsEndSelected
         {
-            get => _IsEndSelected;
-            set => SetProperty(ref _IsEndSelected, value);
+            get => isEndSelected;
+            set => SetProperty(ref isEndSelected, value);
         }
 
         /// <summary>
@@ -89,15 +89,15 @@ namespace MVVM_Base.ViewModel
             IsEndSelected = type == ViewType.End;
         }
 
-        private readonly ThemeService _themeService;
+        private readonly ThemeService themeService;
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        public vmEntry(ThemeService themeService) 
+        public vmEntry(ThemeService _themeService) 
         { 
-            _themeService = themeService;
-            _themeService.PropertyChanged += ThemeService_PropertyChanged;
+            themeService = _themeService;
+            themeService.PropertyChanged += ThemeService_PropertyChanged;
         }
 
         #region カラーテーマ変更通知関連
@@ -106,7 +106,7 @@ namespace MVVM_Base.ViewModel
             if (e.PropertyName == nameof(ThemeService.CurrentTheme))
             {
                 // ここで CurrentTheme 変化を検知可能
-                OnThemeChanged(_themeService.CurrentTheme);
+                OnThemeChanged(themeService.CurrentTheme);
             }
         }
 
@@ -123,21 +123,21 @@ namespace MVVM_Base.ViewModel
         /// ThemeServiceにイベント通知を委任しているので、プロパティ変化の通知は行わない
         /// 行うと二重発火となり、viewEntryでのプロパティ変更イベントが二回発生する。
         /// </summary>
-        private bool _isDarkTheme;
+        private bool isDarkTheme;
         public bool IsDarkTheme
         {
-            get => _isDarkTheme;
+            get => isDarkTheme;
             set
             {
-                if (_isDarkTheme != value)
+                if (isDarkTheme != value)
                 {
-                    _isDarkTheme = value;
+                    isDarkTheme = value;
                 }
             }
         }
         #endregion
 
-        private viewMain _mainView;
+        private viewMain mainView;
         /// <summary>
         /// ビュー切り替え
         /// </summary>
@@ -151,7 +151,7 @@ namespace MVVM_Base.ViewModel
             // CurrentView 切り替え
             CurrentView = type switch
             {
-                ViewType.Main => _mainView ??= diRoot.Instance.GetService<viewMain>(),
+                ViewType.Main => mainView ??= diRoot.Instance.GetService<viewMain>(),
                 ViewType.LinearView => diRoot.Instance.GetService<viewLinear>(),
                 ViewType.BView => diRoot.Instance.GetService<viewB>(),
                 _ => CurrentView
@@ -177,17 +177,17 @@ namespace MVVM_Base.ViewModel
                 Color oldTextColor = (Color)resources["TextColor"];
                 Color oldTagColor = (Color)resources["TagColor"];
 
-                if (_themeService.CurrentTheme == "Dark")
+                if (themeService.CurrentTheme == "Dark")
                 {
-                    _themeService.CurrentTheme = "Light";
+                    themeService.CurrentTheme = "Light";
                 }
                 else
                 {
-                    _themeService.CurrentTheme = "Dark";
+                    themeService.CurrentTheme = "Dark";
                 }
 
                 // 変更後カラーの取得
-                var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{_themeService.CurrentTheme}Theme.xaml", UriKind.Relative) };
+                var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{themeService.CurrentTheme}Theme.xaml", UriKind.Relative) };
 
                 Color newTbarColor1 = (Color)newDict["TitleBarAnimFrom1"];
                 Color newTbarColor2 = (Color)newDict["TitleBarAnimFrom2"];

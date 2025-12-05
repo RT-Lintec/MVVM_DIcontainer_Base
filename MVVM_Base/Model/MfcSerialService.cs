@@ -8,8 +8,8 @@ namespace MVVM_Base.Model
     public class MfcSerialService : IMFCSerialService
     {
         // Singleton
-        private static readonly Lazy<MfcSerialService> _instance = new(() => new MfcSerialService());
-        public static MfcSerialService Instance => _instance.Value;
+        private static readonly Lazy<MfcSerialService> instance = new(() => new MfcSerialService());
+        public static MfcSerialService Instance => instance.Value;
 
         private string? deviceNum;
 

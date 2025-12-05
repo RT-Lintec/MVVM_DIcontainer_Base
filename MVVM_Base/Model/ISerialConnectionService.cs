@@ -17,7 +17,9 @@ namespace MVVM_Base.Model
         public static OperationResult Fail(string message) => new(false, message);
     }
 
-    // 共通接続・切断操作
+    /// <summary>
+    /// 共通接続・切断操作
+    /// </summary>
     public interface ISerialConnectionService
     {
         Task<bool> Connect(SerialPortInfo serialPortInfo);
@@ -28,7 +30,9 @@ namespace MVVM_Base.Model
         SerialPort? Port { get; }
     }
 
-    // 天秤専用の非同期リクエスト
+    /// <summary>
+    /// 天秤専用の非同期リクエスト
+    /// </summary>
     public interface IMFCSerialService : ISerialConnectionService
     {
         /// <summary>
@@ -47,7 +51,9 @@ namespace MVVM_Base.Model
         Task<OperationResult?> RequestType3Async(string cmd1, string cmd2, CancellationToken cancellationToken = default);
     }
 
-    // 天秤専用の非同期リクエスト
+    /// <summary>
+    /// 天秤専用の非同期リクエスト
+    /// </summary>
     public interface IBalanceSerialService : ISerialConnectionService
     {
         /// <summary>

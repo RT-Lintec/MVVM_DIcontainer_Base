@@ -19,7 +19,7 @@ namespace MVVM_Base.View
         /// <summary>
         /// vmからのイベント通知を受け取るために保持
         /// </summary>
-        private vmEntry? _vm;
+        private vmEntry? vm;
 
         /// <summary>
         /// トグルボタンの括弧に関する位置設定
@@ -58,7 +58,7 @@ namespace MVVM_Base.View
         /// <summary>
         /// 初期値はダークモード
         /// </summary>
-        //private bool _isDark = true;
+        //private bool isDark = true;
         private bool isOn = false;
         private int tBarAnimInterval = 5;
         private int tBarAnimTransition = 1;
@@ -85,15 +85,15 @@ namespace MVVM_Base.View
         #endregion
 
         #region Bloom関連
-        private bool _isBloomEnabled;
+        private bool isBloomEnabled;
         public bool IsBloomEnabled
         {
-            get => _isBloomEnabled;
+            get => isBloomEnabled;
             set
             {
-                if (_isBloomEnabled != value)
+                if (isBloomEnabled != value)
                 {
-                    _isBloomEnabled = value;
+                    isBloomEnabled = value;
                     OnPropertyChanged(nameof(IsBloomEnabled));
                 }
             }
@@ -429,10 +429,10 @@ namespace MVVM_Base.View
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             // vmにイベント登録　カラーテーマ変更処理
-            if (DataContext is vmEntry vm)
+            if (DataContext is vmEntry _vm)
             {
-                _vm = vm;
-                _vm.PropertyChanged += Vm_PropertyChanged;
+                vm = _vm;
+                vm.PropertyChanged += Vm_PropertyChanged;
             }
 
             AnimateTitleBar();
@@ -448,7 +448,7 @@ namespace MVVM_Base.View
             if (e.PropertyName == nameof(vmEntry.IsDarkTheme))
             {
                 // フラグ変化時にアニメーションや UI 更新
-                ThemeChanged(_vm.IsDarkTheme);
+                ThemeChanged(vm.IsDarkTheme);
             }
         }
 
@@ -734,7 +734,7 @@ namespace MVVM_Base.View
                 };
                 btn.BeginAnimation(Canvas.LeftProperty, anim);
 
-                //_isDark = !_isDark;
+                //isDark = !isDark;
                 string theme = isDark ? "Dark" : "Light";
 
                 ApplyTheme(theme);

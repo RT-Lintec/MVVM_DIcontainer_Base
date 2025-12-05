@@ -1,9 +1,7 @@
 ﻿using MVVM_Base.ViewModel;
 using System.ComponentModel;
-using System.Drawing;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -21,18 +19,18 @@ namespace MVVM_Base.View
         /// <summary>
         /// vmからのイベント通知を受け取るために保持
         /// </summary>
-        private vmMain? _vm;
+        private vmMain? vm;
 
         /// <summary>
         /// 通信時のアイコンのアニメーションSB
         /// </summary>
-        private Storyboard? _icMfcStoryboard = new Storyboard()
+        private Storyboard? icMfcStoryboard = new Storyboard()
         {
             RepeatBehavior = RepeatBehavior.Forever,
             AutoReverse = true
         };
 
-        private Storyboard? _icBalanceStoryboard = new Storyboard()
+        private Storyboard? icBalanceStoryboard = new Storyboard()
         {
             RepeatBehavior = RepeatBehavior.Forever,
             AutoReverse = true
@@ -72,13 +70,13 @@ namespace MVVM_Base.View
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
             // 初期化　一回のみ
-            if (_vm == null && DataContext is vmMain vm)
+            if (vm == null && DataContext is vmMain _vmMain)
             {
-                _vm = vm;
-                _vm.PropertyChanged += (s, e) =>
+                vm = _vmMain;
+                vm.PropertyChanged += (s, e) =>
                 {
-                    if (e.PropertyName == nameof(vm.IsMfcConnected) || 
-                        e.PropertyName == nameof(vm.IsBalanceConnected) || 
+                    if (e.PropertyName == nameof(_vmMain.IsMfcConnected) || 
+                        e.PropertyName == nameof(_vmMain.IsBalanceConnected) || 
                         e.PropertyName == nameof(vmMain.IsDarkTheme))
                         Vm_PropertyChanged(s,e);
                 };
@@ -107,12 +105,12 @@ namespace MVVM_Base.View
                 if (((vmMain)sender).IsMfcConnected)
                 {
                     isContinueMfcIconAnim = true;
-                    AnimateCommIconColor(nameof(MfcCommIconColor), _icMfcStoryboard);
+                    AnimateCommIconColor(nameof(MfcCommIconColor), icMfcStoryboard);
                 }
                 else
                 {
                     isContinueMfcIconAnim = false;
-                    StopTitleBarAnimation(_icMfcStoryboard);
+                    StopTitleBarAnimation(icMfcStoryboard);
                     if (transitionMfcComm != null)
                     {
                         Application.Current.Dispatcher.BeginInvoke(() =>
@@ -131,12 +129,12 @@ namespace MVVM_Base.View
                 if (((vmMain)sender).IsBalanceConnected)
                 {
                     isContinueBalanceIconAnim = true;
-                    AnimateCommIconColor(nameof(BalanceCommIconColor), _icBalanceStoryboard);
+                    AnimateCommIconColor(nameof(BalanceCommIconColor), icBalanceStoryboard);
                 }
                 else
                 {
                     isContinueBalanceIconAnim = false;
-                    StopTitleBarAnimation(_icBalanceStoryboard);
+                    StopTitleBarAnimation(icBalanceStoryboard);
                     if (transitionBalanceComm != null)
                     {
                         //transitionBalanceComm.Completed += (s, e) =>
@@ -155,16 +153,16 @@ namespace MVVM_Base.View
             {
                 if(((vmMain)sender).IsMfcConnected && ((vmMain)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, _icMfcStoryboard, ((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, _icBalanceStoryboard, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
                 }
                 else if (((vmMain)sender).IsMfcConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, _icMfcStoryboard,((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard,((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
                 }
                 else if(((vmMain)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, _icBalanceStoryboard, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
                 }
             }
         }
@@ -353,6 +351,68 @@ namespace MVVM_Base.View
                 {
                     MyScrollViewer.ScrollToHorizontalOffset(0);
                 }
+            }
+        }
+
+        /// <summary>
+        /// マウスホイール押下状態ならtrue
+        /// </summary>
+        private bool isMiddleButtonDown = false;
+
+        /// <summary>
+        /// マウスホイールが押下された位置
+        /// </summary>
+        private Point middleButtonStart;
+
+        /// <summary>
+        /// マウスホイール押下時の処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ScrollViewer_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Released && isMiddleButtonDown && sender is ScrollViewer sv)
+            {
+                isMiddleButtonDown = false;
+                sv.ReleaseMouseCapture();
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// マウスホイール解放時の処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ScrollViewer_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed && sender is ScrollViewer sv)
+            {
+                isMiddleButtonDown = true;
+                middleButtonStart = e.GetPosition(sv);
+                sv.CaptureMouse();
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// マウス移動時の処理
+        /// マウスホイール押下状態ならスクロールバーを移動させる
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ScrollViewer_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (isMiddleButtonDown && sender is ScrollViewer sv)
+            {
+                Point currentPos = e.GetPosition(sv);
+                Vector delta = currentPos - middleButtonStart;
+
+                sv.ScrollToVerticalOffset(sv.VerticalOffset - delta.Y);
+                sv.ScrollToHorizontalOffset(sv.HorizontalOffset - delta.X);
+
+                middleButtonStart = currentPos;
+                e.Handled = true;
             }
         }
 

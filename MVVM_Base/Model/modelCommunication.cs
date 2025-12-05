@@ -8,20 +8,20 @@ namespace MVVM_Base.Model
 {
     public class ModelCommunication
     {
-        private readonly ModelHandShake _handShake;
+        private readonly ModelHandShake handShake;
 
         public ModelCommunication(ModelHandShake handShake)
         {
-            _handShake = handShake;
+            handShake = handShake;
         }
 
         // 例: MFC 機器の状態取得
         public string GetMfcStatus()
         {
-            if (!_handShake.IsConnected)
+            if (!handShake.IsConnected)
                 throw new InvalidOperationException("MFC機器が接続されていません");
 
-            var port = _handShake.GetSerialPort();
+            var port = handShake.GetSerialPort();
             // ここで RS232C コマンド送受信
             // port.WriteLine("STATUS?");
             // return port.ReadLine();
@@ -32,10 +32,10 @@ namespace MVVM_Base.Model
         // 例: Balance 機器の状態取得
         public string GetBalanceStatus()
         {
-            if (!_handShake.IsConnected)
+            if (!handShake.IsConnected)
                 throw new InvalidOperationException("Balance機器が接続されていません");
 
-            var port = _handShake.GetSerialPort();
+            var port = handShake.GetSerialPort();
             // port.WriteLine("BALANCE?");
             // return port.ReadLine();
 
@@ -45,10 +45,10 @@ namespace MVVM_Base.Model
         // 任意: コマンド送信
         public void SendCommand(string cmd)
         {
-            if (!_handShake.IsConnected)
+            if (!handShake.IsConnected)
                 throw new InvalidOperationException("機器が接続されていません");
 
-            var port = _handShake.GetSerialPort();
+            var port = handShake.GetSerialPort();
             port.WriteLine(cmd);
         }
     }

@@ -7,9 +7,27 @@
              mc:Ignorable="d"
              Style="{StaticResource Page_Style}">
     <Grid>
-        <Border>
-
-        </Border>
-        <TextBlock Text="これは A 画面です" Foreground="{DynamicResource TextColorBrush}" FontSize="20"/>
+        <ScrollViewer x:Name="MyScrollViewer"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto"
+                        ScrollChanged="ScrollViewer_ScrollChanged"
+                        PreviewMouseUp="ScrollViewer_PreviewMouseUp"
+                        PreviewMouseDown="ScrollViewer_PreviewMouseDown"
+                        PreviewMouseMove="ScrollViewer_PreviewMouseMove"
+                        PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+        </ScrollViewer>
+        
+        
+        
+        <!-- 右下隅矩形（ScrollBar 表示に連動） -->
+        <Border x:Name="ScrollCorner"
+                Width="{x:Static SystemParameters.VerticalScrollBarWidth}"
+                Height="{x:Static SystemParameters.HorizontalScrollBarHeight}"
+                Background="{DynamicResource LeftWindowColor2Brush}"
+                BorderBrush="{DynamicResource AccentBrush}"
+                BorderThickness="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Visibility="Collapsed"/>
     </Grid>
 </UserControl>

@@ -6,13 +6,13 @@ namespace MVVM_Base.Model
 {
     public class ModelHandShake
     {
-        private SerialPort _serialPort;
+        private SerialPort serialPort;
 
         /// <summary>接続状態</summary>
-        public bool IsConnected => _serialPort != null && _serialPort.IsOpen;
+        public bool IsConnected => serialPort != null && serialPort.IsOpen;
 
         /// <summary>現在接続中のポート名</summary>
-        public string ConnectedPortName => _serialPort?.PortName;
+        public string ConnectedPortName => serialPort?.PortName;
 
         /// <summary>
         /// 利用可能なCOMポート一覧（フレンドリ名付き）
@@ -67,20 +67,20 @@ namespace MVVM_Base.Model
         {
             try
             {
-                if (_serialPort != null && _serialPort.IsOpen)
-                    _serialPort.Close();
+                if (serialPort != null && serialPort.IsOpen)
+                    serialPort.Close();
 
-                _serialPort = new SerialPort(portName, baudRate)
+                serialPort = new SerialPort(portName, baudRate)
                 {
                     ReadTimeout = 500,
                     WriteTimeout = 500
                 };
 
-                _serialPort.Open();
+                serialPort.Open();
 
                 // 必要に応じて簡易ハンドシェイク処理
-                // _serialPort.WriteLine("HELLO");
-                // var response = _serialPort.ReadLine();
+                // serialPort.WriteLine("HELLO");
+                // var response = serialPort.ReadLine();
 
                 return true;
             }
@@ -95,11 +95,11 @@ namespace MVVM_Base.Model
         /// </summary>
         public void Disconnect()
         {
-            if (_serialPort != null && _serialPort.IsOpen)
-                _serialPort.Close();
+            if (serialPort != null && serialPort.IsOpen)
+                serialPort.Close();
         }
 
         /// <summary>シリアルポートを返す</summary>
-        public SerialPort GetSerialPort() => _serialPort;
+        public SerialPort GetSerialPort() => serialPort;
     }
 }

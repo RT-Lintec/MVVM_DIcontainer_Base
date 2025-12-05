@@ -9,17 +9,17 @@ namespace MVVM_Base.Model
         /// <summary>
         /// 排他制御オブジェクト
         /// </summary>
-        private readonly object _lockObj = new();
+        private readonly object lockObj = new();
 
         /// <summary>
         /// カスタムメッセージボックス
         /// </summary>
-        private CustomMessageBox? _dialog;
+        private CustomMessageBox? dialog;
 
         /// <summary>
         /// クローズ中フラグ
         /// </summary>
-        private bool _isClosing = false;
+        private bool isClosing = false;
 
         /// <summary>
         /// メッセージ表示
@@ -30,26 +30,26 @@ namespace MVVM_Base.Model
             Application.Current.Dispatcher.Invoke(() =>
             {
                 // クリティカルセクション
-                lock (_lockObj)
+                lock (lockObj)
                 {
                     // すでに同じ内容なら開き直さない
-                    if (_dialog != null && _dialog.MessageText.Text == message)
+                    if (dialog != null && dialog.MessageText.Text == message)
                     {
                         return;
                     }
 
                     // 既存を即閉じる（フェード中なら強制）
-                    if (_dialog != null)
+                    if (dialog != null)
                     {
-                        _dialog.Close();
-                        _dialog = null;
-                        _isClosing = false;
+                        dialog.Close();
+                        dialog = null;
+                        isClosing = false;
                     }
 
                     // 新規作成
-                    _dialog = new CustomMessageBox(message, Application.Current.MainWindow);
-                    _dialog.Opacity = 1.0;
-                    _dialog.Show();
+                    dialog = new CustomMessageBox(message, Application.Current.MainWindow);
+                    dialog.Opacity = 1.0;
+                    dialog.Show();
                 }
             });
 
@@ -66,17 +66,17 @@ namespace MVVM_Base.Model
                 CustomMessageBox? dialogToClose;
 
                 // クリティカルセクション
-                lock (_lockObj)
+                lock (lockObj)
                 {
                     // 対象無し or クローズ中なら処理中断
-                    if (_dialog == null || _isClosing)
+                    if (dialog == null || isClosing)
                     {
                         return;
                     }
 
                     // クローズ中フラグオンして対象をキャプチャ
-                    _isClosing = true;
-                    dialogToClose = _dialog;
+                    isClosing = true;
+                    dialogToClose = dialog;
                 }
 
                 // fade-out アニメーション
@@ -93,17 +93,17 @@ namespace MVVM_Base.Model
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         // クリティカルセクション
-                        lock (_lockObj)
+                        lock (lockObj)
                         {
                             dialogToClose.Close();
 
                             // 今閉じたウィンドウが最新のものであれば null にする
-                            if (_dialog == dialogToClose)
+                            if (dialog == dialogToClose)
                             {
-                                _dialog = null;
+                                dialog = null;
                             }
 
-                            _isClosing = false;
+                            isClosing = false;
                         }
                     });
                 };

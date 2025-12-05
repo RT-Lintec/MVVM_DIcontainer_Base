@@ -12,7 +12,7 @@ namespace MVVM_Base.Model
         public SerialPort? Port { get; private set; }
 
         private readonly StringBuilder _buffer = new();
-        private TaskCompletionSource<string?>? _lineTcs;
+        private TaskCompletionSource<string?>? lineTcs;
 
         int timeoutMilliseconds = 1000;
         /// <summary>
@@ -165,37 +165,37 @@ namespace MVVM_Base.Model
                     if (line == null) break;
 
                     // 待機中のタスクがあれば結果を渡す
-                    if (_lineTcs != null && !_lineTcs.Task.IsCompleted)
+                    if (lineTcs != null && !lineTcs.Task.IsCompleted)
                     {
-                        _lineTcs.TrySetResult(line);
-                        _lineTcs = null;
+                        lineTcs.TrySetResult(line);
+                        lineTcs = null;
                     }
                 }
             }
             catch (TimeoutException ex)
             {
-                _lineTcs?.TrySetResult(null);
-                _lineTcs = null;
+                lineTcs?.TrySetResult(null);
+                lineTcs = null;
             }
             catch (InvalidOperationException ex)
             {
-                _lineTcs?.TrySetResult(null);
-                _lineTcs = null;
+                lineTcs?.TrySetResult(null);
+                lineTcs = null;
             }
             catch (IOException ex)
             {
-                _lineTcs?.TrySetResult(null);
-                _lineTcs = null;
+                lineTcs?.TrySetResult(null);
+                lineTcs = null;
             }
             catch (UnauthorizedAccessException ex)
             {
-                _lineTcs?.TrySetResult(null);
-                _lineTcs = null;
+                lineTcs?.TrySetResult(null);
+                lineTcs = null;
             }
             catch (Exception ex)
             {
-                _lineTcs?.TrySetResult(null);
-                _lineTcs = null;
+                lineTcs?.TrySetResult(null);
+                lineTcs = null;
             }
         }
 
@@ -210,13 +210,13 @@ namespace MVVM_Base.Model
             if (Port == null || !Port.IsOpen)
                 return Task.FromResult<string?>(null);
 
-            // _lineTcsを発生させ、bufferからのデータ格納を待つ
-            _lineTcs = new TaskCompletionSource<string?>();
+            // lineTcsを発生させ、bufferからのデータ格納を待つ
+            lineTcs = new TaskCompletionSource<string?>();
 
             if (token != default)
-                token.Register(() => _lineTcs?.TrySetCanceled());
+                token.Register(() => lineTcs?.TrySetCanceled());
 
-            return _lineTcs.Task;
+            return lineTcs.Task;
         }
 
         /// <summary>

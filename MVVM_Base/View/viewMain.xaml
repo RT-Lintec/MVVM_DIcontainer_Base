@@ -22,41 +22,13 @@
     
     <Grid>
         <ScrollViewer x:Name="MyScrollViewer"
-                  HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Auto"
-                  ScrollChanged="ScrollViewer_ScrollChanged"
-                  PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
-
-            <ScrollViewer.Resources>
-                <Style TargetType="ScrollBar">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ScrollBar">
-                                <Grid>
-                                    <!-- 背景色 -->
-                                    <Border Background="{DynamicResource LeftWindowColor2Brush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"/>
-
-                                    <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}">
-                                        <Track.Thumb>
-                                            <!-- Thumb に枠線 -->
-                                            <Thumb Background="{DynamicResource LeftWindowColor2Brush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"/>
-                                        </Track.Thumb>
-                                    </Track>
-                                </Grid>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="Orientation" Value="Vertical">
-                                        <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="true"/>
-                                    </Trigger>
-                                    <Trigger Property="Orientation" Value="Horizontal">
-                                        <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="false"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </ScrollViewer.Resources>
-
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto"
+                        ScrollChanged="ScrollViewer_ScrollChanged"
+                        PreviewMouseUp="ScrollViewer_PreviewMouseUp"
+                        PreviewMouseDown="ScrollViewer_PreviewMouseDown"
+                        PreviewMouseMove="ScrollViewer_PreviewMouseMove"
+                        PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

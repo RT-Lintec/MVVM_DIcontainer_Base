@@ -20,7 +20,8 @@ namespace MVVM_Base.Common
             {
                 return parameter.ToString();
             }
-            return Binding.DoNothing; // false のときはVMを変えない
+            // falseのときはVMを変えない
+            return Binding.DoNothing;
         }
     }
 }

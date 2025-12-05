@@ -6,23 +6,23 @@ namespace MVVM_Base.Model
 {
     public class ThemeService : INotifyPropertyChanged
     {
-        private string _currentTheme = "Dark"; // 初期テーマ
+        private string currentTheme = "Dark"; // 初期テーマ
 
         public string CurrentTheme
         {
-            get => _currentTheme;
+            get => currentTheme;
             set
             {
-                if (_currentTheme != value)
+                if (currentTheme != value)
                 {
-                    _currentTheme = value;
+                    currentTheme = value;
                     OnPropertyChanged();
 
                     // 現在色の取得
                     var resources = Application.Current.Resources;
 
                     // 変更後カラーの取得
-                    var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{_currentTheme}Theme.xaml", UriKind.Relative) };
+                    var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{currentTheme}Theme.xaml", UriKind.Relative) };
 
                     // 既存キーの書き換え
                     resources["AccentColor"] = newDict["AccentColor"];
