@@ -9,6 +9,7 @@
     <Color x:Key="LeftWindowColor22">#A02020</Color>
     <Color x:Key="AccentColor">#7FFFD4</Color>
     <Color x:Key="ButtonThemeColor">#6A5ACD</Color>
+    <Color x:Key="ButtonThemeColor2">#4A5ACD</Color>
     <Color x:Key="BracketColor">#ffc0a8</Color>
     <Color x:Key="CheckToggleColor1">#202020</Color>
     <Color x:Key="CheckToggleColor2">#A0A0A0</Color>
@@ -20,6 +21,10 @@
     <Color x:Key="TitleBarAnimTo1">#0050FF</Color>
     <Color x:Key="TitleBarAnimFrom2">#C0502F</Color>
     <Color x:Key="TitleBarAnimTo2">#10A0D0</Color>
+    
+    <Color x:Key="CommIconColorFrom">#505050</Color>
+    <Color x:Key="CommIconColorTo">#FF7FD4</Color> 
+
 
     <!-- SolidColorBrush 変換 -->
     <SolidColorBrush x:Key="LeftWindowColor1Brush" Color="{DynamicResource LeftWindowColor1}"/>
@@ -28,6 +33,7 @@
     <SolidColorBrush x:Key="CheckToggleColor2Brush" Color="{DynamicResource CheckToggleColor2}"/>
     <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource AccentColor}"/>
     <SolidColorBrush x:Key="ButtonThemeColorBrush" Color="{StaticResource ButtonThemeColor}"/>
+    <SolidColorBrush x:Key="ButtonThemeColorBrush2" Color="{StaticResource ButtonThemeColor2}"/>
     <SolidColorBrush x:Key="BlacketColorBrush" Color="{DynamicResource BracketColor}"/>
     <SolidColorBrush x:Key="TextColorBrush" Color="{DynamicResource TextColor}"/>
     <SolidColorBrush x:Key="TagColorBrush" Color="{DynamicResource TagColor}"/>

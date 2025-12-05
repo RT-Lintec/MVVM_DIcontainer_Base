@@ -1,178 +1,157 @@
 ﻿using System.IO.Ports;
-using System.Management;
+using System.Windows.Interop;
 
 namespace MVVM_Base.Model
 {
+    /// <summary>
+    /// ポート抜き差しイベントにはWIn32(主に物理層の状態を通知する)を用いた設計を行う
+    /// WMIでもイベント取得可能だが、主にOS層といった高レイヤの状態を通知するため
+    /// 誤検知や多重通知が発生する
+    /// 物理層イベントのみ検知→念のためデバウンスで多重通知を防御
+    /// </summary>
     public class PortWatcherService
     {
-        /// <summary>
-        /// シリアルポートUSBケーブル差し込み監視オブジェクト
-        /// </summary>
-        private ManagementEventWatcher? _arrivalWatcher;
+        // USB通知用定数
+        private const int WM_DEVICECHANGE = 0x0219;
+        private const int DBT_DEVICEARRIVAL = 0x8000;
+        private const int DBT_DEVICEREMOVECOMPLETE = 0x8004;
 
-        /// <summary>
-        /// シリアルポートUSBケーブル抜き出し監視オブジェクト
-        /// </summary>
-        private ManagementEventWatcher? _removalWatcher;
+        private IntPtr _hwnd;
 
-        /// <summary>
-        /// シリアルポートのハッシュリスト(重複許可しない)
-        /// </summary>
-        private HashSet<string> _currentPorts;
-
-        /// <summary>
-        /// 排他制御オブジェクト
-        /// </summary>
-        private readonly object _lock = new object();
-
-        /// <summary>
-        /// タイマー デバウンス時間後にセットしたラムダ式を実行する
-        /// </summary>
-        private System.Timers.Timer? _debounceTimer;
-
-        /// <summary>
-        /// デバウンス時間(メッセージ表示～消えるまでの時間)
-        /// </summary>
+        // デバウンス用
+        private System.Timers.Timer? debounceTimer;
         private int debounceTime = 2000;
 
-        /// <summary>
-        /// シリアルポートUSBケーブル抜き差ししてもポート変化無いときのイベント
-        /// </summary>
+        private HashSet<string> currentPorts = new HashSet<string>();
+
+        private readonly object _lock = new object();
+
+        // 公開イベント
+        public event Action? messageShowAdded;
+        public event Action? messageShowRemoved;
+        public event Action<string>? PortAdded;
+        public event Action<string>? PortRemoved;
         public event Action? noChangeDetected;
 
-        /// <summary>
-        /// シリアルポートUSBケーブル差し込み時のダイアログ表示イベント
-        /// </summary>
-        public event Action? messageShowAdded;
-
-        /// <summary>
-        /// シリアルポートUSBケーブル抜き出し時のダイアログ表示イベント
-        /// </summary>
-        public event Action? messageShowRemoved;
-
-        /// <summary>
-        /// シリアルポートUSBケーブル差し込み時の処理イベント
-        /// </summary>
-        public event Action<string>? PortAdded;
-
-        /// <summary>
-        /// シリアルポートUSBケーブル抜き出し時の処理イベント
-        /// </summary>
-        public event Action<string>? PortRemoved;
-
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        /// <param name="messageService"></param>
         public PortWatcherService()
         {
-            // 初期ポートリスト取得
-            _currentPorts = new HashSet<string>(SerialPort.GetPortNames());
+            currentPorts = new HashSet<string>(SerialPort.GetPortNames());
         }
 
         /// <summary>
-        /// USBポート差し込み監視の開始（WMI監視）
+        /// HWNDをApp.xaml.csから注入する
         /// </summary>
+        /// <param name="hwnd"></param>
+        public void Initialize(IntPtr hwnd)
+        {
+            _hwnd = hwnd;
+        }
+
+        /// <summary>
+        /// ポート抜き差しイベント監視開始
+        /// </summary>
+        /// <exception cref="InvalidOperationException"></exception>
         public void Start()
         {
-            var arrivalQuery = new WqlEventQuery(
-                "SELECT * FROM Win32_DeviceChangeEvent WITHIN 1 WHERE EventType = 2");
-            _arrivalWatcher = new ManagementEventWatcher(arrivalQuery);
-            _arrivalWatcher.EventArrived += Arrival_EventArrived;
-            _arrivalWatcher.Start();
+            if (_hwnd == IntPtr.Zero)
+                throw new InvalidOperationException("Initialize(hwnd)が先に必要です");
 
-            var removalQuery = new WqlEventQuery(
-                "SELECT * FROM Win32_DeviceChangeEvent WITHIN 1 WHERE EventType = 3");
-            _removalWatcher = new ManagementEventWatcher(removalQuery);
-            _removalWatcher.EventArrived += Removal_EventArrived;
-            _removalWatcher.Start();
+            AttachWndProc();
         }
 
-        /// <summary>
-        /// USBポート差し込み監視の終了
-        /// </summary>
         public void Stop()
         {
-            _arrivalWatcher?.Stop();
-            _arrivalWatcher?.Dispose();
-            _arrivalWatcher = null;
-
-            _removalWatcher?.Stop();
-            _removalWatcher?.Dispose();
-            _removalWatcher = null;
-
-            _debounceTimer?.Stop();
-            _debounceTimer?.Dispose();
-            _debounceTimer = null;
+            debounceTimer?.Stop();
+            debounceTimer?.Dispose();
+            debounceTimer = null;
         }
 
         /// <summary>
-        /// Debounce処理：短時間(間隔：debounceTime msec)に複数イベントが発生してもまとめて1回だけ処理
+        /// Win32メッセージをWPFにフック
+        /// </summary>
+        private void AttachWndProc()
+        {
+            HwndSource source = HwndSource.FromHwnd(_hwnd);
+            source.AddHook(WndProc);
+        }
+
+        /// <summary>
+        ///  Win32メッセージフック
+        /// </summary>
+        /// <param name="hwnd"></param>
+        /// <param name="msg"></param>
+        /// <param name="wParam"></param>
+        /// <param name="lParam"></param>
+        /// <param name="handled"></param>
+        /// <returns></returns>
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam,
+            IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_DEVICECHANGE)
+            {
+                switch ((int)wParam)
+                {                    
+                    case DBT_DEVICEARRIVAL:
+                        messageShowAdded?.Invoke();
+                        DebounceCheckPorts();
+                        handled = true;
+                        break;
+
+                    case DBT_DEVICEREMOVECOMPLETE:
+                        messageShowRemoved?.Invoke();
+                        DebounceCheckPorts();
+                        handled = true;
+                        break;
+                }
+            }
+
+            return IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// Debounce時間だけ待ってからポートチェックを行う。その間最初のイベント発生から
+        /// のOSからの通知は無視する
         /// </summary>
         private void DebounceCheckPorts()
         {
-            if (_debounceTimer == null)
+            if (debounceTimer == null)
             {
-                _debounceTimer = new System.Timers.Timer(debounceTime);
-                _debounceTimer.AutoReset = false;
-                _debounceTimer.Elapsed += (s, e) => CheckPortsNow();
+                debounceTimer = new System.Timers.Timer(debounceTime);
+                debounceTimer.AutoReset = false;
+                debounceTimer.Elapsed += (_, __) => CheckPortsNow();
             }
-            _debounceTimer.Stop();
-            _debounceTimer.Start();
+            debounceTimer.Stop();
+            debounceTimer.Start();
         }
 
         /// <summary>
-        /// 現在のポートと前回のポートを比較して追加/削除を通知
+        /// ポート追加と削除を行いイベント発火
+        /// 追加後と削除後のポート情報を比較する
         /// </summary>
         private void CheckPortsNow()
         {
-            // クリティカルセクション
             lock (_lock)
             {
                 var ports = new HashSet<string>(SerialPort.GetPortNames());
 
-                // 追加されたポートを通知
-                var added = ports.Except(_currentPorts);
-                foreach (var port in added)
-                    PortAdded?.Invoke(port);
+                var added = ports.Except(currentPorts);
+                var removed = currentPorts.Except(ports);
 
-                // 削除されたポートを通知
-                var removed = _currentPorts.Except(ports);
-                foreach (var port in removed)
-                    PortRemoved?.Invoke(port);
+                foreach (var p in added)
+                    PortAdded?.Invoke(p);
 
-                _currentPorts = ports;
+                foreach (var p in removed)
+                    PortRemoved?.Invoke(p);
 
-                // ポート情報に変化があるかどうか
-                bool isNoChange = !added.Except(removed).Any() && !removed.Except(added).Any();
-                // 何も変更がないのに呼ばれた場合
+                bool isNoChange =
+                    !added.Except(removed).Any() &&
+                    !removed.Except(added).Any();
+
                 if (isNoChange)
-                {
                     noChangeDetected?.Invoke();
-                }
+
+                currentPorts = ports;
             }
-        }
-
-        /// <summary>
-        /// シリアルポートUSBケーブルの差し込みイベント
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Arrival_EventArrived(object sender, EventArrivedEventArgs e)
-        {
-            messageShowAdded?.Invoke();
-            DebounceCheckPorts();
-        }
-
-        /// <summary>
-        /// シリアルポートUSBケーブルの抜き出しイベント
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void Removal_EventArrived(object sender, EventArrivedEventArgs e)
-        {
-            messageShowRemoved?.Invoke();
-            DebounceCheckPorts();
         }
     }
 }

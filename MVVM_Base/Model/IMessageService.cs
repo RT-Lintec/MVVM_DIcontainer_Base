@@ -2,7 +2,7 @@
 {
     public interface IMessageService
     {
-        void ShowMessage(string message);
-        void CloseWithFade();
+        Task ShowMessage(string message);
+        Task CloseWithFade();
     }
 }

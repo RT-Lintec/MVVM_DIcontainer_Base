@@ -17,6 +17,11 @@ namespace MVVM_Base.View
     public partial class viewEntry : Window
     {
         /// <summary>
+        /// vmからのイベント通知を受け取るために保持
+        /// </summary>
+        private vmEntry? _vm;
+
+        /// <summary>
         /// トグルボタンの括弧に関する位置設定
         /// </summary>
         enum CornerType { TopLeft, TopRight, BottomLeft, BottomRight }
@@ -53,7 +58,7 @@ namespace MVVM_Base.View
         /// <summary>
         /// 初期値はダークモード
         /// </summary>
-        private bool _isDark = true;
+        //private bool _isDark = true;
         private bool isOn = false;
         private int tBarAnimInterval = 5;
         private int tBarAnimTransition = 1;
@@ -125,8 +130,7 @@ namespace MVVM_Base.View
             };
 
             // 起動時にMain画面を表示
-            vmEntry.ShowView(ViewType.Main);
-            
+            vmEntry.ShowView(ViewType.Main);            
         }
 
         /// <summary>
@@ -418,13 +422,34 @@ namespace MVVM_Base.View
         }
 
         /// <summary>
-        /// ウィンドウロード時にアニメーション開始
+        /// ウィンドウロード時にvmのイベントに処理登録、アニメーション開始
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // vmにイベント登録　カラーテーマ変更処理
+            if (DataContext is vmEntry vm)
+            {
+                _vm = vm;
+                _vm.PropertyChanged += Vm_PropertyChanged;
+            }
+
             AnimateTitleBar();
+        }
+
+        /// <summary>
+        /// vmからのプロパティ値変更イベント通知時の処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(vmEntry.IsDarkTheme))
+            {
+                // フラグ変化時にアニメーションや UI 更新
+                ThemeChanged(_vm.IsDarkTheme);
+            }
         }
 
         /// <summary>
@@ -466,7 +491,7 @@ namespace MVVM_Base.View
         }
 
         /// <summary>
-        /// 
+        /// テーマカラーを取得する
         /// </summary>
         /// <param name="key"></param>
         /// <param name="fallback"></param>
@@ -690,9 +715,9 @@ namespace MVVM_Base.View
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)
+        private void ThemeChanged(bool isDark)
         {
-            var btn = sender as Button;
+            var btn = ThemeToggleButton;
 
             if (btn.Tag.ToString() == "theme")
             {
@@ -709,31 +734,24 @@ namespace MVVM_Base.View
                 };
                 btn.BeginAnimation(Canvas.LeftProperty, anim);
 
-                _isDark = !_isDark;
-                string theme = _isDark ? "Dark" : "Light";
+                //_isDark = !_isDark;
+                string theme = isDark ? "Dark" : "Light";
 
                 ApplyTheme(theme);
-                ThemeChange(btn, theme);
+                ThemeChangeProcess(btn, theme);
             }
         }
 
         /// <summary>
         /// 色変化をアニメーション付きで行う
         /// </summary>
-        private void ThemeChange(Button btn, string theme)
+        private void ThemeChangeProcess(Button btn, string theme)
         {
             if (theme != null)
             {
                 // 現在色の取得
                 var resources = Application.Current.Resources;
                 Color oldThemeColor = (Color)resources["ButtonThemeColor"];
-                Color oldAcsColor = (Color)resources["AccentColor"];
-                Color oldWcColor1 = (Color)resources["LeftWindowColor1"];
-                Color oldWcColor2 = (Color)resources["LeftWindowColor2"];
-                Color oldCtColor1 = (Color)resources["CheckToggleColor1"];
-                Color oldCtColor2 = (Color)resources["CheckToggleColor2"];
-                Color oldTextColor = (Color)resources["TextColor"];
-                Color oldTagColor = (Color)resources["TagColor"];
 
                 // 変更後カラーの取得
                 var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{theme}Theme.xaml", UriKind.Relative) };
@@ -741,43 +759,12 @@ namespace MVVM_Base.View
                 Color newTbarColor1 = (Color)newDict["TitleBarAnimFrom1"];
                 Color newTbarColor2 = (Color)newDict["TitleBarAnimFrom2"];
                 Color newThemeColor = (Color)newDict["ButtonThemeColor"];
-                Color newAcsColor = (Color)newDict["AccentColor"];
-                Color newWcColor1 = (Color)newDict["LeftWindowColor1"];
-                Color newWcColor2 = (Color)newDict["LeftWindowColor2"];
-                Color newCtColor1 = (Color)newDict["CheckToggleColor1"];
-                Color newCtColor2 = (Color)newDict["CheckToggleColor2"];
-                Color newTextColor = (Color)newDict["TextColor"];
-                Color newTagColor = (Color)newDict["TagColor"];
-
-                // 既存キーの書き換え
-                resources["AccentColor"] = newDict["AccentColor"];
-                resources["AccentBrush"] = newDict["AccentBrush"];
-                resources["ButtonThemeColor"] = newDict["ButtonThemeColor"];
-                resources["ThemeIconKind"] = newDict["ThemeIconKind"];
-                resources["LeftWindowColor1"] = newDict["LeftWindowColor1"];
-                resources["LeftWindowColor1Brush"] = newDict["LeftWindowColor1Brush"];
-                resources["LeftWindowColor2"] = newDict["LeftWindowColor2"];
-                resources["LeftWindowColor2Brush"] = newDict["LeftWindowColor2Brush"];
-                resources["TextColor"] = newDict["TextColor"];
-                resources["TagColor"] = newDict["TagColor"];
-                resources["RippleColor"] = newDict["RippleColor"];
-                resources["RippleColorBrush"] = newDict["RippleColorBrush"];
 
                 // タイトルバーのアニメーション
                 ThemeChangeTB(btn, TitleBarGradientStop1, TitleBarGradientStop2, newTbarColor1, newTbarColor2);
 
-                // SolidColorBrush参照ブラシのアニメーション
-                ThemeChangeSCB("AccentBrush", oldAcsColor, newAcsColor);
-                ThemeChangeSCB("LeftWindowColor1Brush", oldWcColor1, newWcColor1);
-                ThemeChangeSCB("LeftWindowColor2Brush", oldWcColor2, newWcColor2);
-                ThemeChangeSCB("TextColorBrush", oldTextColor, newTextColor);
-                ThemeChangeSCB("TagColorBrush", oldTagColor, newTagColor);
-
-                // LinearGradientBrush参照ブラシのアニメーション
-                ThemeChangeLGB(newDict, "CheckToggleBrush", "CheckToggleColor1", "CheckToggleColor2", oldCtColor1, oldCtColor2, newCtColor1, newCtColor2);
-
                 // カラーテーマ変更ボタンのアニメーション
-                ThemeChangeButton(ThemeToggleButton, oldThemeColor, newThemeColor);               
+                ThemeChangeButton(ThemeToggleButton, oldThemeColor, newThemeColor);
             }
         }
 
@@ -828,83 +815,6 @@ namespace MVVM_Base.View
             };
 
             tbStoryboard.Begin(this);
-        }
-
-        /// <summary>
-        /// SolidColorBrush参照UIのテーマ変化アニメーション
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="oldColor"></param>
-        /// <param name="newColor"></param>
-        private void ThemeChangeSCB(string target, Color oldColor, Color newColor)
-        {
-            var brush = Application.Current.Resources[target] as SolidColorBrush;
-
-            if (brush != null)
-            {
-                // 凍結されている場合はクローンして再登録
-                if (brush.IsFrozen)
-                {
-                    brush = brush.Clone();
-                    Application.Current.Resources[target] = brush;
-                }
-
-                // アニメーション作成
-                var anim = new ColorAnimation
-                {
-                    From = oldColor,
-                    To = newColor,
-                    Duration = TimeSpan.FromSeconds(1),
-                    AutoReverse = false
-                };
-
-                // アニメーション開始
-                brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
-            }
-        }
-
-        /// <summary>
-        /// LinearGradientBrush参照UIのテーマ変化アニメーション
-        /// </summary>
-        /// <param name="newDict"></param>
-        /// <param name="targetBrush"></param>
-        /// <param name="targetColor1"></param>
-        /// <param name="targetColor2"></param>
-        /// <param name="oldColor1"></param>
-        /// <param name="oldColor2"></param>
-        /// <param name="newColor1"></param>
-        /// <param name="newColor2"></param>
-        private void ThemeChangeLGB(ResourceDictionary newDict, string targetBrush, string targetColor1, string targetColor2, Color oldColor1, Color oldColor2, Color newColor1, Color newColor2)
-        {
-            var resources = Application.Current.Resources;
-
-            // Brush を取得
-            var brushCheckToggle = Application.Current.Resources[targetBrush] as LinearGradientBrush;
-            if (brushCheckToggle != null)
-            {
-                if (brushCheckToggle.IsFrozen)
-                {
-                    brushCheckToggle = brushCheckToggle.Clone();
-                    Application.Current.Resources[targetBrush] = brushCheckToggle;
-                }
-
-                // GradientStop を取得
-                var gs1 = brushCheckToggle.GradientStops[0];
-                var gs2 = brushCheckToggle.GradientStops[1];
-
-                // アニメーション作成
-                var anim1 = new ColorAnimation(oldColor1, newColor1, TimeSpan.FromSeconds(1));
-                var anim2 = new ColorAnimation(oldColor2, newColor2, TimeSpan.FromSeconds(1));
-
-                anim2.Completed += (o, e) =>
-                {
-                    resources[targetColor1] = newDict[targetColor1];
-                    resources[targetColor2] = newDict[targetColor2];
-                };
-                // GradientStop にアニメーションを適用
-                gs1.BeginAnimation(GradientStop.ColorProperty, anim1);
-                gs2.BeginAnimation(GradientStop.ColorProperty, anim2);
-            }
         }
 
         private void ThemeChangeButton(Button button, Color oldColor, Color newColor)

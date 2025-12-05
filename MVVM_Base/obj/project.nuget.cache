@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "DpZcDYAGSxw=",
+  "dgSpecHash": "2qAlyxrUkiU=",
   "success": true,
   "projectFilePath": "C:\\Users\\takahashi\\source\\repos\\MVVM_Base\\MVVM_Base\\MVVM_Base.csproj",
   "expectedPackageFiles": [
@@ -53,6 +53,7 @@
     "C:\\Users\\takahashi\\.nuget\\packages\\mahapps.metro.iconpacks.zondicons\\6.2.1\\mahapps.metro.iconpacks.zondicons.6.2.1.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\9.0.10\\microsoft.extensions.dependencyinjection.9.0.10.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\9.0.10\\microsoft.extensions.dependencyinjection.abstractions.9.0.10.nupkg.sha512",
+    "C:\\Users\\takahashi\\.nuget\\packages\\microsoft.xaml.behaviors.wpf\\1.1.135\\microsoft.xaml.behaviors.wpf.1.1.135.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\runtime.android-arm.runtime.native.system.io.ports\\10.0.0\\runtime.android-arm.runtime.native.system.io.ports.10.0.0.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\runtime.android-arm64.runtime.native.system.io.ports\\10.0.0\\runtime.android-arm64.runtime.native.system.io.ports.10.0.0.nupkg.sha512",
     "C:\\Users\\takahashi\\.nuget\\packages\\runtime.android-x64.runtime.native.system.io.ports\\10.0.0\\runtime.android-x64.runtime.native.system.io.ports.10.0.0.nupkg.sha512",

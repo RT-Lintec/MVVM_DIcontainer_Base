@@ -25,7 +25,7 @@ namespace MVVM_Base.Model
         /// メッセージ表示
         /// </summary>
         /// <param name="message"></param>
-        public void ShowMessage(string message)
+        public Task ShowMessage(string message)
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -52,12 +52,14 @@ namespace MVVM_Base.Model
                     _dialog.Show();
                 }
             });
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// メッセージ消去
         /// </summary>
-        public void CloseWithFade()
+        public Task CloseWithFade()
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -108,6 +110,8 @@ namespace MVVM_Base.Model
 
                 dialogToClose.BeginAnimation(Window.OpacityProperty, fadeOut);
             });
+
+            return Task.CompletedTask;
         }
     }
 }

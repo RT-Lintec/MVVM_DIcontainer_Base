@@ -2,516 +2,1049 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:Icon="http://metro.mahapps.com/winfx/xaml/iconpacks"
-             Style="{StaticResource Page_Style}">
+             xmlns:converter="clr-namespace:MVVM_Base.Common"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             Style="{StaticResource Page_Style}" Cursor=""
+             Loaded="UserControl_Loaded">
+
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="PreviewKeyDown">
+            <i:InvokeCommandAction Command="{Binding AdjustUICommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
+        <i:EventTrigger EventName="PreviewMouseWheel">
+            <i:InvokeCommandAction Command="{Binding AdjustUICommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
 
     <UserControl.Resources>
-        <!-- ▼ GroupBox 共通スタイル -->
-        <Style x:Key="GroupBoxStyle" TargetType="GroupBox">
-            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Margin" Value="10"/>
-            <Setter Property="Padding" Value="10"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GroupBox">
-                        <Border BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="2" 
-                                CornerRadius="5" 
-                                Background="Transparent" 
-                                SnapsToDevicePixels="True">
-                            <DockPanel>
-                                <ContentPresenter x:Name="HeaderContent"
-                                                  ContentSource="Header" 
-                                                  RecognizesAccessKey="True"
-                                                  Margin="5"
-                                                  DockPanel.Dock="Top"/>
-                                <ContentPresenter Margin="{TemplateBinding Padding}"/>
-                            </DockPanel>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- 枠線を細くした派生スタイル -->
-        <Style x:Key="GroupBoxThinBorderStyle" TargetType="GroupBox" BasedOn="{StaticResource GroupBoxStyle}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="GroupBox">
-                        <Border BorderBrush="{TemplateBinding BorderBrush}" 
-                        BorderThickness="1"
-                            CornerRadius="5" 
-                        Background="Transparent" 
-                        SnapsToDevicePixels="True">
-                            <DockPanel>
-                                <ContentPresenter x:Name="HeaderContent"
-                                          ContentSource="Header" 
-                                          RecognizesAccessKey="True"
-                                          Margin="5"
-                                          DockPanel.Dock="Top"/>
-                                <ContentPresenter Margin="{TemplateBinding Padding}"/>
-                            </DockPanel>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ▼ StackPanel 共通スタイル -->
-        <Style x:Key="VerticalStackPanelStyle" TargetType="StackPanel">
-            <Setter Property="Orientation" Value="Vertical"/>
-            <Setter Property="Width" Value="80"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-        </Style>
-
-        <!-- ▼ TextBlock 共通スタイル -->
-        <Style x:Key="LabelTextStyle" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-        </Style>
-
-        <!-- ▼ TextBox 共通スタイル -->
-        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="Margin" Value="0,0,0,5"/>
-        </Style>
-
-        <Style x:Key="UnderlineComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <!-- 下線ボーダー -->
-                            <Border x:Name="Border"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Background="{TemplateBinding Background}"
-                            SnapsToDevicePixels="True"/>
-
-                            <!-- 選択中のアイテム表示 -->
-                            <ContentPresenter x:Name="ContentSite"
-                                      IsHitTestVisible="False"
-                                      Content="{TemplateBinding SelectionBoxItem}"
-                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                      Margin="3,0,25,0"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Left"/>
-
-                            <!-- ドロップダウンボタン -->
-                            <ToggleButton x:Name="DropDownToggle"
-                                  Width="24" Height="20"
-                                  Background="Transparent"
-                                  HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"
-                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                                <Path Data="M 0 0 L 4 4 L 8 0 Z"
-                              Fill="{TemplateBinding Foreground}"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
-                            </ToggleButton>
-
-                            <!-- ドロップダウンリスト -->
-                            <Popup x:Name="Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-
-                                <Grid Name="DropDown"
-                                      SnapsToDevicePixels="True"
-                                      MinWidth="{TemplateBinding ActualWidth}"
-                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
-
-                                    <Border x:Name="DropDownBorder"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="1"
-                                            Background="{DynamicResource LeftWindowColor2Brush}"/>
-
-                                    <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
-                                        <ItemsPresenter />
-                                        <!-- StackPanel から変更 -->
-                                    </ScrollViewer>
-                                </Grid>
-                            </Popup>
-
-                        </Grid>
-
-                        <!-- トリガー -->
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="HasItems" Value="False">
-                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="Gray"/>
-                            </Trigger>
-                            <Trigger Property="IsGrouping" Value="True">
-                                <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
+        <converter:StringToBooleanConverter x:Key="StringToBooleanConverter" />        
     </UserControl.Resources>
-
-
+    
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <!-- Communication -->
-            <RowDefinition Height="Auto"/>
-            <!-- Status -->
-            <RowDefinition Height="*"/>
-            <!-- (余白や将来のListView用) -->
-        </Grid.RowDefinitions>
+        <ScrollViewer x:Name="MyScrollViewer"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto"
+                  ScrollChanged="ScrollViewer_ScrollChanged"
+                  PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
 
-        <!-- ▼ Communication グループ -->
-        <GroupBox Grid.Row="0" Style="{StaticResource GroupBoxStyle}">
-            <GroupBox.Header>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Communication" Foreground="{DynamicResource AccentBrush}" FontSize="18" FontWeight="Bold"/>
-                    <Icon:PackIconMaterial Kind="LanConnect"
+            <ScrollViewer.Resources>
+                <Style TargetType="ScrollBar">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ScrollBar">
+                                <Grid>
+                                    <!-- 背景色 -->
+                                    <Border Background="{DynamicResource LeftWindowColor2Brush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"/>
+
+                                    <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}">
+                                        <Track.Thumb>
+                                            <!-- Thumb に枠線 -->
+                                            <Thumb Background="{DynamicResource LeftWindowColor2Brush}" BorderBrush="{DynamicResource AccentBrush}" BorderThickness="1"/>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="Orientation" Value="Vertical">
+                                        <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="true"/>
+                                    </Trigger>
+                                    <Trigger Property="Orientation" Value="Horizontal">
+                                        <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="false"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ScrollViewer.Resources>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <!-- Communication -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Status -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- (余白や将来のListView用) -->
+                </Grid.RowDefinitions>
+
+                <!-- ▼ Communication グループ -->
+                <GroupBox Grid.Row="0" Style="{StaticResource GroupBoxStyle}" HorizontalAlignment="Left" Cursor="">
+                    <GroupBox.Header>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Communication" Foreground="{DynamicResource AccentBrush}" FontSize="{Binding TitleFontSize}" FontWeight="Bold"/>
+                            <Icon:PackIconMaterial Kind="LanConnect"
                                            Width="20" Height="20"
                                            Margin="5,0,0,0"
                                            VerticalAlignment="Center"
                                            Foreground="{DynamicResource AccentBrush}"/>
-                </StackPanel>
-            </GroupBox.Header>
-
-            <!-- 内部：MFC + Balance -->
-            <StackPanel>
-                <!-- ▼ MFC -->
-                <GroupBox Grid.Row="0" Style="{StaticResource GroupBoxThinBorderStyle}">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <!--<TextBlock Text="MFC" Foreground="{DynamicResource AccentBrush}" FontSize="18" FontWeight="Bold"/>-->
-                            <Icon:PackIconMaterial Kind="CameraRear"
-                                   Width="20" Height="20"
-                                   Margin="5,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="{Binding MfcFriendlyName}"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       FontSize="14"
-                                       Margin="8,0,0,0"/>
                         </StackPanel>
                     </GroupBox.Header>
 
+                    <!-- 内部：MFC + Balance -->
+                    <StackPanel>
+                        <!-- ▼ MFC -->
+                        <GroupBox Grid.Row="0" Width="{Binding GroupBoxWidth}" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5 0 5 0">
+                            <GroupBox.Header>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- 左側：アイコン + テキスト -->
+                                    <StackPanel Grid.Column="0"
+                                                Orientation="Horizontal" 
+                                                VerticalAlignment="Center">
+                                        <Icon:PackIconMaterial Kind="CameraRear"
+                                                               Width="{Binding IconSize}" 
+                                                               Height="{Binding IconSize}"
+                                                               Margin="5,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource AccentBrush}"/>
+
+                                        <TextBlock Text="{Binding MfcPortWithName}" 
+                                                   Foreground="{DynamicResource TagColorBrush}" 
+                                                   FontSize="{Binding LabelFontSize}"
+                                                   Margin="8,0,0,0"/>
+
+                                        <Icon:PackIconMaterial Kind="AccessPointNetwork"
+                                                               Width="{Binding IconSize}" 
+                                                               Height="{Binding IconSize}"
+                                                               Margin="5,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               Visibility="{Binding IsMfcPortSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <Icon:PackIconMaterial.Foreground>
+                                                <LinearGradientBrush StartPoint="0,0" 
+                                                                     EndPoint="1,0">
+                                                    <GradientStop x:Name="MfcCommIconColor" 
+                                                                  Color="{DynamicResource CommIconColorFrom}"
+                                                                  Offset="0"/>
+                                                </LinearGradientBrush>
+                                            </Icon:PackIconMaterial.Foreground>
+                                        </Icon:PackIconMaterial>
+
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Vertical"
+                                                VerticalAlignment="Top" 
+                                                HorizontalAlignment="Right">
+                                        <Button Style="{StaticResource HoverButtonStyle}"
+                                                Background="Transparent"
+                                                Width="{Binding PortBtnSize}"
+                                                Cursor="Hand"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                BorderBrush="{DynamicResource AccentBrush}"
+                                                Content="{Binding MFCPortButtonText}"
+                                                Command="{Binding ControlMFCPortCommand}"
+                                                FontSize="{Binding LabelFontSize}"
+                                                Margin="10,0,5,0"
+                                                HorizontalAlignment="Left"
+                                                IsEnabled="{Binding IsMfcPortbtnEnable}"
+                                                VerticalAlignment="Center" >
+
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox.Header>
+
+                            <Grid>
+                                <!-- 列定義 -->
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Port Number -->
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Port Number"
+                                               Style="{StaticResource LabelTextStyle}" 
+                                               Grid.Row="0"/>
+
+                                    <ComboBox Grid.Row="1"
+                                              ItemsSource="{Binding AvailablePortList}"
+                                              SelectedValue="{Binding MfcPortName, Mode=TwoWay}"
+                                              SelectedValuePath="PortName"
+                                              IsHitTestVisible="{Binding IsMfcPortListEnabled}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthLongSize}"
+                                              HorizontalAlignment="Left">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0} - {1}">
+                                                            <Binding Path="PortName"/>
+                                                            <Binding Path="FriendlyName"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Baud rate -->
+                                <Grid Grid.Column="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Baud rate"
+                                               Style="{StaticResource LabelTextStyle}" 
+                                               Grid.Row="0"/>
+
+                                    <ComboBox Grid.Row="1"
+                                              ItemsSource="{Binding MfcBaudrateList}"
+                                              SelectedItem="{Binding MfcPort.Baudrate, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"/>
+                                </Grid>
+
+                                <!-- Data bit -->
+                                <Grid Grid.Column="4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Data bit"
+                                               Style="{StaticResource LabelTextStyle}" 
+                                               Grid.Row="0"/>
+
+                                    <ComboBox Grid.Row="1"
+                                              ItemsSource="{Binding MfcDatabitList}"
+                                              SelectedItem="{Binding MfcPort.Databit, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"/>
+                                </Grid>
+
+                                <!-- Stop bit -->
+                                <Grid Grid.Column="6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Stop bit"
+                                               Style="{StaticResource LabelTextStyle}" 
+                                               Grid.Row="0"/>
+
+                                    <ComboBox Grid.Row="1"
+                                              ItemsSource="{Binding MfcStopbitList}"
+                                              SelectedItem="{Binding MfcPort.Stopbit, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"/>
+                                </Grid>
+
+                                <!-- Parity bit -->
+                                <Grid Grid.Column="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Text="Parity bit"
+                                               Style="{StaticResource LabelTextStyle}" 
+                                               Grid.Row="0"/>
+
+                                    <ComboBox Grid.Row="1"
+                                              ItemsSource="{Binding MfcParitybitList}"
+                                              SelectedItem="{Binding MfcPort.Paritybit, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"/>
+                                </Grid>
+                            </Grid>
+
+                        </GroupBox>
+
+                        <!-- ▼ Balance -->
+                        <GroupBox Grid.Row="1"  Width="{Binding GroupBoxWidth}"  Style="{StaticResource GroupBoxThinBorderStyle}" HorizontalAlignment="Left"  Margin="5 10 5 5">
+                            <GroupBox.Header>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- 左側：アイコン + テキスト -->
+                                    <StackPanel Grid.Column="0" 
+                                                Orientation="Horizontal" 
+                                                VerticalAlignment="Center">
+                                        <Icon:PackIconMaterial Kind="ScaleBalance"
+                                                               Width="{Binding IconSize}" 
+                                                               Height="{Binding IconSize}"
+                                                               Margin="5,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource AccentBrush}"/>
+
+                                        <TextBlock Text="{Binding BalancePortWithName}" 
+                                                   Foreground="{DynamicResource TagColorBrush}" 
+                                                   FontSize="{Binding LabelFontSize}"
+                                                   Margin="8,0,0,0"/>
+
+                                        <Icon:PackIconMaterial Kind="AccessPointNetwork"
+                                                               Width="{Binding IconSize}" 
+                                                               Height="{Binding IconSize}"
+                                                               Margin="5,0,0,0"
+                                                               VerticalAlignment="Center"
+                                                               Visibility="{Binding IsBalancePortSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <Icon:PackIconMaterial.Foreground>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop x:Name="BalanceCommIconColor" Color="{DynamicResource CommIconColorFrom}" Offset="0"/>
+                                                </LinearGradientBrush>
+                                            </Icon:PackIconMaterial.Foreground>
+                                        </Icon:PackIconMaterial>
+                                    </StackPanel>
+
+                                    <!-- 右側：Openボタン + Commボタンを縦に配置 -->
+                                    <StackPanel Grid.Column="1" 
+                                                Orientation="Vertical" 
+                                                VerticalAlignment="Top" 
+                                                HorizontalAlignment="Right">
+                                        <Button Style="{StaticResource HoverButtonStyle}"
+                                                Background="Transparent"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                BorderBrush="{DynamicResource AccentBrush}"
+                                                Content="{Binding BalancePortButtonText}"
+                                                Width="{Binding PortBtnSize}"
+                                                Cursor="Hand"
+                                                Command="{Binding ControlBalancePortCommand}"
+                                                FontSize="{Binding LabelFontSize}"
+                                                Margin="10,0,5,0"
+                                                HorizontalAlignment="Left"
+                                                IsEnabled="{Binding IsBalancePortbtnEnable}"
+                                                VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </GroupBox.Header>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="{Binding ComboPaddingSize}"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Text="Port Number" 
+                                               Style="{StaticResource LabelTextStyle}"
+                                               Grid.Row="0"/>
+
+                                    <ComboBox Grid.Row="1"
+                                              ItemsSource="{Binding AvailablePortList}"
+                                              SelectedValue="{Binding BalancePortName, Mode=TwoWay}"
+                                              SelectedValuePath="PortName"
+                                              IsHitTestVisible="{Binding IsBalancePortListEnabled}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthLongSize}"
+                                              HorizontalAlignment="Left" >
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0} - {1}">
+                                                            <Binding Path="PortName"/>
+                                                            <Binding Path="FriendlyName"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
+                                <Grid Grid.Column="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Baud rate" 
+                                               Style="{StaticResource LabelTextStyle}"
+                                               Grid.Row="0"/>
+                                    <ComboBox ItemsSource="{Binding BalanceBaudrateList}"
+                                              SelectedItem="{Binding BalancePort.Baudrate, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"
+                                              Grid.Row="1"/>
+                                </Grid>
+
+                                <Grid Grid.Column="4">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Data bit" 
+                                               Style="{StaticResource LabelTextStyle}"
+                                               Grid.Row="0"/>
+                                    <ComboBox ItemsSource="{Binding BalanceDatabitList}"
+                                              SelectedItem="{Binding BalancePort.Databit, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"
+                                              Grid.Row="1"/>
+                                </Grid>
+
+                                <Grid Grid.Column="6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Stop bit"
+                                               Style="{StaticResource LabelTextStyle}"
+                                               Grid.Row="0"/>
+                                    <ComboBox ItemsSource="{Binding BalanceStopbitList}"
+                                              SelectedItem="{Binding BalancePort.Stopbit, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"
+                                              Grid.Row="1"/>
+                                </Grid>
+
+                                <Grid Grid.Column="8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Parity bit"
+                                               Style="{StaticResource LabelTextStyle}"
+                                               Grid.Row="0"/>
+                                    <ComboBox ItemsSource="{Binding BalanceParitybitList}"
+                                              SelectedItem="{Binding BalancePort.Paritybit, Mode=TwoWay}"
+                                              Style="{StaticResource UnderlineComboBoxStyle}"
+                                              Width="{Binding ComboWidthSize}"
+                                              HorizontalAlignment="Left"
+                                              Grid.Row="1"/>
+                                </Grid>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- ▼ 下段：Status グループ -->
+                <GroupBox Grid.Row="1" 
+                          Style="{StaticResource GroupBoxStyle}" 
+                          HorizontalAlignment="Left" 
+                          Cursor="">
+                    <GroupBox.Header>
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <!-- 左側: Status -->
+                                <ColumnDefinition Width="Auto" />
+                                <!-- 中央: DevNum -->
+                                <ColumnDefinition Width="*" />
+                                <!-- 右側: 空白 -->
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 左側：Status + 更新アイコン -->
+                            <StackPanel Orientation="Horizontal" 
+                                        VerticalAlignment="Center" 
+                                        Grid.Column="0">
+                                <TextBlock Text="Status"
+                                           Foreground="{DynamicResource AccentBrush}" 
+                                           FontSize="{Binding TitleFontSize}"
+                                           FontWeight="Bold" 
+                                           VerticalAlignment="Center"/>
+
+                                <Button Style="{StaticResource HoverButtonStyle}"
+                                        Command="{Binding UpdateMFCStatusCommand}"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Margin="5,0,0,0"
+                                        Cursor="Hand"
+                                        VerticalAlignment="Center">
+
+                                    <Icon:PackIconMaterial Kind="Autorenew"
+                                                           Width="{Binding IconSize}" 
+                                                           Height="{Binding IconSize}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+                                </Button>
+                            </StackPanel>
+
+                            <!-- 中央：DevNum -->
+                            <TextBlock Grid.Column="1"
+                                       TextDecorations="Underline"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       FontSize="{Binding TitleFontSize}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center">
+                                <Run Text="Device Number : "/>
+                                <Run Text="{Binding DeviceNum}"/>
+                            </TextBlock>
+                        </Grid>
+                    </GroupBox.Header>
+
+                    <!-- ▼ 内部レイアウト：2行3列 -->
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Style="{StaticResource VerticalStackPanelStyle}">
-                            <TextBlock Text="Port Number" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding AvailablePortList}"
-                                      SelectedValue="{Binding MfcPort, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2" Style="{StaticResource VerticalStackPanelStyle}">
-                            <TextBlock Text="Baud rate" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding MfcBaudrateList}"
-                                      SelectedItem="{Binding MfcBaudrate, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="4" Style="{StaticResource VerticalStackPanelStyle}">
-                            <TextBlock Text="Data bit" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding MfcDatabitList}"
-                                      SelectedItem="{Binding MfcDatabit, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="6" Style="{StaticResource VerticalStackPanelStyle}">
-                            <TextBlock Text="Stop bit" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding MfcStopbitList}"
-                                      SelectedItem="{Binding MfcStopbit, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="8" Style="{StaticResource VerticalStackPanelStyle}">
-                            <TextBlock Text="Parity bit" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding MfcParitybitList}"
-                                      SelectedItem="{Binding MfcParitybit, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-                    </Grid>
-                </GroupBox>
-
-                <!-- ▼ Balance -->
-                <GroupBox Grid.Row="1" Style="{StaticResource GroupBoxThinBorderStyle}">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <!--<TextBlock Text="Balance" Foreground="{DynamicResource AccentBrush}" FontSize="18" FontWeight="Bold"/>-->
-                            <Icon:PackIconMaterial Kind="ScaleBalance"
-                                   Width="20" Height="20"
-                                   Margin="5,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text="{Binding BalanceFriendlyName}"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       FontSize="14"
-                                       Margin="8,0,0,0"/>
-                        </StackPanel>
-                    </GroupBox.Header>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="3"/>
-                            <ColumnDefinition Width="77"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Style="{StaticResource VerticalStackPanelStyle}" Grid.ColumnSpan="2" Margin="0,0,0,10">
-                            <TextBlock Text="Port Number" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding AvailablePortList}"
-                                      SelectedValue="{Binding BalancePort, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="3" Style="{StaticResource VerticalStackPanelStyle}" Margin="0,0,0,10">
-                            <TextBlock Text="Baud rate" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding BalanceBaudrateList}"
-                                      SelectedItem="{Binding BalanceBaudrate, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="5" Style="{StaticResource VerticalStackPanelStyle}" Margin="0,0,0,10">
-                            <TextBlock Text="Data bit" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding BalanceDatabitList}"
-                                      SelectedItem="{Binding BalanceDatabit, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="7" Style="{StaticResource VerticalStackPanelStyle}" Margin="0,0,0,10">
-                            <TextBlock Text="Stop bit" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding BalanceStopbitList}"
-                                      SelectedItem="{Binding BalanceStopbit, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="9" Style="{StaticResource VerticalStackPanelStyle}" Margin="0,0,0,10">
-                            <TextBlock Text="Parity bit" Style="{StaticResource LabelTextStyle}"/>
-                            <ComboBox ItemsSource="{Binding BalanceParitybitList}"
-                                      SelectedItem="{Binding BalanceParitybit, Mode=TwoWay}"
-                                      Style="{StaticResource UnderlineComboBoxStyle}"/>
-                        </StackPanel>
-                    </Grid>
-                </GroupBox>
-
-            </StackPanel>
-        </GroupBox>
-
-        <!-- ▼ 下段：Status グループ -->
-        <GroupBox Grid.Row="1" Style="{StaticResource GroupBoxStyle}">
-            <GroupBox.Header>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Status" Foreground="{DynamicResource AccentBrush}" FontSize="18" FontWeight="Bold"/>
-                    <Icon:PackIconMaterial Kind="InformationOutline"
-                                   Width="20" Height="20"
-                                   Margin="5,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource AccentBrush}"/>
-                </StackPanel>
-            </GroupBox.Header>
-
-            <!-- ▼ 内部レイアウト：2行3列 -->
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- 上段左：Alerm A -->
-                <GroupBox Grid.Row="0" Grid.Column="0" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Icon:PackIconMaterial Kind="Bell"
-                                       Width="16" Height="16"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text=" A"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       FontSize="14"
-                                       FontWeight="Bold"/>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-                        <RadioButton Content="Enable" GroupName="ValveGroup" Margin="0 0 0 0" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="Disable" GroupName="ValveGroup" Margin="0 5 0 0" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- 上段中央：Slow / Fast -->
-                <GroupBox Grid.Row="0" Grid.Column="1" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <!--<TextBlock Text="Slow / Fast" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold"/>-->
-                            <Icon:PackIconPhosphorIcons Kind="ClockClockwiseBold"
-                                       Width="16" Height="16"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-                        <RadioButton Content="Slow" GroupName="PressureGroup" Margin="0 0 0 0" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="Fast" GroupName="PressureGroup" Margin="0 5 0 0" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- 上段右：Ana / Dig -->
-                <GroupBox Grid.Row="0" Grid.Column="2" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <!--<TextBlock Text="Ana / Dig" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold"/>-->
-                            <Icon:PackIconPhosphorIcons Kind="BinaryFill"
-                                       Width="16" Height="16"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-                        <RadioButton Content="Analog" GroupName="FlowGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="Digital" GroupName="FlowGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- 下段左：Alerm B -->
-                <GroupBox Grid.Row="1" Grid.Column="0" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Icon:PackIconBoxIcons Kind="RegularBell"
-                                       Width="16" Height="16"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                            <TextBlock Text=" B" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold"/>
-                        </StackPanel>
-                    </GroupBox.Header>
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-                        <RadioButton Content="Enable" GroupName="TempGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="Disable" GroupName="TempGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                    </StackPanel>
-                </GroupBox>
-
-                <!-- 下段中央：VO VS VC -->
-                <GroupBox Grid.Row="1" Grid.Column="1" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5">
-                    <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Icon:PackIconMaterial Kind="PipeValve"
-                                   Width="16" Height="16"
-                                   Margin="5,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource AccentBrush}"/>
-                        </StackPanel>
-                    </GroupBox.Header>
-
-                    <Grid Margin="3">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <!-- 左側の空白 -->
-                            <ColumnDefinition Width="Auto"/>
-                            <!-- 右寄せ -->
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- 1行目: VO と VC -->
-                        <RadioButton Content="VO" Grid.Row="0" Grid.Column="1" Margin="0 0 0 5"
-                     GroupName="AlarmGroup" Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="VC" Grid.Row="0" Grid.Column="0" Margin="0"
-                     GroupName="AlarmGroup" Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
+                        <!-- 上段左：Alerm A -->
+                        <GroupBox Grid.Row="0" 
+                                  Grid.Column="0" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width="{Binding GroupBoxStatusWidth}" 
+                                  Margin="5" 
+                                  Padding="5,2,5,5">
+                            <GroupBox.Header>
+                                <Grid Margin="2 " Height="{Binding StatusIconSize}" HorizontalAlignment="Left">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{Binding StatusIconSize}"/>
+                                        <ColumnDefinition Width="50"/>
+                                        <!-- アイコンと文字の間隔 -->
+                                        <ColumnDefinition Width="*"/>
+                                        <!-- 空きスペース -->
+                                    </Grid.ColumnDefinitions>
 
-                        <!-- 2行目: Control と Hold -->
-                        <RadioButton Content="Controll" Grid.Row="1" Grid.Column="1" Margin="0"
-                     GroupName="AlarmGroup" Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="Hold" Grid.Row="1" Grid.Column="0" Margin="0"
-                     GroupName="AlarmGroup" Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
+                                    <Icon:PackIconMaterial Grid.Column="0" 
+                                                           Kind="Bell"
+                                                           Width="{Binding StatusIconSize}"
+                                                           Height="{Binding StatusIconSize}"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+
+                                    <TextBlock Grid.Column="1" 
+                                               Text="A"
+                                               FontSize="{Binding LabelFontSize}"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentBrush}"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </GroupBox.Header>
+
+                            <Grid Margin="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Row="0"
+                                             Content="Enable"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="AlermA"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="EA"
+                                             IsChecked="{Binding AlermAOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=E, Mode=TwoWay}" />
+
+                                <RadioButton Grid.Row="1"
+                                             Content="Disable"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="AlermA"
+                                             Margin="0,5,0,0"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="DA"
+                                             VerticalContentAlignment="Center"
+                                             IsChecked="{Binding AlermAOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=D, Mode=TwoWay}" />
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- 上段中央：Slow / Fast -->
+                        <GroupBox Grid.Row="0" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width="{Binding GroupBoxStatusWidth}" 
+                                  Margin="5" 
+                                  Padding="5,2,5,5">
+                            <GroupBox.Header>
+                                <StackPanel  Margin="2"  Orientation="Horizontal" VerticalAlignment="Center">
+                                    <!--<TextBlock Text="Slow / Fast" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold"/>-->
+                                    <Icon:PackIconPhosphorIcons Kind="ClockClockwiseBold"
+                                       Width="{Binding StatusIconSize}" Height="{Binding StatusIconSize}"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AccentBrush}"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+                            <Grid Margin="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Row="0"
+                                             Content="Slow"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="SF"
+                                                Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="CS"
+                                             IsChecked="{Binding SFOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=S, Mode=TwoWay}" />
+
+                                <RadioButton Grid.Row="1"
+                                             Content="Fast"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="SF"
+                                             Margin="0,5,0,0"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="CF"
+                                             IsChecked="{Binding SFOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=F, Mode=TwoWay}" />
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- 上段右：Ana / Dig -->
+                        <GroupBox Grid.Row="0" 
+                                  Grid.Column="2" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width="{Binding GroupBoxStatusWidth}" 
+                                  Margin="5" 
+                                  Padding="5,2,5,5">
+                            <GroupBox.Header>
+                                
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <!--<TextBlock Text="Ana / Dig" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold"/>-->
+                                    <Icon:PackIconPhosphorIcons Kind="BinaryFill"
+                                       Width="{Binding StatusIconSize}" Height="{Binding StatusIconSize}"
+                                       Margin="5,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AccentBrush}"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+                            <Grid Margin="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Row="0"
+                                             Content="Analog"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="AD"
+                                             Margin="0,3,0,0"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="CA"
+                                             IsChecked="{Binding ADOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, Mode=TwoWay}" />
+
+                                <RadioButton Grid.Row="1"
+                                             Content="Digital"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="AD"
+                                             Margin="0,5,0,0"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="CD"
+                                             IsChecked="{Binding ADOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=D, Mode=TwoWay}" />
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- 下段左：Alerm B -->
+                        <GroupBox Grid.Row="1" 
+                                  Grid.Column="0" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width="{Binding GroupBoxStatusWidth}" 
+                                  Margin="5"
+                                  Padding="5,2,5,5">
+                            <GroupBox.Header>
+                                <Grid Margin="2 " Height="{Binding StatusIconSize}" HorizontalAlignment="Left">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{Binding StatusIconSize}"/>
+                                        <ColumnDefinition Width="50"/>
+                                        <!-- アイコンと文字の間隔 -->
+                                        <ColumnDefinition Width="*"/>
+                                        <!-- 空きスペース -->
+                                    </Grid.ColumnDefinitions>
+                                    <Icon:PackIconBoxIcons Grid.Column="0"
+                                                           Kind="RegularBell"
+                                                           Width="{Binding StatusIconSize}" 
+                                                           Height="{Binding StatusIconSize}"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+                                    <TextBlock Grid.Column="1" 
+                                               Text=" B" 
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding LabelFontSize}" 
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </GroupBox.Header>
+                            <Grid Margin="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Row="0"
+                                             Content="Enable"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="AlermB"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="EB"
+                                             IsChecked="{Binding AlermBOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=E, Mode=TwoWay}" />
+
+                                <RadioButton Grid.Row="1"
+                                             Content="Disable"
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             GroupName="AlermB"
+                                             Margin="0,5,0,0"
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="DB"
+                                             IsChecked="{Binding AlermBOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=D, Mode=TwoWay}" />
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- 下段中央：Valve -->
+                        <GroupBox Grid.Row="1" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width="{Binding GroupBoxStatusWidth}" 
+                                  Margin="5" 
+                                  Padding="5 2 5 5">
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Icon:PackIconMaterial Kind="PipeValve"
+                                                           Width="{Binding StatusIconSize}" 
+                                                           Height="{Binding StatusIconSize}"
+                                                           Margin="5 0 0 3"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+
+                            <Grid Margin="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- 左側の空白 -->
+                                    <ColumnDefinition Width="*"/>
+                                    <!-- 右寄せ -->
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 1行目: VO と VC -->
+                                <RadioButton Content="VO" 
+                                             Grid.Row="0" 
+                                             Grid.Column="1" 
+                                             Margin="0 0 0 5" 
+                                             GroupName="Valve" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="VO"
+                                             IsChecked="{Binding ValveOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=1, Mode=TwoWay}"/>
+                                <RadioButton Content="VC" 
+                                             Grid.Row="0" 
+                                             Grid.Column="0" 
+                                             Margin="0 0 0 5"
+                                             GroupName="Valve" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="VC"
+                                             IsChecked="{Binding ValveOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=0, Mode=TwoWay}"/>
+
+                                <!-- 2行目: Control と Hold -->
+                                <RadioButton Content="Control"
+                                             Grid.Row="1" 
+                                             Grid.Column="1" 
+                                             Margin="0 0 0 0"
+                                             GroupName="Valve" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="VS"
+                                             IsChecked="{Binding ValveOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=S, Mode=TwoWay}"/>
+                                <RadioButton Content="Hold" 
+                                             Grid.Row="1" 
+                                             Grid.Column="0" 
+                                             Margin="0"
+                                             GroupName="Valve" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="VH"
+                                             IsChecked="{Binding ValveOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=H, Mode=TwoWay}"/>
+                            </Grid>
+                        </GroupBox>
+
+
+                        <!-- 下段右：2% -->
+                        <GroupBox Grid.Row="1"
+                                  Grid.Column="2" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}"
+                                  Width="{Binding GroupBoxStatusWidth}" 
+                                  Margin="5" 
+                                  Padding="5,2,5,5">
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="2%" Foreground="{DynamicResource AccentBrush}" FontSize="{Binding LabelFontSize}" FontWeight="Bold"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+                            <Grid Margin="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Row="0"
+                                             Content="(CN)Normal" 
+                                             GroupName="Cmode" 
+                                             Margin="3 -2 0 5" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="CN"
+                                             IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=N, Mode=TwoWay}"/>
+                                <RadioButton Grid.Row="1"
+                                             Content="(C4)Hold" 
+                                             GroupName="Cmode" 
+                                             Margin="3 0 0 5" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="C4"
+                                             IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=H, Mode=TwoWay}"/>
+                                <RadioButton Grid.Row="2"
+                                             Content="(C3)Close" 
+                                             GroupName="Cmode" 
+                                             Margin="3 0 0 5" 
+                                             Style="{StaticResource StatusRadioButtonStyle}" 
+                                             Command="{Binding commMFCAsyncType1WithCommand }"
+                                             CommandParameter="C3"
+                                             IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=C, Mode=TwoWay}"/>
+                            </Grid>
+                        </GroupBox>
+
                     </Grid>
                 </GroupBox>
 
 
-                <!-- 下段右：2% -->
-                <GroupBox Grid.Row="1" Grid.Column="2" Style="{StaticResource GroupBoxThinBorderStyle}" Margin="5">
+                <!-- ▼ 最下段：Debug グループ -->
+                <GroupBox Grid.Row="2" 
+                          Style="{StaticResource GroupBoxStyle}" 
+                          HorizontalAlignment="Left" 
+                          Visibility="{Binding IsDebug, Converter={StaticResource BoolToVisibilityConverter}}">
                     <GroupBox.Header>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="2%" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold"/>
-                            <!--<Icon:PackIconFontAwesome6 Kind="_2Solid"
-                                       Width="16" Height="16"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AccentBrush}"/>
-                            <Icon:PackIconLucide Kind="Percent"
-                                       Width="16" Height="16"
-                                       Margin="5,0,0,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource AccentBrush}"/>-->
+                        <StackPanel Orientation="Horizontal" 
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="Debug" 
+                                       Foreground="{DynamicResource AccentBrush}" 
+                                       FontSize="{Binding TitleFontSize}" 
+                                       FontWeight="Bold"/>
+                            <Icon:PackIconMaterial Kind="Bug"
+                                                   Width="{Binding IconSize}" 
+                                                   Height="{Binding IconSize}"
+                                                   Margin="5,0,0,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource AccentBrush}"/>
                         </StackPanel>
                     </GroupBox.Header>
-                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left">
-                        <RadioButton Content="(CN)Normal" GroupName="MessageGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="(C4)Hold" GroupName="MessageGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                        <RadioButton Content="(C3)Close" GroupName="MessageGroup" Margin="3" 
-                             Foreground="{DynamicResource AccentBrush}" FontSize="12"/>
-                    </StackPanel>
+
+                    <!-- ▼ 内部レイアウト -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- MFC -->
+                        <GroupBox Grid.Row="0" 
+                                  Grid.Column="0" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width ="{Binding GroupBoxDebugWidthA}" 
+                                  Margin="5">
+                            <GroupBox.Header>
+                                <TextBlock Text=" MFC Comm"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="{Binding LabelFontSize}"
+                                           FontWeight="Bold"/>
+                            </GroupBox.Header>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Row="0" 
+                                            Orientation="Horizontal" 
+                                            VerticalAlignment="Center">
+                                    <Button Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Content="Read"
+                                            Command="{Binding CommMFCType2}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Margin="5,2,5,5"
+                                            VerticalAlignment="Center" />
+
+                                    <TextBox Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Text="{Binding CommMFCType2Command, Mode=TwoWay}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Width="{Binding DebugTextBoxSIze}"
+                                            Margin="14,0,0,0"
+                                            VerticalAlignment="Center"/>
+
+                                    <TextBox Background="Transparent"
+                                             Foreground="{DynamicResource AccentBrush}"
+                                             BorderBrush="{DynamicResource AccentBrush}"
+                                             Text="{Binding CommMFCType2Result, Mode=TwoWay}"
+                                             FontSize="{Binding LabelFontSize}"
+                                             Width="{Binding DebugTextBoxLongSIze}"
+                                             Margin="5,0,0,0"
+                                             VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" 
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+                                    <Button Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Content="Write1"
+                                            Command="{Binding CommMFCType1}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Margin="5,2,5,5"
+                                            VerticalAlignment="Center" />
+
+                                    <TextBox Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Text="{Binding CommMFCType1Command, Mode=TwoWay}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Width="{Binding DebugTextBoxSIze}"
+                                            Margin="7,0,0,0"
+                                            VerticalAlignment="Center"/>
+
+                                </StackPanel>
+                                <StackPanel  Grid.Row="2"  
+                                             Orientation="Horizontal" 
+                                             VerticalAlignment="Center">
+                                    <Button Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Content="Write2"
+                                            Command="{Binding CommMFCType3}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Margin="5,2,5,5"
+                                            VerticalAlignment="Center" />
+
+                                    <TextBox Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Text="{Binding CommMFCType3Command1, Mode=TwoWay}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Width="{Binding DebugTextBoxSIze}"
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"/>
+
+                                    <TextBox Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Text="{Binding CommMFCType3Command2, Mode=TwoWay}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Width="{Binding DebugTextBoxSIze}"
+                                            Margin="5,0,0,0"
+                                            VerticalAlignment="Center"/>
+
+                                    <TextBox Background="Transparent"
+                                             Foreground="{DynamicResource AccentBrush}"
+                                             BorderBrush="{DynamicResource AccentBrush}"
+                                             Text="{Binding CommMFCType3Result, Mode=TwoWay}"
+                                             FontSize="{Binding LabelFontSize}"
+                                             Width="{Binding DebugTextBoxLongSIze}"
+                                             Margin="5,0,0,0"
+                                             VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Balance -->
+                        <GroupBox Grid.Row="0" 
+                                  Grid.Column="1" 
+                                  Style="{StaticResource GroupBoxThinBorderStyle}" 
+                                  Width ="{Binding GroupBoxDebugWidthB}" 
+                                  Margin="5">
+                            <GroupBox.Header>
+                                <TextBlock Text=" Balance Comm"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="{Binding LabelFontSize}"
+                                           FontWeight="Bold"/>
+                            </GroupBox.Header>
+                            <StackPanel Orientation="Horizontal" 
+                                        VerticalAlignment="Center">
+                                <Button Background="Transparent"
+                                        Foreground="{DynamicResource AccentBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        Content="Comm"
+                                        Command="{Binding CommBalanceCommand}"
+                                        FontSize="{Binding LabelFontSize}"
+                                        Margin="5,2,5,5"
+                                        VerticalAlignment="Center" />
+
+                                <TextBox Background="Transparent"
+                                         Foreground="{DynamicResource AccentBrush}"
+                                         BorderBrush="{DynamicResource AccentBrush}"
+                                         Text="{Binding CommBalanceValue, Mode=TwoWay}"
+                                         FontSize="{Binding LabelFontSize}"
+                                         Width="{Binding DebugTextBoxLongSIze}"
+                                         Margin="5,0,0,0"
+                                         VerticalAlignment="Center" Cursor=""/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- 他のデバッグ用ボタンやテキストボックスがあれば、同じ要領で追加 -->
+                    </Grid>
                 </GroupBox>
 
             </Grid>
-        </GroupBox>
-
-
+        </ScrollViewer>
+        <!-- 右下隅矩形（ScrollBar 表示に連動） -->
+        <Border x:Name="ScrollCorner"
+                Width="{x:Static SystemParameters.VerticalScrollBarWidth}"
+                Height="{x:Static SystemParameters.HorizontalScrollBarHeight}"
+                Background="{DynamicResource LeftWindowColor2Brush}"
+                BorderBrush="{DynamicResource AccentBrush}"
+                BorderThickness="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
+                Visibility="Collapsed"/>
     </Grid>
 </UserControl>

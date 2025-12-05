@@ -22,10 +22,12 @@ namespace MVVM_Base.DiContainer
 
             // 共通サービス登録
             //services.AddSingleton<IAnimalService, AnimalService>();
+            services.AddSingleton<ThemeService>();
 
             // 各画面DIにサービス登録させる
             diEntry.Configure(services);
             diViewMain.Configure(services);
+            diViewLinear.Configure(services);
 
             _provider = services.BuildServiceProvider();
         }
@@ -58,15 +60,30 @@ namespace MVVM_Base.DiContainer
             {
                 // vm
                 services.AddSingleton<vmMain>();
-
                 services.AddSingleton<PortWatcherService>();
-
                 services.AddTransient<IMessageService, MessageBlocker>();
 
                 // view
                 services.AddTransient<viewMain>();
-                services.AddTransient<viewA>();
+                services.AddTransient<viewLinear>();
                 services.AddTransient<viewB>();
+            }
+        }
+
+        /// <summary>
+        /// リニア調整ビュー画面のDIコンテナ
+        /// </summary>
+        private static class diViewLinear
+        {
+            public static void Configure(IServiceCollection services)
+            {
+                // vm
+                services.AddSingleton<vmLinear>();
+                services.AddSingleton<PortWatcherService>();
+                services.AddTransient<IMessageService, MessageBlocker>();
+
+                // view
+                services.AddTransient<viewLinear>();
             }
         }
     }

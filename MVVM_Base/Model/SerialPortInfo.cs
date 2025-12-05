@@ -12,22 +12,33 @@ namespace MVVM_Base.Model
     public class SerialPortInfo
     {
         /// <summary>
-        /// ポート番号　"COM3"
+        /// ポート番号　"COM1"など
         /// </summary>
         public string? PortName { get; set; }
 
         /// <summary>
-        /// フレンドリ名　"Moxa USB Serial Port"
+        /// フレンドリ名　"Moxa USB Serial Port"など
         /// </summary>
         public string? FriendlyName { get; set; }
 
         /// <summary>
-        /// viewからの参照に対して保持するPortNameを返す
+        /// ボーレート
         /// </summary>
-        /// <returns></returns>
-        public override string? ToString()
-        {
-            return PortName;
-        }
+        public int Baudrate { get; set; }
+
+        /// <summary>
+        /// データビット
+        /// </summary>
+        public int Databit {  get; set; }
+
+        /// <summary>
+        /// ストップビット
+        /// </summary>
+        public int Stopbit { get; set; }
+
+        /// <summary>
+        /// パリティビット
+        /// </summary>
+        public string? Paritybit { get; set; }
     }
 }
