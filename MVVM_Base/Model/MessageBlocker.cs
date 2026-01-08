@@ -56,6 +56,24 @@ namespace MVVM_Base.Model
             return Task.CompletedTask;
         }
 
+        public Task<bool?> ShowModalAsync(string message)
+        {
+            var tcs = new TaskCompletionSource<bool?>();
+
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var dialog = new CustomModal(message)
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                bool? result = dialog.ShowDialog();
+                tcs.SetResult(result);
+            }));
+
+            return tcs.Task;
+        }
+
         /// <summary>
         /// メッセージ消去
         /// </summary>

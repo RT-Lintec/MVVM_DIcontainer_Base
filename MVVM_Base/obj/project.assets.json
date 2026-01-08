@@ -917,6 +917,19 @@
           "Microsoft.WindowsDesktop.App.WPF"
         ]
       },
+      "MathNet.Numerics/5.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/MathNet.Numerics.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/MathNet.Numerics.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Microsoft.Extensions.DependencyInjection/9.0.10": {
         "type": "package",
         "dependencies": {
@@ -3133,6 +3146,28 @@
         "mahapps.metro.iconpacks.zondicons.nuspec"
       ]
     },
+    "MathNet.Numerics/5.0.0": {
+      "sha512": "pg1W2VwaEQMAiTpGK840hZgzavnqjlCMTVSbtVCXVyT+7AX4mc1o89SPv4TBlAjhgCOo9c1Y+jZ5m3ti2YgGgA==",
+      "type": "package",
+      "path": "mathnet.numerics/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "icon.png",
+        "lib/net461/MathNet.Numerics.dll",
+        "lib/net461/MathNet.Numerics.xml",
+        "lib/net48/MathNet.Numerics.dll",
+        "lib/net48/MathNet.Numerics.xml",
+        "lib/net5.0/MathNet.Numerics.dll",
+        "lib/net5.0/MathNet.Numerics.xml",
+        "lib/net6.0/MathNet.Numerics.dll",
+        "lib/net6.0/MathNet.Numerics.xml",
+        "lib/netstandard2.0/MathNet.Numerics.dll",
+        "lib/netstandard2.0/MathNet.Numerics.xml",
+        "mathnet.numerics.5.0.0.nupkg.sha512",
+        "mathnet.numerics.nuspec"
+      ]
+    },
     "Microsoft.Extensions.DependencyInjection/9.0.10": {
       "sha512": "iEtXCkNd5XhjNJAOb/wO4IhDRdLIE2CsPxZggZQWJ/q2+sa8dmEPC393nnsiqdH8/4KV8Xn25IzgKPR1UEQ0og==",
       "type": "package",
@@ -3908,6 +3943,7 @@
       "FontAwesome.Sharp >= 6.6.0",
       "FontAwesomeWPFNuget >= 1.0.0",
       "MahApps.Metro.IconPacks >= 6.2.1",
+      "MathNet.Numerics >= 5.0.0",
       "Microsoft.Extensions.DependencyInjection >= 9.0.10",
       "Microsoft.Xaml.Behaviors.Wpf >= 1.1.135",
       "System.IO.Ports >= 10.0.0",
@@ -3979,6 +4015,10 @@
           "MahApps.Metro.IconPacks": {
             "target": "Package",
             "version": "[6.2.1, )"
+          },
+          "MathNet.Numerics": {
+            "target": "Package",
+            "version": "[5.0.0, )"
           },
           "Microsoft.Extensions.DependencyInjection": {
             "target": "Package",

@@ -21,8 +21,11 @@ namespace MVVM_Base.DiContainer
             var services = new ServiceCollection();
 
             // 共通サービス登録
-            //services.AddSingleton<IAnimalService, AnimalService>();
             services.AddSingleton<ThemeService>();
+            services.AddSingleton<CommStatusService>();
+            services.AddSingleton<ApplicationStatusService>();
+            services.AddSingleton<ViewModelManagerService>();
+            services.AddSingleton<HighPrecisionTimer>();
 
             // 各画面DIにサービス登録させる
             diEntry.Configure(services);
@@ -44,10 +47,13 @@ namespace MVVM_Base.DiContainer
             public static void Configure(IServiceCollection services)
             {
                 // vm
-                services.AddTransient<vmEntry>();
+                services.AddSingleton<vmEntry>();
 
                 // view
-                services.AddTransient<viewEntry>();
+                services.AddSingleton<viewEntry>();
+
+                // service
+                services.AddSingleton<ViewModelManagerService>();
             }
         }
 
@@ -60,12 +66,15 @@ namespace MVVM_Base.DiContainer
             {
                 // vm
                 services.AddSingleton<vmMain>();
+
+                // service
                 services.AddSingleton<PortWatcherService>();
                 services.AddTransient<IMessageService, MessageBlocker>();
+                services.AddSingleton<ViewModelManagerService>();
 
                 // view
-                services.AddTransient<viewMain>();
-                services.AddTransient<viewLinear>();
+                services.AddSingleton<viewMain>();
+                services.AddSingleton<viewLinear>();
                 services.AddTransient<viewB>();
             }
         }
@@ -79,11 +88,14 @@ namespace MVVM_Base.DiContainer
             {
                 // vm
                 services.AddSingleton<vmLinear>();
+
+                // service
                 services.AddSingleton<PortWatcherService>();
                 services.AddTransient<IMessageService, MessageBlocker>();
+                services.AddSingleton<ViewModelManagerService>();
 
                 // view
-                services.AddTransient<viewLinear>();
+                services.AddSingleton<viewLinear>();
             }
         }
     }

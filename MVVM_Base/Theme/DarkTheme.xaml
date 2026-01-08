@@ -23,8 +23,7 @@
     <Color x:Key="TitleBarAnimTo2">#10A0D0</Color>
     
     <Color x:Key="CommIconColorFrom">#505050</Color>
-    <Color x:Key="CommIconColorTo">#FF7FD4</Color> 
-
+    <Color x:Key="CommIconColorTo">#FF7FD4</Color>
 
     <!-- SolidColorBrush 変換 -->
     <SolidColorBrush x:Key="LeftWindowColor1Brush" Color="{DynamicResource LeftWindowColor1}"/>

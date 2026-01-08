@@ -1,6 +1,7 @@
 ﻿using MVVM_Base.DiContainer;
 using MVVM_Base.Model;
 using MVVM_Base.View;
+using MVVM_Base.ViewModel;
 using System.Windows;
 using System.Windows.Interop;
 
@@ -14,6 +15,9 @@ namespace MVVM_Base
         public App() { }
         private PortWatcherService portWatcher;
 
+        private ViewModelManagerService vmManager;
+
+
         /// <summary>
         /// アプリ開始時の処理
         /// </summary>
@@ -22,11 +26,17 @@ namespace MVVM_Base
         {
             base.OnStartup(e);
 
-            // viewEntry を作成して表示
+            // viewEntryを作成
             var entry = diRoot.Instance.GetService<viewEntry>();
+
+            // viewLinearを作成
+            var linear = diRoot.Instance.GetService<viewLinear>();
 
             // PortWatcherサービス取得
             portWatcher = diRoot.Instance.GetService<PortWatcherService>();
+
+            // vm管理クラス
+            vmManager = diRoot.Instance.GetService<ViewModelManagerService>();
 
             // viewEntry のウィンドウハンドルが生成されるタイミングで PortWatcher を開始
             entry.SourceInitialized += (s, ev) =>
@@ -36,7 +46,7 @@ namespace MVVM_Base
                 portWatcher.Initialize(hwnd);
                 portWatcher.Start();
             };
-
+            
             entry.Show();
         }
 
@@ -47,6 +57,7 @@ namespace MVVM_Base
         protected override void OnExit(ExitEventArgs e)
         {
             portWatcher.Stop();
+            //vmManager.DisposeAll();
             base.OnExit(e);
         }
     }

@@ -108,6 +108,8 @@ namespace MVVM_Base.View
         private bool _glowIncreasing = true;
         #endregion
 
+        private bool canTransit = true;
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
@@ -130,7 +132,7 @@ namespace MVVM_Base.View
             };
 
             // 起動時にMain画面を表示
-            vmEntry.ShowView(ViewType.Main);            
+            vmEntry.ShowView(ViewType.Main);
         }
 
         /// <summary>
@@ -274,11 +276,25 @@ namespace MVVM_Base.View
         }
 
         /// <summary>
+        /// 最後に押されたボタン
+        /// エントリー画面で画面遷移を制御する場合は初期値が必要になる
+        /// </summary>
+        ToggleButton lastBtn;
+
+        /// <summary>
         /// ボタンエフェクト：スプリング括弧
         /// </summary>
         /// <param name="btn"></param>
-        private void ShowCornerBrackets(ToggleButton btn, bool isAnimate)
+        private void ShowCornerBrackets(ToggleButton _btn, bool isAnimate)
         {
+            ToggleButton btn = _btn;
+
+            // 画面遷移不可時に括弧位置を前のボタン位置に固定する
+            if (!canTransit)
+            {
+                btn = lastBtn;
+            }
+
             EffectCanvas_tb.Children.Clear();
 
             // ボタンの位置とサイズをCanvas座標で取得
@@ -308,6 +324,8 @@ namespace MVVM_Base.View
 
             pathDatas.tb = btn;
             pathDatas.lastP = btn.PointToScreen(new Point(0, 0));
+
+            lastBtn = btn;
         }
 
         /// <summary>
@@ -449,6 +467,11 @@ namespace MVVM_Base.View
             {
                 // フラグ変化時にアニメーションや UI 更新
                 ThemeChanged(vm.IsDarkTheme);
+            }
+            else if (e.PropertyName == nameof(vmEntry.CanTransit))
+            {
+                // 画面遷移に影響を受ける描画を抑止
+                canTransit = vm.CanTransit;
             }
         }
 
@@ -621,7 +644,9 @@ namespace MVVM_Base.View
 
             if (finalX >= threshold)
             {
-                Application.Current.Shutdown();
+                //Application.Current.Shutdown();
+
+                vm?.OnThumbSlideCompleted();
             }
 
             // Thumb を左端に戻す

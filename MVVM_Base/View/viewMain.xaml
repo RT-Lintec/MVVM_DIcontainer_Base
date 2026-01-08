@@ -45,7 +45,7 @@
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="Communication" Foreground="{DynamicResource AccentBrush}" FontSize="{Binding TitleFontSize}" FontWeight="Bold"/>
                             <Icon:PackIconMaterial Kind="LanConnect"
-                                           Width="20" Height="20"
+                                           Width="{Binding IconSize}" Height="{Binding IconSize}"
                                            Margin="5,0,0,0"
                                            VerticalAlignment="Center"
                                            Foreground="{DynamicResource AccentBrush}"/>

@@ -9,8 +9,10 @@ using System.Windows.Input;
 
 namespace MVVM_Base.ViewModel
 {
-    public partial class vmMain : ObservableObject
+    public partial class vmMain : ObservableObject, IViewModel
     {
+        private CancellationTokenSource? vmCts;
+
         /// <summary>
         /// シリアルポートイベントの管理クラス
         /// </summary>
@@ -927,8 +929,12 @@ namespace MVVM_Base.ViewModel
         false;
 #endif
 
+        // service
         private readonly IMFCSerialService mfcService;
         private readonly ThemeService themeService;
+        private readonly CommStatusService commStatusService;
+        private readonly ViewModelManagerService vmService;
+        private readonly ApplicationStatusService appStatusService;
 
         [ObservableProperty]
         private string? _readValue;
@@ -937,19 +943,30 @@ namespace MVVM_Base.ViewModel
         private string? _writeValue;
 
         /// <summary>
+        /// 終了可否
+        /// </summary>
+        public bool canQuit { get; set; }
+
+        /// <summary>
+        /// 画面遷移可否
+        /// </summary>
+        public bool canTransitOther { get; set; }
+
+        /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="portWatcher"></param>
         /// <param name="messageService"></param>
-        public vmMain(PortWatcherService _portWatcher, IMessageService _messageService, ThemeService _themeService)
+        public vmMain(PortWatcherService _portWatcher, IMessageService _messageService, 
+            ThemeService _themeService, CommStatusService _commStatusService, ViewModelManagerService _vmService, ApplicationStatusService _appStatusService)
         {
             InitParameter();
-            RefreshAvailablePorts();
+            RefreshAvailablePorts();            
 
             portWatcher = _portWatcher;
             portWatcher.messageShowAdded += MessageShowAdded;
             portWatcher.messageShowRemoved += MessageShowRemoved;
-            portWatcher.noChangeDetected += DeleteDialog;
+            portWatcher.noChangeDetected += NoChangeDetected;
             portWatcher.PortAdded += OnPortAdded;
             portWatcher.PortRemoved += OnPortRemoved;
 
@@ -967,7 +984,15 @@ namespace MVVM_Base.ViewModel
 
             themeService = _themeService;
             themeService.PropertyChanged += ThemeService_PropertyChanged;
+
+            commStatusService = _commStatusService;
+            vmService = _vmService;
+            vmService.Register(this);
+
+            appStatusService = _appStatusService;
+            appStatusService.PropertyChanged += AppStatusService_PropertyChanged;
             //this.PropertyChanged += MfcConnected_PropertyChanged;
+            canTransitOther = true;
         }
 
         /// <summary>
@@ -975,11 +1000,28 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         ~vmMain()
         {
-            StopPortWatcher();
+            //StopPortWatcher();
+
+            //// 接続中のポート全てに対して接続解除
+            //MfcSerialService.Instance.Disconnect();
+            //BalanceSerialService.Instance.Disconnect();
+        }
+
+        public void Dispose()
+        {
+            //StopPortWatcher();
 
             // 接続中のポート全てに対して接続解除
             MfcSerialService.Instance.Disconnect();
             BalanceSerialService.Instance.Disconnect();
+
+            // 終了可否判断
+            canQuit = true;
+
+            // 終了可否チェック
+            vmService.CheckCanQuit();
+
+            canTransitOther = true;
         }
 
         /// <summary>
@@ -988,7 +1030,7 @@ namespace MVVM_Base.ViewModel
         private int tcnt = 0;
 
         /// <summary>
-        /// 
+        /// UI拡縮
         /// </summary>
         public ICommand AdjustUICommand => new RelayCommand<object>(e =>
         {
@@ -1047,19 +1089,24 @@ namespace MVVM_Base.ViewModel
             tcnt += delta;
         }
 
-        #region カラーテーマ変更通知関連
+        #region 状態変更通知関連
+        /// <summary>
+        /// カラーテーマ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void ThemeService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ThemeService.CurrentTheme))
             {
-                // ここで CurrentTheme 変化を検知可能
+                // CurrentTheme変化を検知
                 OnThemeChanged(themeService.CurrentTheme);
             }
         }
 
         private void OnThemeChanged(string newTheme)
         {
-            // View に依存せず ViewModel 内で処理可能
+            // Viewに依存せずViewModel内で処理可能
             // 例：内部フラグ更新や別プロパティ更新など
             IsDarkTheme = newTheme == "Dark"; // フラグ例
                                               // 必要であれば PropertyChanged 通知も出す
@@ -1113,6 +1160,9 @@ namespace MVVM_Base.ViewModel
             // ポート番号が設定されていなければ中断
             if (MfcPort?.PortName == null) return;
 
+            vmCts = new CancellationTokenSource();
+            var token = vmCts.Token;
+
             try
             {
                 // ポートオープン
@@ -1123,12 +1173,12 @@ namespace MVVM_Base.ViewModel
                         // ポートボタンを無効化する
                         IsMfcPortbtnEnable = false;
 
-                        var isSucceed = await MfcSerialService.Instance.Connect(MfcPort);
+                        var isSucceed = await MfcSerialService.Instance.Connect(MfcPort, token);
 
                         // MFCステータスの読み出しと初期値表示
                         if (isSucceed)
                         {
-                            await UpdateMFCStatus();
+                            await UpdateMFCStatus(token);
 
                             // ダブルチェック
                             if (MfcSerialService.Instance.Port != null && MfcSerialService.Instance.Port.IsOpen)
@@ -1140,7 +1190,10 @@ namespace MVVM_Base.ViewModel
                                 MfcPortWithName = MfcPort.PortName + " - " + MfcPort.FriendlyName;
 
                                 // ポート選択不可能にする
-                                IsMfcPortListEnabled = false;                                
+                                IsMfcPortListEnabled = false;
+
+                                // サービスに通知
+                                commStatusService.IsMfcConnected = true;
                             }
                         }
                         else
@@ -1152,7 +1205,7 @@ namespace MVVM_Base.ViewModel
                             // さらに原因不明のポートクローズ不可能な状態となる。
                             // 0.5sec程度では安定しないため3sec連打防止させる
                             await Task.Delay(3000);
-                            await messageService.CloseWithFade();                            
+                            await messageService.CloseWithFade();
                         }
 
                         // ポートボタンを有効化する
@@ -1168,7 +1221,7 @@ namespace MVVM_Base.ViewModel
                         IsMfcPortbtnEnable = false;
 
                         MfcSerialService.Instance.Disconnect();
-                        await UpdateMFCStatus();
+                        await UpdateMFCStatus(token);
                         IsMfcPortOpened = false;
 
                         // デバイス番号とポート名・フレンドリ名の初期化
@@ -1180,6 +1233,9 @@ namespace MVVM_Base.ViewModel
 
                         // ポートボタンを有効化する
                         IsMfcPortbtnEnable = true;
+
+                        // サービスに通知
+                        commStatusService.IsMfcConnected = false;
                     }
                 }
             }
@@ -1193,7 +1249,7 @@ namespace MVVM_Base.ViewModel
         /// MFCステータスの更新
         /// </summary>
         /// <returns></returns>
-        private async Task UpdateMFCStatus()
+        private async Task UpdateMFCStatus(CancellationToken token)
         {
             if(MfcSerialService.Instance.Port == null)
             {
@@ -1211,7 +1267,7 @@ namespace MVVM_Base.ViewModel
             if (MfcSerialService.Instance.Port.IsOpen)
             {
                 // MFCステータスの読み出し
-                var result = await mfcService.RequestType2Async("ST");
+                var result = await mfcService.RequestType2Async("ST", token);
                 if (result != null)
                 {
                     if (result.IsSuccess)
@@ -1260,7 +1316,7 @@ namespace MVVM_Base.ViewModel
 
         // MFCコマンドタイプ1(W) 返信なし
         [RelayCommand]
-        private async Task CommMFCAsyncType1()
+        private async Task CommMFCAsyncType1(CancellationToken token)
         {
             if (mfcService.Port == null || !mfcService.Port.IsOpen)
             {
@@ -1272,13 +1328,18 @@ namespace MVVM_Base.ViewModel
                 return;
             }
 
-            await mfcService.RequestType1Async(CommMFCType1Command);
+            await mfcService.RequestType1Async(CommMFCType1Command, token);
         }
 
         public IAsyncRelayCommand commMFCAsyncType1WithCommand { get; }
 
+        /// <summary>
+        /// MFCコマンドタイプ1(W)　返信なし
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <returns></returns>
         [RelayCommand]
-        private async Task CommMFCAsyncType1WithCommand(string? cmd)
+        private async Task CommMFCAsyncType1WithCommand(string? cmd, CancellationToken token)
         {
             if (mfcService.Port == null || !mfcService.Port.IsOpen)
             {
@@ -1290,12 +1351,12 @@ namespace MVVM_Base.ViewModel
                 return;
             }
 
-            var result = await mfcService.RequestType1Async(cmd);
+            var result = await mfcService.RequestType1Async(cmd, token);
             if (result != null)
             {
                 if (result.IsSuccess)
                 {
-                    await UpdateMFCStatus();
+                    await UpdateMFCStatus(token);
                 }
                 else
                 {
@@ -1305,9 +1366,12 @@ namespace MVVM_Base.ViewModel
             }
         }
 
-        // MFCコマンドタイプ2(R)　返信あり
+        /// <summary>
+        /// MFCコマンドタイプ2(R)　返信あり
+        /// </summary>
+        /// <returns></returns>
         [RelayCommand]
-        private async Task CommMFCAsyncType2()
+        private async Task CommMFCAsyncType2(CancellationToken token)
         {
             if (mfcService.Port == null || !mfcService.Port.IsOpen)
             { 
@@ -1319,7 +1383,7 @@ namespace MVVM_Base.ViewModel
                 return;
             }
 
-            var result = await mfcService.RequestType2Async(CommMFCType2Command);
+            var result = await mfcService.RequestType2Async(CommMFCType2Command, token);
             if (result != null)
             {
                 if (result.IsSuccess)
@@ -1335,9 +1399,12 @@ namespace MVVM_Base.ViewModel
             }
         }
 
-        // MFCコマンドタイプ3(W)　AK返信あり、エコーあり
+        /// <summary>
+        /// MFCコマンドタイプ3(W)　AK返信あり、エコーあり
+        /// </summary>
+        /// <returns></returns>
         [RelayCommand]
-        private async Task CommMFCAsyncType3()
+        private async Task CommMFCAsyncType3(CancellationToken token)
         {
             if (mfcService.Port == null || !mfcService.Port.IsOpen)
             {
@@ -1349,7 +1416,7 @@ namespace MVVM_Base.ViewModel
                 return;
             }
 
-            var result = await mfcService.RequestType3Async(CommMFCType3Command1, CommMFCType3Command2);
+            var result = await mfcService.RequestType3Async(CommMFCType3Command1, CommMFCType3Command2, token);
             if (result != null)
             {
                 if (result.IsSuccess)
@@ -1374,6 +1441,9 @@ namespace MVVM_Base.ViewModel
             // ポート番号が設定されていなければ中断
             if (BalancePort?.PortName == null) return;
 
+            vmCts = new CancellationTokenSource();
+            var token = vmCts.Token;
+
             try
             {
                 // ポートオープン
@@ -1384,7 +1454,7 @@ namespace MVVM_Base.ViewModel
                         // ポートボタンを無効化する
                         IsBalancePortbtnEnable = false;
 
-                        await BalanceSerialService.Instance.Connect(BalancePort);
+                        await BalanceSerialService.Instance.Connect(BalancePort, token);
                         // 天秤通信アイコン表示条件2：ポートオープン状態であること
 
                         // ダブルチェック
@@ -1397,12 +1467,15 @@ namespace MVVM_Base.ViewModel
 
                             // ポート選択不可能にする
                             IsBalancePortListEnabled = false;
+
+                            // サービスに通知
+                            commStatusService.IsBalanceConnected = true;
                         }
                         else
                         {
                             await messageService.ShowMessage("Failed to open the port.");
                             IsBalancePortOpened = false;
-                            await Task.Delay(500);
+                            await Task.Delay(3000);
                             await messageService.CloseWithFade();
                         }
 
@@ -1429,6 +1502,9 @@ namespace MVVM_Base.ViewModel
 
                         // ポートボタンを有効化する
                         IsBalancePortbtnEnable = true;
+
+                        // サービスに通知
+                        commStatusService.IsBalanceConnected = false;
                     }
                 }
             }
@@ -1442,11 +1518,11 @@ namespace MVVM_Base.ViewModel
         /// 天秤との通信
         /// </summary>
         /// <returns></returns>
-        private async Task CommBalanceAsyncCommand()
+        private async Task CommBalanceAsyncCommand(CancellationToken token)
         {
             if (BalanceSerialService.Instance.Port == null|| !BalanceSerialService.Instance.Port.IsOpen) return;
 
-            var result = await BalanceSerialService.Instance.RequestWeightAsync();
+            var result = await BalanceSerialService.Instance.RequestWeightAsync(token);
             if (result != null)
             {
                 if (result.IsSuccess)
@@ -1468,7 +1544,7 @@ namespace MVVM_Base.ViewModel
         {
             AvailablePortList.Clear();
             foreach (var info in SerialPortSearcher.GetPortList())
-                AvailablePortList.Add(info);
+            AvailablePortList.Add(info);
         }
 
         /// <summary>
@@ -1487,10 +1563,16 @@ namespace MVVM_Base.ViewModel
             await messageService.ShowMessage("Port disconnected...");
         }
 
+        private void NoChangeDetected()
+        {
+            vmCts = new CancellationTokenSource();
+            DeleteDialog(vmCts.Token);
+        }
+
         /// <summary>
         /// ポート抜き差しするも変化が無い場合にダイアログを消去する
         /// </summary>
-        private async void DeleteDialog()
+        private async void DeleteDialog(CancellationToken token)
         {
             // ポート選択可能にする
             IsMfcPortListEnabled = true;
@@ -1505,7 +1587,7 @@ namespace MVVM_Base.ViewModel
             IsBalancePortOpened = false;
             UpdateBalancePortOpenBtnText();
             OnBalanceConnectedChanged();
-            await UpdateMFCStatus();
+            await UpdateMFCStatus(token);
             await messageService.CloseWithFade();
         }
 
@@ -1530,11 +1612,16 @@ namespace MVVM_Base.ViewModel
                 RefreshAvailablePorts();
             });
 
-            DeleteDialog();
+            vmCts = new CancellationTokenSource();
+            DeleteDialog(vmCts.Token);
 
             // ポートボタンを有効化する
             IsMfcPortbtnEnable = true;
             IsBalancePortbtnEnable = true;
+
+            // サービスに通知
+            commStatusService.IsMfcConnected = false;
+            commStatusService.IsBalanceConnected = false;
         }
 
         /// <summary>
@@ -1542,6 +1629,10 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private async void OnPortRemoved(string portName)
         {
+            IsMfcPortSelected = false;
+            IsMfcPortOpened = false;
+            IsBalancePortSelected = false;
+            IsBalancePortOpened = false;
             // ポート選択可能にする
             IsMfcPortListEnabled = true;
             IsBalancePortListEnabled = true;
@@ -1552,18 +1643,19 @@ namespace MVVM_Base.ViewModel
 
             // 接続解除
             MfcSerialService.Instance.Disconnect();
-            IsMfcPortSelected = false;
-            IsMfcPortOpened = false;
+            //IsMfcPortSelected = false;
+            //IsMfcPortOpened = false;
             UpdateMfcPortOpenBtnText();
             OnMfcConnectedChanged();
 
             BalanceSerialService.Instance.Disconnect();
-            IsBalancePortSelected = false;
-            IsBalancePortOpened = false;
+            //IsBalancePortSelected = false;
+            //IsBalancePortOpened = false;
             UpdateBalancePortOpenBtnText();
             OnBalanceConnectedChanged();
 
-            await UpdateMFCStatus();
+            vmCts = new CancellationTokenSource();
+            await UpdateMFCStatus(vmCts.Token);
 
             await Task.Delay(delayTime);
 
@@ -1583,14 +1675,35 @@ namespace MVVM_Base.ViewModel
             // ポートボタンを有効化する
             IsMfcPortbtnEnable = true;
             IsBalancePortbtnEnable = true;
+
+            // サービスに通知
+            commStatusService.IsMfcConnected = false;
+            commStatusService.IsBalanceConnected = false;
         }
+
+        /// <summary>
+        /// アプリケーション終了の検知
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AppStatusService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ApplicationStatusService.IsQuit))
+            {
+                if (appStatusService.IsQuit)
+                {
+                    Dispose();
+                }
+            }
+        }
+
 
         /// <summary>
         /// イベント削除
         /// </summary>
         public void StopPortWatcher()
         {
-            portWatcher.noChangeDetected -= DeleteDialog;
+            portWatcher.noChangeDetected -= NoChangeDetected;
             portWatcher.messageShowAdded -= MessageShowAdded;
             portWatcher.messageShowRemoved -= MessageShowRemoved;
             portWatcher.PortAdded -= OnPortAdded;

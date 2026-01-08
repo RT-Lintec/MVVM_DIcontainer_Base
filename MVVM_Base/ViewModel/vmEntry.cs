@@ -20,7 +20,7 @@ namespace MVVM_Base.ViewModel
         End
     }
 
-    public partial class vmEntry : ObservableObject
+    public partial class vmEntry : ObservableObject, IViewModel
     {
 
         [ObservableProperty]
@@ -33,7 +33,13 @@ namespace MVVM_Base.ViewModel
         public bool IsMainSelected
         {
             get => isMainSelected;
-            set => SetProperty(ref isMainSelected, value);
+            set
+            {
+                if (vmService.CanTransit)
+                {
+                    SetProperty(ref isMainSelected, value);
+                }
+            }
         }
 
         /// <summary>
@@ -43,7 +49,14 @@ namespace MVVM_Base.ViewModel
         public bool IsLinearViewSelected
         {
             get => isLinearViewSelected;
-            set => SetProperty(ref isLinearViewSelected, value);
+            set
+            {
+                if (vmService.CanTransit)
+                {
+                    SetProperty(ref isLinearViewSelected, value);
+                }
+            }
+
         }
 
         /// <summary>
@@ -53,7 +66,13 @@ namespace MVVM_Base.ViewModel
         public bool IsBViewSelected
         {
             get => isBViewSelected;
-            set => SetProperty(ref isBViewSelected, value);
+            set
+            {
+                if (vmService.CanTransit)
+                {
+                    SetProperty(ref isBViewSelected, value);
+                }
+            }
         }
 
         /// <summary>
@@ -89,18 +108,51 @@ namespace MVVM_Base.ViewModel
             IsEndSelected = type == ViewType.End;
         }
 
+        // service
         private readonly ThemeService themeService;
+        private readonly ViewModelManagerService vmService;
+        private readonly ApplicationStatusService appStatusService;
+
+        /// <summary>
+        /// 終了可否
+        /// </summary>
+        public bool canQuit { get; set; }
+
+        /// <summary>
+        /// 画面遷移可否
+        /// </summary>
+        public bool canTransitOther { get; set; }
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        public vmEntry(ThemeService _themeService) 
+        public vmEntry(ThemeService _themeService, ViewModelManagerService _vmService, ApplicationStatusService _appStatusService) 
         { 
             themeService = _themeService;
             themeService.PropertyChanged += ThemeService_PropertyChanged;
+
+            vmService = _vmService;
+            vmService.Register(this);
+            vmService.PropertyChanged += VmService_PropertyChanged;
+
+            appStatusService = _appStatusService;
+
+            canTransitOther = true;
         }
 
-        #region カラーテーマ変更通知関連
+        public void Dispose()
+        {
+            // 終了可否判断
+            canQuit = true;
+
+            // 終了可否チェック
+            vmService.CheckCanQuit();
+
+            canTransitOther = true;
+        }
+
+
+        #region 変更通知関連
         private void ThemeService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ThemeService.CurrentTheme))
@@ -135,6 +187,38 @@ namespace MVVM_Base.ViewModel
                 }
             }
         }
+
+        private void VmService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(vmService.CanTransit))
+            {
+                // ここで CurrentTheme 変化を検知可能
+                OnTransitChanged(vmService.CanTransit);
+            }
+        }
+
+        private void OnTransitChanged(bool _canTransit)
+        {
+            // View に依存せず ViewModel 内で処理可能
+            // 例：内部フラグ更新や別プロパティ更新など
+            CanTransit = _canTransit; // フラグ例
+                                              // 必要であれば PropertyChanged 通知も出す
+            OnPropertyChanged(nameof(CanTransit));
+        }
+
+        private bool canTransit;
+        public bool CanTransit
+        {
+            get => canTransit;
+            set
+            {
+                if (canTransit != value)
+                {
+                    canTransit = value;
+                }
+            }
+        }
+
         #endregion
 
         private viewMain mainView;
@@ -148,14 +232,17 @@ namespace MVVM_Base.ViewModel
             // 選択状態を一括で更新
             SelectView(type);
 
-            // CurrentView 切り替え
-            CurrentView = type switch
+            if (vmService.CanTransit)
             {
-                ViewType.Main => mainView ??= diRoot.Instance.GetService<viewMain>(),
-                ViewType.LinearView => diRoot.Instance.GetService<viewLinear>(),
-                ViewType.BView => diRoot.Instance.GetService<viewB>(),
-                _ => CurrentView
-            };
+                // CurrentView 切り替え
+                CurrentView = type switch
+                {
+                    ViewType.Main => mainView ??= diRoot.Instance.GetService<viewMain>(),
+                    ViewType.LinearView => diRoot.Instance.GetService<viewLinear>(),
+                    ViewType.BView => diRoot.Instance.GetService<viewB>(),
+                    _ => CurrentView
+                };
+            }
         }
 
         [RelayCommand]
@@ -177,6 +264,7 @@ namespace MVVM_Base.ViewModel
                 Color oldTextColor = (Color)resources["TextColor"];
                 Color oldTagColor = (Color)resources["TagColor"];
 
+                // サービスに変更通知出させる
                 if (themeService.CurrentTheme == "Dark")
                 {
                     themeService.CurrentTheme = "Light";
@@ -295,6 +383,23 @@ namespace MVVM_Base.ViewModel
                 gs1.BeginAnimation(GradientStop.ColorProperty, anim1);
                 gs2.BeginAnimation(GradientStop.ColorProperty, anim2);
             }
+        }
+
+        /// <summary>
+        /// 終了ボタンの終了側スライド完了
+        /// </summary>
+        public void OnThumbSlideCompleted()
+        {
+            // trueにして各vmの終了イベント発火
+            appStatusService.IsQuit = true;
+            Dispose();
+
+            // 各vmの終了チェックが完了したので、サービスに全vmの終了状態を調べさせる
+            // 全vmが終了OKならアプリ終了
+            vmService.CheckCanQuit();
+
+            // アプリ終了中断の場合はfalseに戻す
+            appStatusService.IsQuit = false;
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic.Logging;
+using System;
 using System.IO;
 using System.IO.Ports;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -17,12 +18,16 @@ namespace MVVM_Base.Model
 
         private MfcSerialService() {}
 
-        private int timeout = 1000;
+        private int timeout = 100;
 
-        public async Task<bool> Connect(SerialPortInfo serialPortInfo)
+        List<int> BaudRates = new List<int>() { 4800, 9600, 19200 };
+
+        public async Task<bool> Connect(SerialPortInfo serialPortInfo, CancellationToken token)
         {
             try
             {
+                token.ThrowIfCancellationRequested();
+
                 if (Port != null)
                 {
                     if (Port.IsOpen) Port.Close();
@@ -60,11 +65,49 @@ namespace MVVM_Base.Model
                 Port.DiscardInBuffer();
                 Port.DiscardOutBuffer();
 
+                token.ThrowIfCancellationRequested();
+
                 // 兼通信テスト
-                deviceNum = await RequestDeviceNumber();
+                deviceNum = await RequestDeviceNumber(token);
+
+                token.ThrowIfCancellationRequested();
 
                 if (deviceNum == "")
                 {
+                    // ボーレートを変えて通信することで復帰できるケース
+                    // ファームウェア側の処理にバグがある可能性大
+                    // 通信ハング時にポートリセットしているかどうか確認
+                    foreach(var baudrate in BaudRates)
+                    {
+                        Port.DiscardInBuffer();
+                        Port.DiscardOutBuffer();
+                        Port.BaudRate = baudrate;
+
+                        token.ThrowIfCancellationRequested();
+
+                        deviceNum = await RequestDeviceNumber(token);
+                        if(deviceNum != "")
+                        {
+                            return Port != null && Port.IsOpen;
+                        }
+                    }
+
+                    // ごくまれにこちらのケースも発生する
+                    if(deviceNum == "")
+                    {
+                        foreach (int value in Enumerable.Range(0, 64)) // 0～63
+                        {
+                            token.ThrowIfCancellationRequested();
+
+                            var num = await RequestType3Async(value.ToString(), "DR", token);
+                            if(num.IsSuccess/*num.Message != ""*/)
+                            {
+                                deviceNum = num.Message;
+                                return Port != null && Port.IsOpen;
+                            }
+                        }
+                    }
+
                     Disconnect();
                     return false;
                 }
@@ -97,28 +140,157 @@ namespace MVVM_Base.Model
             }
         }
 
-
+        /// <summary>
+        /// 接続解除。同期処理。
+        /// </summary>
         public void Disconnect()
         {
             if (Port == null) return;
 
+            //try
+            //{
+            //    if (Port.IsOpen)
+            //    {
+            //        Port.Close();
+            //    }
+            //}
+            //catch { }
+
+            //try { Port.Dispose(); } catch { }
+
             var portToClose = Port;
             Port = null; // アプリ側は即 null にして安全
 
-            Task.Run(() =>
+            //Task.Run(() =>
+            //{
+            try
             {
-                try
+                if (portToClose.IsOpen)
                 {
-                    if (portToClose.IsOpen)
+                    var closeTask = Task.Run(() =>
                     {
-                        // Close がブロックされても、別スレッドなら UI は止まらない
-                        portToClose.Close();
+                        try
+                        {
+                            portToClose.Close();
+                        }
+                        catch (NullReferenceException)
+                        {
+                        }
+                        catch (TimeoutException)
+                        {
+
+                        }
+                        catch (IOException ex)
+                        {
+
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+
+                        }
+                        catch (OperationCanceledException ex)
+                        {
+
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                    });
+
+                    if (!closeTask.Wait(500))
+                    {
+                        // Closeが帰ってこない
                     }
                 }
-                catch { }
+            }
+            catch (NullReferenceException)
+            {
+            }
+            catch (TimeoutException)
+            {
 
-                try { portToClose.Dispose(); } catch { }
-            });
+            }
+            catch (IOException ex)
+            {
+
+            }
+            catch (InvalidOperationException ex)
+            {
+
+            }
+            catch (OperationCanceledException ex)
+            {
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            try 
+            { 
+                //portToClose.Dispose();
+                var closeTask = Task.Run(() =>
+                {
+                    try
+                    {
+                        portToClose.Dispose();
+                    }
+                    catch (NullReferenceException)
+                    {
+                    }
+                    catch (TimeoutException)
+                    {
+
+                    }
+                    catch (IOException ex)
+                    {
+
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                });
+
+                if (!closeTask.Wait(500))
+                {
+                    // Closeが帰ってこない
+                }
+            }
+            catch (NullReferenceException)
+            {
+            }
+            catch (TimeoutException)
+            {
+
+            }
+            catch (IOException ex)
+            {
+
+            }
+            catch (InvalidOperationException ex)
+            {
+
+            }
+            catch (OperationCanceledException ex)
+            {
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+
         }
 
         /// <summary>
@@ -126,7 +298,7 @@ namespace MVVM_Base.Model
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private async Task<OperationResult> ReadLineAsync(CancellationToken token = default)
+        private async Task<OperationResult> ReadLineAsync(CancellationToken token)
         {
             if (Port == null)
             {
@@ -137,11 +309,12 @@ namespace MVVM_Base.Model
             {
                 return OperationResult.Fail("port is not opened");
             }
-
+            
             return await Task.Run(() =>
             {
                 try
                 {
+                    token.ThrowIfCancellationRequested();
                     var line = Port.ReadLine();
                     return OperationResult.Success(line);
                 }
@@ -159,7 +332,7 @@ namespace MVVM_Base.Model
                 }
                 catch (OperationCanceledException ex)
                 {
-                    return OperationResult.Fail($"Operation canceled: {ex.Message}");
+                    return OperationResult.Fail("canceled");
                 }
                 catch (Exception ex)
                 {
@@ -211,7 +384,7 @@ namespace MVVM_Base.Model
             }
             catch (OperationCanceledException ex)
             {
-                return OperationResult.Fail($"Operation canceled: {ex.Message}");
+                return OperationResult.Fail("canceled");
             }
             catch (Exception ex)
             {
@@ -219,117 +392,296 @@ namespace MVVM_Base.Model
             }
         }
 
-        public async Task<string> RequestDeviceNumber()
+        public async Task<string> RequestDeviceNumber(CancellationToken token)
         {
-            var result = WriteLine($"AL,DR");
-            result = await ReadLineAsync();
-            if(result.IsSuccess)
+            try
             {
-                return result.Message.Substring(0, 2) ?? "";
+                token.ThrowIfCancellationRequested();
+
+                var result = WriteLine($"AL,DR");
+                result = await ReadLineAsync(token);
+                if (result.IsSuccess)
+                {
+                    return result.Message.Substring(0, 2) ?? "";
+                }
+                else
+                {
+                    return "";
+                }
             }
-            else
+            catch(OperationCanceledException)
             {
-                return "";
-            }                
+                return "canceled";
+            }
         }
 
-        /// <summary>Type1: 返信なし</summary>
-        public Task<OperationResult?> SendType1Async(string cmd, CancellationToken token = default)
+        /// <summary>
+        /// Type1: 返信なし
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public Task<OperationResult?> SendType1Async(string cmd, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             var result = WriteLine($"{deviceNum},{cmd}");
 
             return Task.FromResult<OperationResult?>(OperationResult.Success());
         }
 
-        /// <summary>Type2: 返信あり</summary>
-        public async Task<OperationResult?> SendType2Async(string cmd, CancellationToken token = default)
+        /// <summary>
+        /// Type2: 返信あり
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> SendType2Async(string cmd, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             var result = WriteLine($"{deviceNum},{cmd}");
-            return await ReadLineAsync();
+            return await ReadLineAsync(token);
         }
 
-        /// <summary>Type3: 二段階通信</summary>
-        public async Task<OperationResult?> SendType3Async(string cmd1, string cmd2, CancellationToken token = default)
+        /// <summary>
+        /// Type3: 二段階通信
+        /// </summary>
+        /// <param name="cmd1"></param>
+        /// <param name="cmd2"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> SendType3Async(string cmd1, string cmd2, CancellationToken token)
         {
-            // 1回目送信
-            WriteLine($"{deviceNum},{cmd1}");
-
-            // 機器から "デバイス番号, AK\r\n" が返るか確認
-            var first = await ReadLineAsync();
-
-            if (first.IsSuccess)
+            try
             {
-                if (first?.Message.Trim() != $"{deviceNum},AK") return null;
+                // 1回目送信
+                WriteLine($"{deviceNum},{cmd1}");
 
-                // 2回目送信
-                var result = WriteLine($"{deviceNum},{cmd2}");
+                token.ThrowIfCancellationRequested();
 
-                if (result.IsSuccess)
+                // 機器から "デバイス番号, AK\r\n" が返るか確認
+                var first = await ReadLineAsync(token);
+
+                if (first.IsSuccess)
                 {
-                    // 2回目の返信受信
-                    var second = await ReadLineAsync();
+                    if (first?.Message.Trim() != $"{deviceNum},AK") return null;
 
-                    if (second.IsSuccess)
+                    token.ThrowIfCancellationRequested();
+
+                    // 2回目送信
+                    var result = WriteLine($"{deviceNum},{cmd2}");
+
+                    if (result.IsSuccess)
                     {
-                        if (cmd1 == "DW")
-                        {
-                            deviceNum = second?.Message.Substring(0, 2);
-                        }                        
-                    }
+                        token.ThrowIfCancellationRequested();
 
-                    return second;
+                        // 2回目の返信受信
+                        var second = await ReadLineAsync(token);
+
+                        if (second.IsSuccess)
+                        {
+                            if (cmd1 == "DW")
+                            {
+                                deviceNum = second?.Message.Substring(0, 2);
+                            }
+                        }
+
+                        return second;
+                    }
+                    else
+                    {
+                        return result;
+                    }
                 }
                 else
                 {
-                    return result;
+                    return first;
                 }
             }
-            else
+            catch(OperationCanceledException)
             {
-                return first;
+                OperationResult cancelOperation = new OperationResult(false, "canceled");
+                return cancelOperation;
             }
         }
 
-        /// <summary>MFC通信タイプ1</summary>
-        public async Task<OperationResult?> RequestType1Async(string cmd, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Type3: 二段階通信
+        /// </summary>
+        /// <param name="cmd1"></param>
+        /// <param name="cmd2"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> SendTypeRWAsync(string cmd1, Tuple<string, string> cmdPair, CancellationToken token)
         {
-            if (deviceNum == null ||
-                deviceNum.Length != 2 ||
-                !char.IsDigit(deviceNum[0]) ||
-                !char.IsDigit(deviceNum[1]))
+            try
             {
-                deviceNum = await RequestDeviceNumber();
-            }
+                // 1回目送信
+                WriteLine($"{deviceNum},{cmd1}");
 
-            return await SendType1Async(cmd, cancellationToken);
+                token.ThrowIfCancellationRequested();
+
+                // 機器から "デバイス番号, AK\r\n" が返るか確認
+                var first = await ReadLineAsync(token);
+
+                if (first.IsSuccess)
+                {
+                    if (first?.Message.Trim() != $"{deviceNum},AK") return null;
+
+                    token.ThrowIfCancellationRequested();
+
+                    // 2回目送信
+                    var result = WriteLine($"{cmdPair.Item1},{cmdPair.Item2}");
+
+                    if (result.IsSuccess)
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        // 2回目の返信受信
+                        var second = await ReadLineAsync(token);
+
+                        return second;
+                    }
+                    else
+                    {
+                        return result;
+                    }
+                }
+                else
+                {
+                    return first;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                OperationResult cancelOperation = new OperationResult(false, "canceled");
+                return cancelOperation;
+            }
         }
 
-        /// <summary>MFC通信タイプ2</summary>
-        public async Task<OperationResult?> RequestType2Async(string cmd, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// MFC通信タイプ1
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> RequestType1Async(string cmd, CancellationToken token)
         {
-            if (deviceNum == null ||
-                deviceNum.Length != 2 ||
-                !char.IsDigit(deviceNum[0]) ||
-                !char.IsDigit(deviceNum[1]))
+            try
             {
-                deviceNum = await RequestDeviceNumber();
-            }
+                token.ThrowIfCancellationRequested();
 
-            return await SendType2Async(cmd, cancellationToken);
+                if (deviceNum == null ||
+                    deviceNum.Length != 2 ||
+                    !char.IsDigit(deviceNum[0]) ||
+                    !char.IsDigit(deviceNum[1]))
+                {
+                    deviceNum = await RequestDeviceNumber(token);
+                }
+
+                token.ThrowIfCancellationRequested();
+
+                return await SendType1Async(cmd, token);
+            }
+            catch (OperationCanceledException)
+            {
+                OperationResult cancelOperation = new OperationResult(false, "canceled");
+                return cancelOperation;
+            }
         }
 
-        /// <summary>MFC通信タイプ3</summary>
-        public async Task<OperationResult?> RequestType3Async(string cmd1, string cmd2, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// MFC通信タイプ2
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> RequestType2Async(string cmd, CancellationToken token)
         {
-            if (deviceNum == null ||
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                if (deviceNum == null ||
+                    deviceNum.Length != 2 ||
+                    !char.IsDigit(deviceNum[0]) ||
+                    !char.IsDigit(deviceNum[1]))
+                {
+                    deviceNum = await RequestDeviceNumber(token);
+                }
+
+                token.ThrowIfCancellationRequested();
+
+                return await SendType2Async(cmd, token);
+            }
+            catch (OperationCanceledException)
+            {
+                OperationResult cancelOperation = new OperationResult(false, "canceled");
+                return cancelOperation;
+            }
+        }
+
+        /// <summary>
+        /// MFC通信タイプ3
+        /// </summary>
+        /// <param name="cmd1"></param>
+        /// <param name="cmd2"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> RequestType3Async(string cmd1, string cmd2, CancellationToken token)
+        {
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                if (deviceNum == null ||
+                    deviceNum.Length != 2 ||
+                    !char.IsDigit(deviceNum[0]) ||
+                    !char.IsDigit(deviceNum[1]))
+                {
+                    deviceNum = await RequestDeviceNumber(token);
+                }
+
+                token.ThrowIfCancellationRequested();
+
+                return await SendType3Async(cmd1, cmd2, token);
+            }
+            catch (OperationCanceledException)
+            {
+                OperationResult cancelOperation = new OperationResult(false, "canceled");
+                return cancelOperation;
+            }
+        }
+
+        /// <summary>
+        /// MFC通信 EEPROM R/W専用
+        /// </summary>
+        /// <param name="cmd1"></param>
+        /// <param name="cmd2"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async Task<OperationResult?> RequestReadWriteAsync(string cmd1, Tuple<string, string> cmdPair, CancellationToken token)
+        {
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                if (deviceNum == null ||
                 deviceNum.Length != 2 ||
                 !char.IsDigit(deviceNum[0]) ||
                 !char.IsDigit(deviceNum[1]))
-            {
-                deviceNum = await RequestDeviceNumber();
-            }
+                {
+                    deviceNum = await RequestDeviceNumber(token);
+                }
 
-            return await SendType3Async(cmd1, cmd2, cancellationToken);
+                return await SendTypeRWAsync(cmd1, cmdPair, token);
+            }
+            catch (OperationCanceledException)
+            {
+                OperationResult cancelOperation = new OperationResult(false, "canceled");
+                return cancelOperation;
+            }
         }
 
         public string GetDeviceNumber()

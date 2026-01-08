@@ -2,6 +2,9 @@
 
 namespace MVVM_Base.Model
 {
+    /// <summary>
+    /// 通信成功可否
+    /// </summary>
     public class OperationResult
     {
         public bool IsSuccess { get; }
@@ -22,33 +25,52 @@ namespace MVVM_Base.Model
     /// </summary>
     public interface ISerialConnectionService
     {
-        Task<bool> Connect(SerialPortInfo serialPortInfo);
+        /// <summary>
+        /// 接続
+        /// </summary>
+        /// <param name="serialPortInfo"></param>
+        /// <returns></returns>
+        Task<bool> Connect(SerialPortInfo serialPortInfo, CancellationToken token);
+
+        /// <summary>
+        /// 接続解除
+        /// </summary>
         void Disconnect();
 
-        //void Destroy();
-
+        /// <summary>
+        /// ポート情報
+        /// </summary>
         SerialPort? Port { get; }
     }
 
     /// <summary>
-    /// 天秤専用の非同期リクエスト
+    /// MFC専用の非同期リクエスト
     /// </summary>
     public interface IMFCSerialService : ISerialConnectionService
     {
         /// <summary>
         /// MFC通信タイプ1
         /// </summary>
-        Task<OperationResult?> RequestType1Async(string cmd, CancellationToken cancellationToken = default);
+        Task<OperationResult?> RequestType1Async(string cmd, CancellationToken token);
 
         /// <summary>
         /// MFC通信タイプ2
         /// </summary>
-        Task<OperationResult?> RequestType2Async(string cmd, CancellationToken cancellationToken = default);
+        Task<OperationResult?> RequestType2Async(string cmd, CancellationToken token);
 
         /// <summary>
         /// MFC通信タイプ3
         /// </summary>
-        Task<OperationResult?> RequestType3Async(string cmd1, string cmd2, CancellationToken cancellationToken = default);
+        Task<OperationResult?> RequestType3Async(string cmd1, string cmd2, CancellationToken token);
+
+        /// <summary>
+        /// ER,EWコマンド対応
+        /// </summary>
+        /// <param name="cmd1"></param>
+        /// <param name="cmd2"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<OperationResult?> RequestReadWriteAsync(string cmd1, Tuple<string, string> cmd2, CancellationToken token);
     }
 
     /// <summary>
@@ -59,6 +81,6 @@ namespace MVVM_Base.Model
         /// <summary>
         /// 天秤から重量取得要求 "Q\r\n" を送り、応答を受信する
         /// </summary>
-        Task<OperationResult?> RequestWeightAsync(CancellationToken cancellationToken = default);
+        Task<OperationResult?> RequestWeightAsync(CancellationToken token);
     }
 }

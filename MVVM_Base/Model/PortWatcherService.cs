@@ -20,7 +20,7 @@ namespace MVVM_Base.Model
 
         // デバウンス用
         private System.Timers.Timer? debounceTimer;
-        private int debounceTime = 2000;
+        private int debounceTime = 1;
 
         private HashSet<string> currentPorts = new HashSet<string>();
 

@@ -19,7 +19,7 @@ namespace MVVM_Base.Model
         /// ポート接続オープン
         /// </summary>
         /// <param name="serialPortInfo"></param>
-        public async Task<bool> Connect(SerialPortInfo serialPortInfo)
+        public async Task<bool> Connect(SerialPortInfo serialPortInfo, CancellationToken token)
         {
             try
             {
@@ -63,9 +63,10 @@ namespace MVVM_Base.Model
 
                 //Port.DiscardInBuffer();
                 //Port.DiscardOutBuffer();
+                token.ThrowIfCancellationRequested();
 
                 // 通信テスト                
-                var result = await RequestWeightAsync();
+                var result = await RequestWeightAsync(token);
 
                 if (result != null && result != null && result.IsSuccess)
                 {
@@ -120,15 +121,136 @@ namespace MVVM_Base.Model
             //{
             try
             {
+                //if (portToClose.IsOpen)
+                //{
+                //    // Close がブロックされても、別スレッドなら UI は止まらない
+                //    portToClose.Close();
+                //}
                 if (portToClose.IsOpen)
                 {
-                    // Close がブロックされても、別スレッドなら UI は止まらない
-                    portToClose.Close();
+                    var closeTask = Task.Run(() =>
+                    {
+                        try
+                        {
+                            portToClose.Close();
+                        }
+                        catch (NullReferenceException)
+                        {
+                        }
+                        catch (TimeoutException)
+                        {
+
+                        }
+                        catch (IOException ex)
+                        {
+
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+
+                        }
+                        catch (OperationCanceledException ex)
+                        {
+
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                    });
+
+                    if (!closeTask.Wait(500))
+                    {
+                        // Closeが帰ってこない
+                    }
                 }
             }
-            catch { }
+            catch (NullReferenceException)
+            {
+            }
+            catch (TimeoutException)
+            {
 
-            try { portToClose.Dispose(); } catch {  }
+            }
+            catch (IOException ex)
+            {
+
+            }
+            catch (InvalidOperationException ex)
+            {
+
+            }
+            catch (OperationCanceledException ex)
+            {
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            try 
+            {
+                //portToClose.Dispose(); 
+                var closeTask = Task.Run(() =>
+                {
+                    try
+                    {
+                        portToClose.Dispose();
+                    }
+                    catch (NullReferenceException)
+                    {
+                    }
+                    catch (TimeoutException)
+                    {
+
+                    }
+                    catch (IOException ex)
+                    {
+
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                });
+
+                if (!closeTask.Wait(500))
+                {
+                    // Closeが帰ってこない
+                }
+            }
+            catch (NullReferenceException)
+            {
+            }
+            catch (TimeoutException)
+            {
+
+            }
+            catch (IOException ex)
+            {
+
+            }
+            catch (InvalidOperationException ex)
+            {
+
+            }
+            catch (OperationCanceledException ex)
+            {
+
+            }
+            catch (Exception ex)
+            {
+
+            }
             //});
         }
 
@@ -205,7 +327,7 @@ namespace MVVM_Base.Model
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private Task<string?> ReadLineAsync(CancellationToken token = default)
+        private Task<string?> ReadLineAsync(CancellationToken token)
         {
             if (Port == null || !Port.IsOpen)
                 return Task.FromResult<string?>(null);
@@ -213,7 +335,7 @@ namespace MVVM_Base.Model
             // lineTcsを発生させ、bufferからのデータ格納を待つ
             lineTcs = new TaskCompletionSource<string?>();
 
-            if (token != default)
+            //if (token != default)
                 token.Register(() => lineTcs?.TrySetCanceled());
 
             return lineTcs.Task;
@@ -273,7 +395,7 @@ namespace MVVM_Base.Model
         /// <summary>
         /// 天秤との通信リクエストの窓口（タイムアウト対応版）
         /// </summary>
-        public async Task<OperationResult?> RequestWeightAsync(CancellationToken cancellationToken = default)
+        public async Task<OperationResult?> RequestWeightAsync(CancellationToken token)
         {
             if (Port == null || !Port.IsOpen)
             {
@@ -289,7 +411,7 @@ namespace MVVM_Base.Model
                 return result;
             }
 
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeoutMilliseconds); // タイムアウト設定
 
             try

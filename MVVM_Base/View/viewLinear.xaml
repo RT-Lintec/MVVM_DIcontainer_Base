@@ -1,11 +1,44 @@
 ﻿<UserControl x:Class="MVVM_Base.View.viewLinear"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:MVVM_Base"
-             mc:Ignorable="d"
-             Style="{StaticResource Page_Style}">
+             xmlns:Icon="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:converter="clr-namespace:MVVM_Base.Common"
+             xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+             Style="{StaticResource Page_Style}" Cursor=""
+             xmlns:local="clr-namespace:MVVM_Base.Common"
+             Loaded="UserControl_Loaded">
+
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="PreviewKeyDown">
+            <i:InvokeCommandAction Command="{Binding AdjustUICommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
+        <i:EventTrigger EventName="PreviewMouseWheel">
+            <i:InvokeCommandAction Command="{Binding AdjustUICommand}" PassEventArgsToCommand="True" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+
+    <UserControl.Resources>
+        <converter:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
+
+        <Style x:Key="MeasureTextLeftStyle_WithFirstRowCenter"
+                TargetType="TextBlock"
+                BasedOn="{StaticResource MeasureTextLeftStyle}">
+
+            <!-- 通常は左 -->
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                       Path=(ItemsControl.AlternationIndex)}"
+                     Value="0">
+                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+    </UserControl.Resources>
+
+    <!-- 全体Grid -->
     <Grid>
         <ScrollViewer x:Name="MyScrollViewer"
                         HorizontalScrollBarVisibility="Auto"
@@ -14,10 +47,1513 @@
                         PreviewMouseUp="ScrollViewer_PreviewMouseUp"
                         PreviewMouseDown="ScrollViewer_PreviewMouseDown"
                         PreviewMouseMove="ScrollViewer_PreviewMouseMove"
-                        PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+                        PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" Cursor="">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+            
+            <Grid Margin="3" Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 最上段Grid s/h,流量,計測設定, FB -->
+                <Grid Grid.Row="0" HorizontalAlignment="Left" Margin="10 10 0 0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 1段目Grid s/h,流量,計測設定 -->
+                    <Grid Grid.Row="0" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 通信状態 -->
+                        <GroupBox Grid.Row="0" Grid.Column="0" Margin="5 0 0 0"
+                                    Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                                    Width="{Binding GroupBoxWidth100}">
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Comm" 
+                                                Foreground="{DynamicResource AccentBrush}" 
+                                                FontSize="{Binding TitleFontSize}" 
+                                                FontWeight="Bold"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Column="0"
+                                            Orientation="Horizontal" 
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="0 10 0 0">
+                                    <Icon:PackIconMaterial Kind="CameraRear"
+                                                           Width="{Binding IconSize}" 
+                                                           Height="{Binding IconSize}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+
+                                    <Icon:PackIconMaterial Kind="AccessPointNetwork"
+                                                           Width="{Binding IconSize}" 
+                                                           Height="{Binding IconSize}"
+                                                           Margin="10,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           Visibility="{Binding IsMfcPortSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <Icon:PackIconMaterial.Foreground>
+                                            <LinearGradientBrush StartPoint="0,0" 
+                                                                 EndPoint="1,0">
+                                                <GradientStop x:Name="MfcCommIconColor" 
+                                                              Color="{DynamicResource CommIconColorFrom}"
+                                                              Offset="0"/>
+                                            </LinearGradientBrush>
+                                        </Icon:PackIconMaterial.Foreground>
+                                    </Icon:PackIconMaterial>
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="1" 
+                                            Orientation="Horizontal" 
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="0 20 0 0">
+                                    <Icon:PackIconMaterial Kind="ScaleBalance"
+                                                           Width="{Binding IconSize}" 
+                                                           Height="{Binding IconSize}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource AccentBrush}"/>
+
+                                    <Icon:PackIconMaterial Kind="AccessPointNetwork"
+                                                           Width="{Binding IconSize}" 
+                                                           Height="{Binding IconSize}"
+                                                           Margin="10,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           Visibility="{Binding IsBalancePortSelected, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="">
+                                        <Icon:PackIconMaterial.Foreground>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop x:Name="BalanceCommIconColor" Color="{DynamicResource CommIconColorFrom}" Offset="0"/>
+                                            </LinearGradientBrush>
+                                        </Icon:PackIconMaterial.Foreground>
+                                    </Icon:PackIconMaterial>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+
+                        <Grid Grid.Column="1">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <!-- ▼ S/Nグループ -->
+                            <GroupBox Grid.Row="0" Grid.Column="1" Margin="5 0 0 10"
+                                    Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                                    Width="{Binding GroupBoxWidth100}">
+                                <GroupBox.Header>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="S/N" 
+                                                Foreground="{DynamicResource AccentBrush}" 
+                                                FontSize="{Binding TitleFontSize}" 
+                                                FontWeight="Bold"/>
+                                    </StackPanel>
+                                </GroupBox.Header>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Border BorderBrush="{DynamicResource AccentBrush}"
+                                            BorderThickness="0 0 0 1.5"
+                                            SnapsToDevicePixels="True"
+                                            Margin="5 0 5 5">
+                                        <TextBlock Text="{Binding SerialNum}"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   FontSize="{Binding TitleFontSize}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0 0 0 0"/>
+                                    </Border>
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- ▼ Flow グループ -->
+                            <GroupBox Grid.Row="1" Grid.Column="1" Margin="5 0 0 0"
+                                   Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                                   Width="{Binding GroupBoxWidth100}">
+                                <GroupBox.Header>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Flow" 
+                                                Foreground="{DynamicResource AccentBrush}" 
+                                                FontSize="{Binding TitleFontSize}" 
+                                                FontWeight="Bold"/>
+                                    </StackPanel>
+                                </GroupBox.Header>
+
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBox Style="{StaticResource UnderlineTextBoxStyle}" Margin="0 -7 0 0"
+                                             Text="{Binding FlowValue, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="{Binding TitleFontSize}"
+                                             IsEnabled="{Binding FlowEnable}">
+                                        <i:Interaction.Behaviors>
+                                            <local:NumericOnlyBehavior MaxValue="100000"/>
+                                        </i:Interaction.Behaviors>
+                                    </TextBox>
+                                </Grid>
+                            </GroupBox>
+                        </Grid>
+
+                        <!-- その他設定 -->
+                        <GroupBox Grid.Row="0" Grid.Column="2" Margin="5 0 0 0"
+                                  Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                                  Width="{Binding SmallGBWidth}">
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Other Settings" 
+                                                Foreground="{DynamicResource AccentBrush}" 
+                                                FontSize="{Binding TitleFontSize}" 
+                                                FontWeight="Bold"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="90"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 上段左：Version -->
+                                <Grid Grid.Column="0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0"
+                                           Margin="0 10 0 0"
+                                           Content="Version"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="{Binding TitleFontSize}">
+                                    </Label>
+                                    <RadioButton Grid.Row="1"
+                                         Content="4.00~"
+                                         Style="{StaticResource StatusRadioButtonStyle}" 
+                                         GroupName="Version"
+                                         IsHitTestVisible="{Binding RBtnEnable}"
+                                         IsChecked="{Binding VersionValue, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Ver400, Mode=TwoWay}" />
+
+                                    <RadioButton Grid.Row="2"
+                                         Content="~2.98"
+                                         Style="{StaticResource StatusRadioButtonStyle}" 
+                                         GroupName="Version"
+                                         Margin="0,5,0,0"
+                                         VerticalContentAlignment="Center"
+                                         IsHitTestVisible="{Binding RBtnEnable}"
+                                         IsChecked="{Binding VersionValue, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Ver298, Mode=TwoWay}" />
+                                </Grid>
+
+
+                                <!-- ブレークポイント -->
+                                <Grid Grid.Column="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0"
+                                            Margin="0 10 0 0"
+                                            Content="BP"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            FontSize="{Binding TitleFontSize}">
+                                    </Label>
+                                    <RadioButton Grid.Row="1"
+                                                 Content="Invariable"
+                                                 Style="{StaticResource StatusRadioButtonStyle}" 
+                                                 GroupName="BP"
+                                                 IsHitTestVisible="{Binding RBtnEnable}"
+                                                 IsChecked="{Binding BPValue, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Invariable, Mode=TwoWay}" />
+
+                                    <RadioButton Grid.Row="2"
+                                                 Content="Variable"
+                                                 Style="{StaticResource StatusRadioButtonStyle}" 
+                                                 GroupName="BP"
+                                                 Margin="0,5,0,0"
+                                                 VerticalContentAlignment="Center"
+                                                 IsHitTestVisible="{Binding RBtnEnable}"
+                                                 IsChecked="{Binding BPValue, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Variable, Mode=TwoWay}" />
+                                </Grid>
+
+                                <!-- 上段左：Alerm A -->
+                                <Grid Grid.Column="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Row="0"
+                                            Margin="0 10 0 0"
+                                            Content="Increment"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            FontSize="{Binding TitleFontSize}">
+                                    </Label>
+                                    <RadioButton Grid.Row="1"
+                                                 Content="normal"
+                                                 Style="{StaticResource StatusRadioButtonStyle}" 
+                                                 GroupName="Increment"
+                                                 IsHitTestVisible="{Binding RBtnEnable}"
+                                                 IsChecked="{Binding IncrementValue, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=Normal, Mode=TwoWay}" />
+
+                                    <RadioButton Grid.Row="2"
+                                                 Content="5%"
+                                                 Style="{StaticResource StatusRadioButtonStyle}" 
+                                                 GroupName="Increment"
+                                                 Margin="0,5,0,0"
+                                                 VerticalContentAlignment="Center"
+                                                 IsHitTestVisible="{Binding RBtnEnable}"
+                                                 IsChecked="{Binding IncrementValue, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter=FivePercent, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- ▼ Measure グループ -->
+                        <GroupBox Grid.Row="0" Grid.Column="3" Margin="5 0 0 0"
+                              Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                              Width="{Binding GroupBoxWidth200}">
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="Measure Settings" 
+                                           Foreground="{DynamicResource AccentBrush}" 
+                                           FontSize="{Binding TitleFontSize}" 
+                                           FontWeight="Bold"/>
+                                </StackPanel>
+                            </GroupBox.Header>
+
+                            <Grid HorizontalAlignment="Left" Margin="0 -15 0 0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Label Grid.Column="0"
+                                        Grid.Row="0"
+                                           Margin="0 10 0 0"
+                                           Content="Interval"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="{Binding TitleFontSize}">
+                                </Label>
+
+                                <Grid Grid.Column="0" Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBox Grid.Column="0"
+                                             Grid.Row="1"
+                                             Style="{StaticResource UnderlineTextBoxStyle}" 
+                                             Margin="0 -12 0 0"
+                                             Text="{Binding IntervalValue, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="{Binding TitleFontSize}"
+                                             IsEnabled="{Binding MSettingEnable}">
+                                        <i:Interaction.Behaviors>
+                                            <local:NumericOnlyBehavior MaxValue="1000"/>
+                                        </i:Interaction.Behaviors>
+                                    </TextBox>
+
+                                    <TextBlock Grid.Column="1"
+                                               Grid.Row="1"
+                                               Text="(Sec)" 
+                                               Margin="0 0 0 0"
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding UnitFontSize}" 
+                                               FontWeight="Bold"/>
+                                </Grid>
+
+                                <Label Grid.Row="0"
+                                       Grid.Column="2"
+                                        Margin="0 10 0 0"
+                                        Content="Stable OS"
+                                        Foreground="{DynamicResource AccentBrush}"
+                                        FontSize="{Binding TitleFontSize}">
+                                </Label>
+
+                                <Grid Grid.Column="2" Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBox Grid.Column="0"
+                                             Grid.Row="0"
+                                             Style="{StaticResource UnderlineTextBoxStyle}" 
+                                             Margin="0 -12 0 0"
+                                             Text="{Binding StableOSValue, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="{Binding TitleFontSize}"
+                                             IsEnabled="{Binding MSettingEnable}">
+                                        <i:Interaction.Behaviors>
+                                            <local:NumericOnlyBehavior MaxValue="1000"/>
+                                        </i:Interaction.Behaviors>
+                                    </TextBox>
+                                    <TextBlock Grid.Column="1"
+                                               Grid.Row="1"
+                                               Text="(Sec)" 
+                                               Margin="0 0 0 0"
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding UnitFontSize}" 
+                                               FontWeight="Bold"/>
+                                </Grid>
+
+                                <Label Grid.Column="0"
+                                        Grid.Row="2"
+                                       Content="Attempts"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       FontSize="{Binding TitleFontSize}">
+                                </Label>
+                                <Grid Grid.Column="0" Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+
+                                    <TextBox Grid.Column="0"
+                                             Grid.Row="3"
+                                             Style="{StaticResource UnderlineTextBoxStyle}" 
+                                             Margin="0 -12 0 0"
+                                             Text="{Binding AttemptsValue, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="{Binding TitleFontSize}"
+                                             IsEnabled="{Binding MSettingEnable}">
+                                        <i:Interaction.Behaviors>
+                                            <local:NumericOnlyBehavior MaxValue="100"/>
+                                        </i:Interaction.Behaviors>
+                                    </TextBox>
+                                    <TextBlock Grid.Column="1"
+                                               Grid.Row="1"
+                                               Text="(count)" 
+                                               Margin="0 0 0 0"
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding UnitFontSize}" 
+                                               FontWeight="Bold"/>
+                                </Grid>
+
+                                <Label Grid.Column="2"
+                                        Grid.Row="2"
+                                       Content="Wait OS"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       FontSize="{Binding TitleFontSize}">
+                                </Label>
+                                <Grid Grid.Column="2" Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Grid.Row="1"
+                                             Style="{StaticResource UnderlineTextBoxStyle}" 
+                                             Margin="0 -12 0 0"
+                                             Text="{Binding WaitOSValue, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="{Binding TitleFontSize}"
+                                             IsEnabled="{Binding MSettingEnable}">
+                                        <i:Interaction.Behaviors>
+                                            <local:NumericOnlyBehavior MaxValue="1000"/>
+                                        </i:Interaction.Behaviors>
+                                    </TextBox>
+                                    <TextBlock Grid.Column="1"
+                                               Grid.Row="1"
+                                               Text="(Sec)" 
+                                               Margin="0 0 0 0"
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding UnitFontSize}" 
+                                               FontWeight="Bold"/>
+                                </Grid>
+                            </Grid>
+                        </GroupBox>
+                    </Grid>
+
+                    <!-- 2段目Grid FB -->
+                    <Grid Grid.Row="1" HorizontalAlignment="Left" Margin="0 7 0 0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <GroupBox Grid.Row="1" Grid.Column="0" Margin="5 0 0 0"
+                                  Style="{StaticResource GroupBoxSmallMarginStyle}"                                  
+                                  Width="{Binding GroupBoxWidth700}">
+                            <GroupBox.Header>
+                                <StackPanel Orientation="Horizontal" 
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="FB Data" 
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding TitleFontSize}" 
+                                               FontWeight="Bold"/>
+
+                                </StackPanel>
+                            </GroupBox.Header>
+
+                            <Grid HorizontalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- 上位バイト -->
+                                <DataGrid x:Name="UpperFBData" 
+                                          Grid.Row="0"
+                                          Margin="5,5,5,0" 
+                                          AlternatingRowBackground="Transparent"
+                                          AutoGenerateColumns="False"
+                                          BorderBrush="{DynamicResource ButtonThemeColorBrush}"                                          
+                                          Background="Transparent"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          CanUserReorderColumns="False"
+                                          CanUserResizeColumns="False"
+                                          CellStyle="{StaticResource TransparentCell}"
+                                          ColumnHeaderStyle="{StaticResource TransparentColumnHeader}"
+                                          FontSize="{Binding DataGridFontSize}"
+                                          GridLinesVisibility="None"
+                                          HeadersVisibility="Column"
+                                          HorizontalAlignment="Left"
+                                          RowBackground="Transparent"
+                                          SelectionUnit="Cell">
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="FB90" Width="55" Binding="{Binding Fb90}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB92" Width="55" Binding="{Binding Fb92}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB94" Width="55" Binding="{Binding Fb94}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB96" Width="55" Binding="{Binding Fb96}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB98" Width="55" Binding="{Binding Fb98}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB9A" Width="55" Binding="{Binding Fb9a}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB9C" Width="55" Binding="{Binding Fb9c}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB9E" Width="55" Binding="{Binding Fb9e}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FBA0" Width="55" Binding="{Binding Fba0}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FBA2" Width="55" Binding="{Binding Fba2}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB41" Width="55" Binding="{Binding Fb41}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <!-- 下位バイト -->
+                                <DataGrid x:Name="lowerFBData" 
+                                          Grid.Row="1"
+                                          Margin="5,0,5,5" 
+                                          AlternatingRowBackground="Transparent"
+                                          AutoGenerateColumns="False"
+                                          BorderBrush="{DynamicResource ButtonThemeColorBrush}"                                          
+                                          Background="Transparent"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserSortColumns="False"
+                                          CanUserReorderColumns="False"
+                                          CanUserResizeColumns="False"
+                                          CellStyle="{StaticResource TransparentCell}"
+                                          ColumnHeaderStyle="{StaticResource TransparentColumnHeader}"
+                                          FontSize="{Binding DataGridFontSize}"
+                                          GridLinesVisibility="None"
+                                          HeadersVisibility="Column"
+                                          HorizontalAlignment="Left"
+                                          RowBackground="Transparent"
+                                          SelectionUnit="Cell">
+
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="FB91" Width="55" Binding="{Binding Fb91}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB93" Width="55" Binding="{Binding Fb93}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB95" Width="55" Binding="{Binding Fb95}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB97" Width="55" Binding="{Binding Fb97}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB99" Width="55" Binding="{Binding Fb99}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB9B" Width="55" Binding="{Binding Fb9b}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB9D" Width="55" Binding="{Binding Fb9d}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB9F" Width="55" Binding="{Binding Fb9f}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FBA1" Width="55" Binding="{Binding Fba1}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FBA3" Width="55" Binding="{Binding Fba3}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                        <DataGridTextColumn Header="FB42" Width="55" Binding="{Binding Fb42}" EditingElementStyle="{StaticResource EditingTextBoxStyle}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+
+
+                        </GroupBox>
+                    </Grid>
+                </Grid>
+
+                <!-- 2段目Grid MFM, 計測コマンド -->
+                <Grid Grid.Row="1" HorizontalAlignment="Left" Margin="10 5 0 0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- ▼ コマンドグループ -->
+                    <GroupBox Grid.Column="0"
+                              Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                              Width="{Binding GroupBoxWidth150}"
+                              Height="{Binding MiddleGBHeight}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Command" 
+                                           Foreground="{DynamicResource AccentBrush}" 
+                                           FontSize="{Binding TitleFontSize}" 
+                                           FontWeight="Bold"/>
+
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Button Grid.Row="0"
+                                    Style="{StaticResource HoverButtonStyle}"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    Command="{Binding CalculateCommand}"
+                                    CommandParameter="calc"
+                                    Content="Calculate"  
+                                    Cursor="Hand"
+                                    FontSize="{Binding LabelFontSize}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsEnabled="{Binding CanCalculate}"
+                                    Margin="0 0 0 5"
+                                    Width="{Binding CmdBtnSIze}"
+                                    VerticalAlignment="Center" />
+                            <Button Grid.Row="1"
+                                    Style="{StaticResource HoverButtonStyle}"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    Command="{Binding CalculateCommand}"
+                                    CommandParameter="conf"
+                                    Content="Conform"  
+                                    Cursor="Hand"
+                                    FontSize="{Binding LabelFontSize}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsEnabled="{Binding CanConform}"
+                                    Margin="0 0 0 5"
+                                    Width="{Binding CmdBtnSIze}"
+                                    VerticalAlignment="Center" />
+                            <Button Grid.Row="2"
+                                    Style="{StaticResource HoverButtonStyle}"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    Command="{Binding CalAndConfCommand}"
+                                    Content="Cal &amp; Conf"  
+                                    Cursor="Hand"
+                                    FontSize="{Binding LabelFontSize}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsEnabled="{Binding CanCalAndConf}"
+                                    Margin="0 0 0 5"
+                                    Width="{Binding CmdBtnSIze}"
+                                    VerticalAlignment="Center" />
+                            <Button Grid.Row="3"
+                                    Style="{StaticResource HoverButtonStyle}"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    Command="{Binding ManualCommand}"
+                                    Content="Manual"  
+                                    Cursor="Hand"
+                                    FontSize="{Binding LabelFontSize}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    IsEnabled="{Binding CanManual}"
+                                    Margin="0 0 0 5"
+                                    Width="{Binding CmdBtnSIze}"
+                                    VerticalAlignment="Center" />
+                            <Button Grid.Row="4"
+                                    Style="{StaticResource HoverButtonStyle}"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    Command="{Binding StopCmdCommand}"
+                                    Content="Stop"  
+                                    Cursor="Hand"
+                                    FontSize="{Binding LabelFontSize}"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    HorizontalAlignment="Center"
+                                    Margin="0 0 0 0"
+                                    Width="{Binding CmdBtnSIze}"
+                                    VerticalAlignment="Center" />
+                            </Grid>
+                    </GroupBox>
+
+                    <!-- ▼ MFMグループ -->
+                    <GroupBox Grid.Column="2" 
+                                  Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                                  Width="{Binding GroupBoxWidth500}"
+                                  Height="{Binding MiddleGBHeight}">
+                        <GroupBox.Header>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0"
+                                            Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="MFM" 
+                                               Foreground="{DynamicResource AccentBrush}" 
+                                               FontSize="{Binding TitleFontSize}" 
+                                               FontWeight="Bold"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource HoverButtonStyle}"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource AccentBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        Content="{Binding MfmBtnText}"
+                                        Width="{Binding MfmBtnSIze}"
+                                        Cursor="Hand"
+                                        Command="{Binding MFMExecuteCommand}"
+                                        FontSize="{Binding LabelFontSize}"
+                                        Margin="15,0,5,0"
+                                        HorizontalAlignment="Center"
+                                        IsEnabled="{Binding CanMFM}"
+                                        VerticalAlignment="Center" />
+
+                                    <Button Grid.Column="2"
+                                        Style="{StaticResource HoverButtonStyle}"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource AccentBrush}"
+                                        BorderBrush="{DynamicResource AccentBrush}"
+                                        Content="{Binding MfmBtnText}"
+                                        Width="{Binding MfmBtnSIze}"
+                                        Cursor="Hand"
+                                        Command="{Binding MFMStopCommand}"
+                                        FontSize="{Binding LabelFontSize}"
+                                        Margin="15,0,5,0"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center" />
+                                </Grid>
+                        </GroupBox.Header>
+                        <Grid Grid.Column="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Zero Adjust -->
+                            <GroupBox Grid.Row="0" Grid.Column="0" Margin="5 0 5 5"
+                                      Style="{StaticResource GroupBoxSmallMarginStyle}" >
+                                <GroupBox.Header>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Zero Adjust" 
+                                                    Foreground="{DynamicResource AccentBrush}" 
+                                                    FontSize="{Binding TitleFontSize}" 
+                                                    FontWeight="Bold"/>
+                                    </StackPanel>
+                                </GroupBox.Header>
+
+                                <Grid Margin="0 10 0 0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Label Grid.Column="1"
+                                           Grid.Row="0"
+                                           Margin="0 0 0 0"
+                                           Content="Flow Output"
+                                           Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="{Binding TitleFontSize}"
+                                           HorizontalAlignment="Center">
+                                    </Label>
+                                    <Border Grid.Column="1"
+                                            Grid.Row="1"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            BorderThickness="0 0 0 1.5"
+                                            HorizontalAlignment="Center"
+                                            SnapsToDevicePixels="True"
+                                            Margin="0 0 0 5"
+                                            Width="100">
+                                        <TextBlock Text="{Binding FlowOut}"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   FontSize="{Binding TitleFontSize}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0 0 0 0"/>
+                                    </Border>
+
+                                    <Button Grid.Column="0"
+                                            Grid.Row="0"
+                                            Style="{StaticResource HoverButtonStyle}"
+                                            Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Content="{Binding ZStext}"
+                                            Width="{Binding ZaBtnSIze}"
+                                            Cursor="Hand"
+                                            Command="{Binding ZeroSendExecuteCommand}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Margin="15 0 5 0"
+                                            HorizontalAlignment="Center"
+                                            IsEnabled="{Binding CanZeroSend}"
+                                            VerticalAlignment="Center" />
+
+                                    <Button Grid.Column="0"
+                                            Grid.Row="1"
+                                            Style="{StaticResource HoverButtonStyle}"
+                                            Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Content="Zero OK"
+                                            Width="{Binding ZaBtnSIze}"
+                                            Cursor="Hand"
+                                            Command="{Binding ZeroOKExecuteCommand}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Margin="15 10 5 0"
+                                            HorizontalAlignment="Center"
+                                            IsEnabled="{Binding CanZeroOK}"
+                                            VerticalAlignment="Center" />
+                                </Grid>
+                            </GroupBox>
+
+                            <!-- Span -->
+                            <GroupBox Grid.Row="0" Grid.Column="1" Margin="5 0 5 5"
+                                      Style="{StaticResource GroupBoxSmallMarginStyle}" Cursor="">
+                                <GroupBox.Header>
+                                    <Grid Margin="0 0 0 0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Margin="0 0 0 0"
+                                                    Text="Span Adjust" 
+                                                    Foreground="{DynamicResource AccentBrush}" 
+                                                    FontSize="{Binding TitleFontSize}" 
+                                                    FontWeight="Bold"/>
+
+                                        <Button Grid.Column="1"
+                                            Style="{StaticResource HoverButtonStyle}"
+                                            Background="Transparent"
+                                            Foreground="{DynamicResource AccentBrush}"
+                                            BorderBrush="{DynamicResource AccentBrush}"
+                                            Content="Span OK"
+                                            Width="{Binding ZaBtnSIze}"
+                                            Cursor="Hand"
+                                            Command="{Binding SpanOKExecuteCommand}"
+                                            FontSize="{Binding LabelFontSize}"
+                                            Margin="0 0 0 0"
+                                            HorizontalAlignment="Center"
+                                            IsEnabled="{Binding CanSpanAdjust}"
+                                            VerticalAlignment="Center" />
+
+
+                                    </Grid>
+                                </GroupBox.Header>
+                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- 上段 -->
+                                    <Grid Grid.Row="0" Margin="0 0 0 7">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Grid.Column="0"
+                                                        Content="FB41"
+                                                        Foreground="{DynamicResource AccentBrush}"
+                                                        FontSize="{Binding TitleFontSize}" Cursor="">
+                                            </Label>
+
+                                            <Border Grid.Column="1"
+                                                         BorderBrush="{DynamicResource AccentBrush}"
+                                                         BorderThickness="0 0 0 1.5"
+                                                         HorizontalAlignment="Center"
+                                                         SnapsToDevicePixels="True"
+                                                         Margin="0 0 20 5"
+                                                         Width="30">
+                                                <TextBlock Text="{Binding Fb41Val}"
+                                                                Foreground="{DynamicResource AccentBrush}"
+                                                                FontSize="{Binding TitleFontSize}"
+                                                                HorizontalAlignment="Center"
+                                                                Margin="0 0 0 0"/>
+                                            </Border>
+                                        </Grid>
+
+                                        <Button Grid.Column="1"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="+20"
+                                                    Margin="0 0 10 0"
+                                                    Width="{Binding SpnaGainSIze}"
+                                                    Cursor="Hand"
+                                                    Command="{Binding GainAdjustCommand}"
+                                                    CommandParameter="20"
+                                                    FontSize="{Binding LabelFontSize}"
+                                                    HorizontalAlignment="Center"
+                                                    IsEnabled="{Binding CanSpanAdjust}"
+                                                    VerticalAlignment="Center" />
+
+                                        <Button Grid.Column="2"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="+5"
+                                                            Margin="0 0 10 0"
+                                                    Width="{Binding SpnaGainSIze}"
+                                                    Cursor="Hand"
+                                                    Command="{Binding GainAdjustCommand}"
+                                                    CommandParameter="5"
+                                                    FontSize="{Binding LabelFontSize}"
+                                                    HorizontalAlignment="Center"
+                                                    IsEnabled="{Binding CanSpanAdjust}"
+                                                    VerticalAlignment="Center" />
+
+
+                                        <Button Grid.Column="3"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="+1"
+                                                    Width="{Binding SpnaGainSIze}"
+                                                    Cursor="Hand"
+                                                    Command="{Binding GainAdjustCommand}"
+                                                    CommandParameter="1"
+                                                    FontSize="{Binding LabelFontSize}"
+                                                    HorizontalAlignment="Center"
+                                                    IsEnabled="{Binding CanSpanAdjust}"
+                                                    VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <!-- 下段 -->
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid Grid.Column="0" Margin="0 0 0 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Label Grid.Column="0"
+                                                        Margin="0 0 -1.5 0"
+                                                        Content="FB42"
+                                                        Foreground="{DynamicResource AccentBrush}"
+                                                        FontSize="{Binding TitleFontSize}">
+                                            </Label>
+
+                                            <Border Grid.Column="1"
+                                                        BorderBrush="{DynamicResource AccentBrush}"
+                                                        BorderThickness="0 0 0 1.5"
+                                                        HorizontalAlignment="Center"
+                                                        SnapsToDevicePixels="True"
+                                                        Margin="0 0 20 5"
+                                                        Width="30">
+                                                <TextBlock Text="{Binding Fb42Val}"
+                                                            Foreground="{DynamicResource AccentBrush}"
+                                                            FontSize="{Binding TitleFontSize}"
+                                                            HorizontalAlignment="Center"
+                                                            Margin="0 0 0 0"/>
+                                            </Border>
+                                        </Grid>
+                                        <Button Grid.Column="1"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="-20"
+                                                    Width="{Binding SpnaGainSIze}"
+                                                    Margin="0 0 10 0"
+                                                    Cursor="Hand"
+                                                    Command="{Binding GainAdjustCommand}"
+                                                    CommandParameter="-20"
+                                                    FontSize="{Binding LabelFontSize}"
+                                                    HorizontalAlignment="Center"
+                                                    IsEnabled="{Binding CanSpanAdjust}"
+                                                    VerticalAlignment="Center" />
+
+
+                                        <Button Grid.Column="2"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="-5"
+                                                    Width="{Binding SpnaGainSIze}"
+                                                            Margin="0 0 10 0"
+                                                    Cursor="Hand"
+                                                    Command="{Binding GainAdjustCommand}"
+                                                    CommandParameter="-5"
+                                                    FontSize="{Binding LabelFontSize}"
+                                                    HorizontalAlignment="Center"
+                                                    IsEnabled="{Binding CanSpanAdjust}"
+                                                    VerticalAlignment="Center" />
+
+
+                                        <Button Grid.Column="3"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="-1"
+                                                    Width="{Binding SpnaGainSIze}"
+                                                    Cursor="Hand"
+                                                    Command="{Binding GainAdjustCommand}"
+                                                    CommandParameter="-1"
+                                                    FontSize="{Binding LabelFontSize}"
+                                                    HorizontalAlignment="Center"
+                                                    IsEnabled="{Binding CanSpanAdjust}"
+                                                    VerticalAlignment="Center" />
+                                    </Grid>
+                                </Grid>
+                            </GroupBox>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+
+                <!-- 3段目Grid MFM, 計測コマンド -->
+                <Grid Grid.Row="2" HorizontalAlignment="Left" Margin="10 2 0 0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ▼ 測定結果グループ -->
+                    <GroupBox Grid.Column="0" 
+                              Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+                              Width="{Binding GroupBoxWidth150}"
+                              Height="{Binding GroupBoxHeight250}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Measure" 
+                                           Foreground="{DynamicResource AccentBrush}" 
+                                           FontSize="{Binding TitleFontSize}" 
+                                           FontWeight="Bold"/>
+                            </StackPanel>
+                        </GroupBox.Header>
+
+                        <Grid Margin="2">
+                            <!-- 行定義（11行） -->
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 列定義 -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ===== Column 0 ===== -->
+                            <ItemsControl Grid.Column="0"
+                                          ItemsSource="{Binding Column0}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding Value}"
+                                                        Style="{StaticResource MeasureTextCenterStyle}"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 1 ===== -->
+                            <ItemsControl Grid.Column="1"
+                                          ItemsSource="{Binding Column1}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding Value}" FontSize="12">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Opacity" Value="1"/>
+                                                        <Style.Triggers>
+
+                                                            <!-- 明滅トリガー -->
+                                                            <DataTrigger Binding="{Binding IsUpdate}" Value="True">
+                                                                <DataTrigger.EnterActions>
+                                                                    <BeginStoryboard x:Name="BlinkStoryboard">
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation
+                                                                                    Storyboard.TargetProperty="Opacity"
+                                                                                    From="1"
+                                                                                    To="0.3"
+                                                                                    Duration="0:0:0.25"
+                                                                                    AutoReverse="True"
+                                                                                    RepeatBehavior="Forever"/>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </DataTrigger.EnterActions>
+
+                                                                <!-- 終了時に確実に元に戻す -->
+                                                                <DataTrigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation
+                                                                                    Storyboard.TargetProperty="Opacity"
+                                                                                    To="1"
+                                                                                    Duration="0"/>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </DataTrigger.ExitActions>
+
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+
+                    </GroupBox>
+
+                    <!-- Outputグループ -->
+                    <GroupBox Grid.Column="1" 
+                              Style="{StaticResource GroupBoxSmallMarginStyle}"
+                              Width="{Binding GroupBoxWidth500}"
+                              Height="{Binding GroupBoxHeight250}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Output" 
+                                           Foreground="{DynamicResource AccentBrush}" 
+                                           FontSize="{Binding TitleFontSize}" 
+                                           FontWeight="Bold"/>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid Margin="2">
+                            <!-- 行定義（11行） -->
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 列定義 -->
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ===== Column 0 Set Point ===== -->
+                            <ItemsControl Grid.Column="0"
+                                          ItemsSource="{Binding SetPointArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                                Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 1 True ===== -->
+                            <ItemsControl Grid.Column="1"
+                                          ItemsSource="{Binding TrueValueArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 2 Reading ===== -->
+                            <ItemsControl Grid.Column="2"
+                                          ItemsSource="{Binding ReadingValueArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                                <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}">
+                                                    
+                                                </TextBlock>
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 3 初期VO ===== -->
+                            <ItemsControl Grid.Column="3"
+                                          ItemsSource="{Binding InitialVoArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 4 補正Data ===== -->
+                            <ItemsControl Grid.Column="4"
+                                          ItemsSource="{Binding CorrectDataArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 5 VOUT ===== -->
+                            <ItemsControl Grid.Column="5"
+                                          ItemsSource="{Binding VoutArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 6 VO ===== -->
+                            <ItemsControl Grid.Column="6"
+                                          ItemsSource="{Binding VOArray}"
+                                          AlternationCount="11">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                           Path=(ItemsControl.AlternationIndex)}">
+                                            <TextBlock Text="{Binding}"
+                                                        Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- ===== Column 7 confirm btn ===== -->
+                                <!-- ===== Column 7 ===== -->
+                                <Grid Grid.Column="7">
+
+                                    <!-- 全体を 11 行に分割 -->
+                                    <Grid.RowDefinitions>
+                                        <!-- 0行目 -->
+                                        <RowDefinition Height="Auto"/>
+
+                                        <!-- 1〜10行目 -->
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- ================= -->
+                                    <!-- Row 0 : 表示のみ -->
+                                    <!-- ================= -->
+                                    <Border Grid.Row="0"
+                                            Style="{StaticResource MeasureCellBorderStyle}">
+                                        <TextBlock Text="{Binding ConfirmArray[0]}"
+                                                    Style="{StaticResource MeasureTextLeftStyle_WithFirstRowCenter}"/>
+                                    </Border>
+
+                                    <!-- =========================== -->
+                                    <!-- Row 1 : 10 個のボタン領域 -->
+                                    <!-- =========================== -->
+                                    <Grid Grid.Row="1">
+
+                                        <!-- 10 等分 -->
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                            <RowDefinition Height="18"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- ===== ボタン 1〜10 ===== -->
+                                        <Border Grid.Row="0" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 1" 
+                                                    FontSize="10"
+                                                    VerticalContentAlignment="Center"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="1" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 2" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="2" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 3" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="3" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 4" 
+                                                    FontSize="10" 
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="4" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 5" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="5" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 6" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="6" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 7" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="7" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 8" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="8" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 9" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                        <Border Grid.Row="9" Style="{StaticResource MeasureCellBorderStyle}">
+                                            <Button Content="Conf 10" 
+                                                    FontSize="10"
+                                                    Style="{StaticResource ConfirmButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Border>
+
+                                    </Grid>
+
+                                </Grid>
+
+
+                            </Grid>
+
+                    </GroupBox>
+                </Grid>               
+            </Grid>
+                <Grid Grid.Column="1" Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="770"/>
+                    </Grid.RowDefinitions>
+                    <!-- ▼ ロググループ -->
+                    <GroupBox Style="{StaticResource GroupBoxSmallMarginStyle}"                      
+            Width="{Binding GroupBoxWidth245}">
+                        <GroupBox.Header>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Log" 
+                             Foreground="{DynamicResource AccentBrush}" 
+                             FontSize="{Binding TitleFontSize}" 
+                             FontWeight="Bold"/>
+                            </StackPanel>
+                        </GroupBox.Header>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="Log" 
+                         Foreground="{DynamicResource AccentBrush}"
+                         FontSize="{Binding TitleFontSize}" 
+                         FontWeight="Bold">
+                            </TextBlock>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </Grid>
         </ScrollViewer>
-        
-        
         
         <!-- 右下隅矩形（ScrollBar 表示に連動） -->
         <Border x:Name="ScrollCorner"
@@ -29,5 +1565,6 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Bottom"
                 Visibility="Collapsed"/>
+            
     </Grid>
 </UserControl>
