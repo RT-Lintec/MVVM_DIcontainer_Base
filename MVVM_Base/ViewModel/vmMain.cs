@@ -948,11 +948,6 @@ namespace MVVM_Base.ViewModel
         public bool canQuit { get; set; }
 
         /// <summary>
-        /// 画面遷移可否
-        /// </summary>
-        public bool canTransitOther { get; set; }
-
-        /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="portWatcher"></param>
@@ -992,7 +987,7 @@ namespace MVVM_Base.ViewModel
             appStatusService = _appStatusService;
             appStatusService.PropertyChanged += AppStatusService_PropertyChanged;
             //this.PropertyChanged += MfcConnected_PropertyChanged;
-            canTransitOther = true;
+            vmService.CanTransit = true;
         }
 
         /// <summary>
@@ -1021,7 +1016,7 @@ namespace MVVM_Base.ViewModel
             // 終了可否チェック
             vmService.CheckCanQuit();
 
-            canTransitOther = true;
+            vmService.CanTransit = true;
         }
 
         /// <summary>

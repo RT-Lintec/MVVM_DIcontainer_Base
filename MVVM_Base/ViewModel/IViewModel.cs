@@ -13,10 +13,5 @@ namespace MVVM_Base.ViewModel
         /// 終了可否
         /// </summary>
         public bool canQuit { get; set; }
-
-        /// <summary>
-        /// 画面遷移可否
-        /// </summary>
-        public bool canTransitOther { get; set; }
-}
+    }
 }

@@ -73,16 +73,26 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         public async void OnViewLoaded()
         {
-            // ボタン群を無効化
-            SwitchAfterMFMBtn(false);
-            SwitchZeroBtn(false);
-            SwitchSpanBtn(false);
+            vmService.CanTransit = false;
+
+            // 誤操作防止
+            SwitchAllbtn(false);
 
             IsViewVisible = true;
+
             // TODO 以下二つの処理でエラー出た場合の処理
             _loadCts = new CancellationTokenSource();
-            SerialNum = await ReadSerialNumber(_loadCts.Token);
-            await FBDataRead(_loadCts.Token);
+
+            if (commStatusService.IsMfcConnected && commStatusService.IsBalanceConnected)
+            {
+                SerialNum = await ReadSerialNumber(_loadCts.Token);
+                var res = await FBDataRead(_loadCts.Token);
+            }
+
+            // MFM必須コマンド以外を有効化(Initial状態)
+            SwitchBeforeMFMBtn(true);
+
+            vmService.CanTransit = true;
         }
 
         /// <summary>
@@ -186,5 +196,112 @@ namespace MVVM_Base.ViewModel
                 VOArray[i] = "";
             }            
         }
+
+
+        #region ボタンのスイッチング
+        /// <summary>
+        /// CanBtnAttribute属性が付与されたboolプロパティの値を一括変更する
+        /// </summary>
+        /// <param name="enable"></param>
+        private void SwitchAllbtn(bool enable)
+        {
+            SwitchAfterMFMBtn(enable);
+            SwitchBeforeMFMBtn(enable);
+            SwitchZeroBtn(enable);
+            SwitchSpanBtn(enable);
+        }
+
+        /// <summary>
+        /// CanAfterMFMAttribute属性が付与されたboolプロパティの値を一括変更する
+        /// </summary>
+        /// <param name="enable"></param>
+        private void SwitchAfterMFMBtn(bool enable)
+        {
+            var props = this.GetType().GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttributes(typeof(CanAfterMFMAttribute), false)
+                            .Cast<CanAfterMFMAttribute>()
+                            .FirstOrDefault()
+                })
+                .Where(x => x.Attr != null)
+                .ToList();
+
+            foreach (var p in props)
+            {
+                p.Property.SetValue(this, enable);
+            }
+        }
+
+        /// <summary>
+        /// CanBeforeMFMAttribute属性が付与されたboolプロパティの値を一括変更する
+        /// </summary>
+        /// <param name="enable"></param>
+        private void SwitchBeforeMFMBtn(bool enable)
+        {
+            var props = this.GetType().GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttributes(typeof(CanBeforeMFMAttribute), false)
+                            .Cast<CanBeforeMFMAttribute>()
+                            .FirstOrDefault()
+                })
+                .Where(x => x.Attr != null)
+                .ToList();
+
+            foreach (var p in props)
+            {
+                p.Property.SetValue(this, enable);
+            }
+        }
+
+        /// <summary>
+        /// ゼロ調整関連のボタン：CanZeroAttributeをスイッチング
+        /// </summary>
+        /// <param name="enable"></param>
+        private void SwitchZeroBtn(bool enable)
+        {
+            var props = this.GetType().GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttributes(typeof(CanZeroAttribute), false)
+                    .Cast<CanZeroAttribute>()
+                    .FirstOrDefault()
+                })
+                .Where(x => x.Attr != null)
+                .ToList();
+
+            foreach (var p in props)
+            {
+                p.Property.SetValue(this, enable);
+            }
+        }
+
+        /// <summary>
+        /// スパン関連のボタン：CanSpanAttributeをスイッチング
+        /// </summary>
+        /// <param name="enable"></param>
+        private void SwitchSpanBtn(bool enable)
+        {
+            var props = this.GetType().GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttributes(typeof(CanSpanAttribute), false)
+                    .Cast<CanSpanAttribute>()
+                    .FirstOrDefault()
+                })
+                .Where(x => x.Attr != null)
+                .ToList();
+
+            foreach (var p in props)
+            {
+                p.Property.SetValue(this, enable);
+            }
+        }
+        #endregion
     }
 }

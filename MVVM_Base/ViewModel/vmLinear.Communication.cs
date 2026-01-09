@@ -9,78 +9,7 @@ using System.Windows;
 namespace MVVM_Base.ViewModel
 {
     public partial class vmLinear : ObservableObject, IViewModel
-    {
-        #region 状態変更通知に対応する処理
-        /// <summary>
-        /// カラーテーマ
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ThemeService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ThemeService.CurrentTheme))
-            {
-                // CurrentTheme変化を検知
-                OnThemeChanged(themeService.CurrentTheme);
-            }
-        }
-
-        private void OnThemeChanged(string newTheme)
-        {
-            // View に依存せず ViewModel 内で処理可能
-            // 例：内部フラグ更新や別プロパティ更新など
-            IsDarkTheme = newTheme == "Dark"; // フラグ例
-                                              // 必要であれば PropertyChanged 通知も出す
-            OnPropertyChanged(nameof(IsDarkTheme));
-        }
-
-        /// <summary>
-        /// 通信状態
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void CommStatusService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(CommStatusService.IsMfcConnected))
-            {
-                // ここで CurrentTheme 変化を検知可能
-                OnMfcCommChanged(commStatusService.IsMfcConnected);
-            }
-
-            if (e.PropertyName == nameof(CommStatusService.IsBalanceConnected))
-            {
-                // ここで CurrentTheme 変化を検知可能
-                OnBalanceCommChanged(commStatusService.IsBalanceConnected);
-            }
-        }
-
-        private void OnMfcCommChanged(bool isConnected)
-        {
-            IsMfcConnected = isConnected;
-        }
-        private void OnBalanceCommChanged(bool isConnected)
-        {
-            IsBalanceConnected = isConnected;
-        }
-
-        /// <summary>
-        /// アプリケーション終了の検知
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void AppStatusService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ApplicationStatusService.IsQuit))
-            {
-                if (appStatusService.IsQuit)
-                {
-                    Dispose();
-                }
-            }
-        }
-
-        #endregion
-
+    {        
         #region MFC通信処理
         /// <summary>
         /// MFCコマンドタイプ1(W)　書き込みのみ
@@ -463,7 +392,6 @@ namespace MVVM_Base.ViewModel
                 var result = await CommBalanceAsyncCommand(token);
                 if (result == "failed")
                 {
-                    //canTransitOther = true;
                     return "failed";
                 }
                 var val = ConvertBalanceResToMS(result);
@@ -547,7 +475,6 @@ namespace MVVM_Base.ViewModel
                 var result = await CommBalanceAsyncCommand(token);
                 if (result == "failed")
                 {
-                    //canTransitOther = true;
                     return "failed";
                 }
                 var val = ConvertBalanceResToMS(result);

@@ -21,9 +21,26 @@ namespace MVVM_Base.ViewModel
         [RelayCommand]
         private async Task MFMExecute(string mode)
         {
-            string res = "";
-            canTransitOther = false;
+            if(!commStatusService.IsMfcConnected)
+            {
+                await messageService.ShowMessage("MFC isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+            else if(!commStatusService.IsBalanceConnected)
+            {
+                await messageService.ShowMessage("Balance isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
+            vmService.CanTransit = false;
+            ChangeState(ProcessState.MFMStarted);
             _mfmCts = new CancellationTokenSource();
+
+            string res = "";
 
             try
             {
@@ -42,18 +59,21 @@ namespace MVVM_Base.ViewModel
                     await messageService.ShowMessage("Operation Canceled");
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
+
+                    ChangeState(ProcessState.Initial);
                 }
                 else if(res == "failed")
                 {
                     //await messageService.ShowMessage("Operation failed");
                     //await Task.Delay(messageFadeTime);
                     //await messageService.CloseWithFade();
+                    ChangeState(ProcessState.Initial);
                 }
                 else
                 {
-                    
+                    ChangeState(ProcessState.AfterMFM);
                 }
-                canTransitOther = true;
+                vmService.CanTransit = true;
                 _mfmCts?.Dispose();
                 _mfmCts = null;
             }
@@ -67,18 +87,6 @@ namespace MVVM_Base.ViewModel
         {
             token.ThrowIfCancellationRequested();
 
-            // すでに実行中 → 停止
-            //if (IsMfmProccessing)
-            //{
-            //    _mfmCts?.Cancel();
-            //    return;
-            //}
-
-            //// 開始
-            //IsMfmProccessing = true;
-            //canTransitOther = false;
-            //_mfmCts = new CancellationTokenSource();
-
             string res = "";
 
             if (!IsMfcConnected)
@@ -86,8 +94,6 @@ namespace MVVM_Base.ViewModel
                 await messageService.ShowMessage("Mfc port isn't opened");
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
-                MfmEndWithFault();
-                canTransitOther = true;
                 return "failed";
             }
 
@@ -96,22 +102,16 @@ namespace MVVM_Base.ViewModel
                 await messageService.ShowMessage("Balance port isn't opened");
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
-                MfmEndWithFault();
-                canTransitOther = true;
                 return "failed";
             }
             
             if (FlowValue == "")
-            {
-                MfmEndWithFault();
-                canTransitOther = true;
+            {                
                 return "failed";
             }
 
             try
             {
-                MfmStart();
-
                 // True値の計算・格納
                 for (int i = 1; i < TrueValueArray.Count; i++)
                 {
@@ -123,10 +123,8 @@ namespace MVVM_Base.ViewModel
                 // 10点リニア係数(FB90~A3)初期化前のダイアログ表示
                 var confirm = await messageService.ShowModalAsync("10点リニア係数を全て初期化します");
                 if (!confirm.Value)
-                {
-                    MfmEndWithFault();
-                    canTransitOther = true;
-                    return "failed";
+                {                    
+                    return "canceled";
                 }
 
                 // 10点リニア係数(FB90~A3)初期化
@@ -159,9 +157,7 @@ namespace MVVM_Base.ViewModel
 
                     res = await CommMFCAsyncTypeRW("EW", initPair, token);
                     if (res == "failed" || res == "canceled")
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return res;
                     }
                 }
@@ -176,24 +172,18 @@ namespace MVVM_Base.ViewModel
 
                     res = await CommMFCAsyncType3("ER", initPair.Item1, token);
                     if (res == "failed" || res == "canceled")
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return res;
                     }
 
                     if (res.Length < 5)
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return "failed";
                     }
 
                     var temp = res.Substring(3, 2);
                     if (temp != initPair.Item2)
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return "failed";
                     }
                     linearValues.Add(temp);
@@ -206,16 +196,12 @@ namespace MVVM_Base.ViewModel
 
                     res = await CommMFCAsyncType3("ER", gainPair.Item1, token);
                     if (res == "failed" || res == "canceled")
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return res;
                     }
 
                     if (res.Length < 5)
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return "failed";
                     }
 
@@ -264,9 +250,7 @@ namespace MVVM_Base.ViewModel
 
                     res = await CommMFCAsyncTypeRW("EW", cmdPair, token);
                     if (res == "failed" || res == "canceled")
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return res;
                     }
                 }
@@ -278,23 +262,17 @@ namespace MVVM_Base.ViewModel
 
                     res = await CommMFCAsyncType3("ER", cmdPair.Item1, token);
                     if (res == "failed" || res == "canceled")
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return res;
                     }
 
                     if (res.Length < 5)
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return "failed";
                     }
 
                     if (res.Substring(3, 2) != cmdPair.Item2)
-                    {
-                        MfmEndWithFault();
-                        canTransitOther = true;
+                    {                        
                         return "failed";
                     }
                 }
@@ -302,9 +280,7 @@ namespace MVVM_Base.ViewModel
                 // CD送信
                 res = await CommMFCAsyncType1("CD", token);
                 if (res == "failed" || res == "canceled")
-                {
-                    MfmEndWithFault();
-                    canTransitOther = true;
+                {                    
                     return res;
                 }
 
@@ -312,123 +288,57 @@ namespace MVVM_Base.ViewModel
 
                 // ゼロ調整確認
                 confirm = await messageService.ShowModalAsync("ゼロ確認を行います。\nガスを止めてバルブをクローズにしてください");
-                if (res == "failed" || res == "canceled")
-                {
-                    MfmEndWithFault();
-                    canTransitOther = true;
-                    return res;
+                if (!confirm.Value)
+                {                    
+                    return "canceled";
                 }
-
+                
                 token.ThrowIfCancellationRequested();
 
                 // ゼロ調整実行
-                var result = await ZeroAdjust(token);
+                ChangeState(ProcessState.ZeroAdjust);
+                res = await ZeroAdjust(token);
                 if (res == "failed" || res == "canceled")
-                {
-                    MfmEndWithFault();
-                    canTransitOther = true;
+                {                    
                     return res;
                 }
 
                 token.ThrowIfCancellationRequested();
 
                 //Span合わせ
+                ChangeState(ProcessState.Span);
                 res = await SpanAdjust(linearValues, token);
                 if (res == "failed" || res == "canceled")
-                {
-                    MfmEndWithFault();
-                    canTransitOther = true;
+                {                    
                     return res;
                 }
-
-                // 処理完了、ボタンを有効化
-                MfmEndWithSuccess();
-                canTransitOther = true;
-
             }
             catch (OperationCanceledException)
-            {
-                MfmEndWithFault();
-                canTransitOther = true;
+            {                
                 return "canceled";
             }
             catch (NullReferenceException)
             {
-                MfmEndWithFault();
-                canTransitOther = true;
+                
             }
             catch (TimeoutException)
             {
-                MfmEndWithFault();
-                canTransitOther = true;
+                
             }
             catch (IOException ex)
             {
-                MfmEndWithFault();
-                canTransitOther = true;
+                
             }
             catch (InvalidOperationException ex)
             {
-                MfmEndWithFault();
-                canTransitOther = true;
+                
             }
             catch (Exception ex)
             {
-                MfmEndWithFault();
-                canTransitOther = true;
+                
             }
 
             return "";
-        }
-
-        /// <summary>
-        /// MFM処理開始時のフラグ処理
-        /// </summary>
-        private void MfmStart()
-        {
-            CanMFM = false;
-            IsMfmStarted = true;
-            FlowEnable = false;
-            MSettingEnable = false;
-            vmService.CanTransit = false;
-            RBtnEnable = false;
-
-            isZeroSend = false;
-            isZeroOK = false;
-            isSpanOK = false;
-        }
-
-        /// <summary>
-        /// MFM処理失敗時のフラグ処理
-        /// </summary>
-        private void MfmEndWithFault()
-        {
-            CanMFM = true;
-            IsMfmStarted = false;
-            FlowEnable = true;
-            MSettingEnable = true;
-            vmService.CanTransit = true;
-            RBtnEnable = true;
-            SwitchAfterMFMBtn(false);
-            SwitchZeroBtn(false);
-            SwitchSpanBtn(false);
-        }
-
-
-        /// <summary>
-        /// MFM処理完了時のフラグ処理
-        /// </summary>
-        private void MfmEndWithSuccess()
-        {
-            CanMFM = true;
-            IsMfmStarted = false;
-            FlowEnable = true;
-            MSettingEnable = true;
-            vmService.CanTransit = true;
-            RBtnEnable = true;
-            SwitchAfterMFMBtn(true);
-            SwitchZeroBtn(false);
-            SwitchSpanBtn(false);
         }
 
         /// <summary>
@@ -844,111 +754,5 @@ namespace MVVM_Base.ViewModel
         }
 
 
-        #region ボタンのスイッチング
-        /// <summary>
-        /// CanBtnAttribute属性が付与されたboolプロパティの値を一括変更する
-        /// </summary>
-        /// <param name="enable"></param>
-        private void SwitchAllbtn(bool enable)
-        {
-            CanMFM = enable;
-            SwitchAfterMFMBtn(enable);
-            SwitchBeforeMFMBtn(enable);
-            SwitchZeroBtn(enable);
-            SwitchSpanBtn(enable);
-        }
-
-        /// <summary>
-        /// CanAfterMFMAttribute属性が付与されたboolプロパティの値を一括変更する
-        /// </summary>
-        /// <param name="enable"></param>
-        private void SwitchAfterMFMBtn(bool enable)
-        {
-            var props = this.GetType().GetProperties()
-                .Select(p => new
-                {
-                    Property = p,
-                    Attr = p.GetCustomAttributes(typeof(CanAfterMFMAttribute), false)
-                            .Cast<CanAfterMFMAttribute>()
-                            .FirstOrDefault()
-                })
-                .Where(x => x.Attr != null)
-                .ToList();
-
-            foreach (var p in props)
-            {
-                p.Property.SetValue(this, enable);
-            }
-        }
-
-        /// <summary>
-        /// CanBeforeMFMAttribute属性が付与されたboolプロパティの値を一括変更する
-        /// </summary>
-        /// <param name="enable"></param>
-        private void SwitchBeforeMFMBtn(bool enable)
-        {
-            var props = this.GetType().GetProperties()
-                .Select(p => new
-                {
-                    Property = p,
-                    Attr = p.GetCustomAttributes(typeof(CanBeforeMFMAttribute), false)
-                            .Cast<CanBeforeMFMAttribute>()
-                            .FirstOrDefault()
-                })
-                .Where(x => x.Attr != null)
-                .ToList();
-
-            foreach (var p in props)
-            {
-                p.Property.SetValue(this, enable);
-            }
-        }
-
-        /// <summary>
-        /// ゼロ調整関連のボタン：CanZeroAttributeをスイッチング
-        /// </summary>
-        /// <param name="enable"></param>
-        private void SwitchZeroBtn(bool enable)
-        {
-            var props = this.GetType().GetProperties()
-                .Select(p => new
-                {
-                    Property = p,
-                    Attr = p.GetCustomAttributes(typeof(CanZeroAttribute), false)
-                    .Cast<CanZeroAttribute>()
-                    .FirstOrDefault()
-                })
-                .Where(x => x.Attr != null)
-                .ToList();
-
-            foreach (var p in props)
-            {
-                p.Property.SetValue(this, enable);
-            }
-        }
-
-        /// <summary>
-        /// スパン関連のボタン：CanSpanAttributeをスイッチング
-        /// </summary>
-        /// <param name="enable"></param>
-        private void SwitchSpanBtn(bool enable)
-        {
-            var props = this.GetType().GetProperties()
-                .Select(p => new
-                {
-                    Property = p,
-                    Attr = p.GetCustomAttributes(typeof(CanSpanAttribute), false)
-                    .Cast<CanSpanAttribute>()
-                    .FirstOrDefault()
-                })
-                .Where(x => x.Attr != null)
-                .ToList();
-
-            foreach (var p in props)
-            {
-                p.Property.SetValue(this, enable);
-            }
-        }
-        #endregion
     }
 }

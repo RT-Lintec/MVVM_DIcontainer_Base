@@ -12,9 +12,18 @@ namespace MVVM_Base.Model
     /// </summary>
     public class HighPrecisionDelay
     {
-        public async Task WaitAsync(int milliseconds, CancellationToken token)
+        public async Task<string> WaitAsync(int milliseconds, CancellationToken token)
         {
-            await Task.Delay(milliseconds, token);
+            try
+            {
+                token.ThrowIfCancellationRequested();
+                await Task.Delay(milliseconds, token);
+                return "";
+            }
+            catch(OperationCanceledException)
+            {
+                return "canceled";
+            }
         }
     }
 }

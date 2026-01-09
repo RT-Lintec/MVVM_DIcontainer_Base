@@ -109,6 +109,17 @@ namespace MVVM_Base.View
         #endregion
 
         private bool canTransit = true;
+        public bool CanTransit
+        {
+            get => canTransit;
+            set
+            {
+                if (canTransit != value)
+                {
+                    canTransit = value;
+                }
+            }
+        }
 
         /// <summary>
         /// コンストラクタ
@@ -287,13 +298,16 @@ namespace MVVM_Base.View
         /// <param name="btn"></param>
         private void ShowCornerBrackets(ToggleButton _btn, bool isAnimate)
         {
-            ToggleButton btn = _btn;
+            
 
             // 画面遷移不可時に括弧位置を前のボタン位置に固定する
-            if (!canTransit)
+            if (!CanTransit)
             {
-                btn = lastBtn;
+                return;
+                //btn = lastBtn;
             }
+
+            ToggleButton btn = _btn;
 
             EffectCanvas_tb.Children.Clear();
 
@@ -471,7 +485,7 @@ namespace MVVM_Base.View
             else if (e.PropertyName == nameof(vmEntry.CanTransit))
             {
                 // 画面遷移に影響を受ける描画を抑止
-                canTransit = vm.CanTransit;
+                CanTransit = vm.CanTransit;
             }
         }
 

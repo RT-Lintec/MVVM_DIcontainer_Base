@@ -80,6 +80,7 @@
                                 Checked="NavToggleButton_Check"
                                 Style="{StaticResource menuToggleButton}"
                                 IsChecked="{Binding IsMainSelected}" 
+                                IsEnabled="{Binding CanTransit}"
                                 Command="{Binding ShowViewCommand}"
                                 CommandParameter="{x:Static local:ViewType.Main}" >
                                 <StackPanel Orientation="Horizontal">
@@ -95,6 +96,7 @@
                                 Checked="NavToggleButton_Check"
                                 Style="{StaticResource menuToggleButton}" 
                                 IsChecked="{Binding IsLinearViewSelected}"
+                                IsEnabled="{Binding CanTransit}"
                                 Command="{Binding ShowViewCommand}"
                                 CommandParameter="{x:Static local:ViewType.LinearView}" >
                                 <StackPanel Orientation="Horizontal">
@@ -110,6 +112,7 @@
                                 Checked="NavToggleButton_Check"
                                 Style="{StaticResource menuToggleButton}"
                                 IsChecked="{Binding IsBViewSelected}" 
+                                IsEnabled="{Binding CanTransit}"
                                 Command="{Binding ShowViewCommand}"
                                 CommandParameter="{x:Static local:ViewType.BView}" >
                                 <StackPanel Orientation="Horizontal">
@@ -129,6 +132,7 @@
                                 Checked="NavToggleButton_Check"
                                 Style="{StaticResource menuToggleButton}"
                                 IsChecked="{Binding IsHelpSelected}" 
+                                IsEnabled="{Binding CanTransit}"
                                 Command="{Binding ShowViewCommand}"
                                 CommandParameter="{x:Static local:ViewType.Help}" >
                                 <StackPanel Orientation="Horizontal">

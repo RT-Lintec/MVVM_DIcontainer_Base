@@ -566,23 +566,6 @@ namespace MVVM_Base.ViewModel
 
         #region UIテキスト
         /// <summary>
-        /// MFMボタンのテキスト
-        /// </summary>
-        private string mfmBtnText = "Execute";
-        public string MfmBtnText
-        {
-            get => mfmBtnText;
-            set
-            {
-                if (mfmBtnText != value)
-                {
-                    mfmBtnText = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
         /// ゼロ調整　ZS送信ボタンのテキスト
         /// </summary>
         private string zStext = "Zero Send";
@@ -654,23 +637,6 @@ namespace MVVM_Base.ViewModel
 
         #region ボタン押下可否フラグ
         /// <summary>
-        /// MFMボタンの押下可否
-        /// </summary>
-        private bool canMFM = true;
-        public bool CanMFM
-        {
-            get => canMFM;
-            set
-            {
-                if (canMFM != value)
-                {
-                    canMFM = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
         /// MFM後に実行可能なコマンド
         /// </summary>
         [AttributeUsage(AttributeTargets.Property)]
@@ -728,6 +694,24 @@ namespace MVVM_Base.ViewModel
             public CanBeforeMFMAttribute(string code)
             {
                 Code = code;
+            }
+        }
+
+        /// <summary>
+        /// MFMボタンの押下可否
+        /// </summary>        
+        private bool canMFM = true;
+        [CanBeforeMFMAttribute("MFM")]
+        public bool CanMFM
+        {
+            get => canMFM;
+            set
+            {
+                if (canMFM != value)
+                {
+                    canMFM = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -1335,10 +1319,6 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         public bool canQuit { get; set; }
 
-        /// <summary>
-        /// 画面遷移可否
-        /// </summary>
-        public bool canTransitOther { get; set; }
         #endregion
 
         #region UI操作可否フラグ
@@ -1432,6 +1412,17 @@ namespace MVVM_Base.ViewModel
         private bool isSpanOK = false;
         #endregion
 
+        enum ProcessState
+        {
+            Initial,
+            MFMStarted,
+            ZeroAdjust,
+            Span,
+            AfterMFM,
+            Measurement,
+            Transit
+        }
+
         /// <summary>
         /// 拡縮回数
         /// </summary>
@@ -1443,7 +1434,6 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// 計測結果の構成要素
         /// </summary>
-
         public ObservableCollection<MeasureResult> Column0 { get; set; }
         public ObservableCollection<MeasureResult> Column1 { get; set; }
 
@@ -1491,20 +1481,6 @@ namespace MVVM_Base.ViewModel
         private CancellationTokenSource? _loadCts;
         private CancellationTokenSource? _mfmCts;
         private CancellationTokenSource? _calculateCts;
-
-        private bool _isMfmProccessing;
-        public bool IsMfmProccessing
-        {
-            get => _isMfmProccessing;
-            set => SetProperty(ref _isMfmProccessing, value);
-        }
-
-        private bool _isCalculating;
-        public bool IsCalculating
-        {
-            get => _isCalculating;
-            set => SetProperty(ref _isCalculating, value);
-        }
 
         public class MeasureResult : INotifyPropertyChanged
         {

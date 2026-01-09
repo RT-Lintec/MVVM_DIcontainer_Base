@@ -206,7 +206,7 @@ namespace MVVM_Base.ViewModel
             OnPropertyChanged(nameof(CanTransit));
         }
 
-        private bool canTransit;
+        private bool canTransit = true;
         public bool CanTransit
         {
             get => canTransit;
@@ -215,6 +215,7 @@ namespace MVVM_Base.ViewModel
                 if (canTransit != value)
                 {
                     canTransit = value;
+                    OnPropertyChanged();
                 }
             }
         }
