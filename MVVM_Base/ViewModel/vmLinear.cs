@@ -28,8 +28,8 @@ namespace MVVM_Base.ViewModel
 
             precisionTimer = _precisionTimer;
 
-            Column0 = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
-            Column1 = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
+            MesurementItems = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
+            MesurementValues = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
 
             // 計測結果の表を形成
             ResetMeasureResult();
@@ -123,8 +123,32 @@ namespace MVVM_Base.ViewModel
         /// 操作状態に応じてUIを管理
         /// </summary>
         /// <param name="state"></param>
-        private void ChangeState(ProcessState state)
+        private async Task ChangeState(ProcessState state)
         {
+            curState = state;
+
+            // 状態遷移時、最終出力が失われるケースは保存確認入れる
+            if (CanExport && curState != ProcessState.Manual)
+            {
+                if (!isSavedOutput)
+                {
+                    var confirm = await messageService.ShowModalAsync("Would you want save the output?");
+                    if (confirm.Value)
+                    {
+                        await ExportParamsToCsv();
+                    }
+                    else
+                    {
+                        confirm = await messageService.ShowModalAsync("Confirmation: Do you want to save the output?");
+                        if (confirm.Value)
+                        {
+                            await ExportParamsToCsv();
+                        }
+                    }
+                    vmService.HasNonsavedOutput = false;
+                }
+            }
+            
             SwitchAllbtn(false);
             UIAllFalse();
 
@@ -134,44 +158,91 @@ namespace MVVM_Base.ViewModel
                     {
                         InitialUI();
                         SwitchBeforeMFMBtn(true);
+                        CanEditGainData = true;
+                        CanReadWriteGain = true;
                         break;
-                    };
+                    }
+                    ;
                 case ProcessState.MFMStarted:
                     {
                         MfmStart();
                         break;
-                    };
+                    }
+                    ;
                 case ProcessState.ZeroAdjust:
                     {
                         CanZeroSend = true;
                         CanZeroOK = true;
                         break;
-                    };
+                    }
+                    ;
                 case ProcessState.Span:
                     {
                         CanSpanAdjust = true;
                         break;
-                    };
+                    }
+                    ;
                 case ProcessState.AfterMFM:
                     {
+                        CanReadWriteGain = true;
                         IsMfmStarted = false;
+                        isFinishedMFM = true;
                         CanMFM = true;
+                        CanEditGainData = true;
                         FlowEnable = true;
                         MSettingEnable = true;
                         RBtnEnable = true;
                         SwitchBeforeMFMBtn(true);
                         SwitchAfterMFMBtn(true);
                         break;
-                    };
+                    }
+                    ;
+                case ProcessState.AfterCalc:
+                    {
+                        CanReadWriteGain = true;
+                        CanMFM = true;
+                        CanEditGainData = true;
+                        isFinishedMFM = false;
+                        FlowEnable = true;
+                        MSettingEnable = true;
+                        RBtnEnable = true;
+                        SwitchBeforeMFMBtn(true);
+                        SwitchAfterMFMBtn(true);
+                        break;
+                    }
+                    ;
+                case ProcessState.AfterCalcAndConf:
+                    {
+                        CanReadWriteGain = true;
+                        CanMFM = true;
+                        CanEditGainData = true;
+                        CanExport = true;
+                        isFinishedMFM = false;
+                        FlowEnable = true;
+                        MSettingEnable = true;
+                        RBtnEnable = true;
+                        SwitchBeforeMFMBtn(true);
+                        SwitchAfterMFMBtn(true);
+                        break;
+                    }
+                    ;
                 case ProcessState.Measurement:
                     {
                         break;
-                    };
+                    }
+                    ;
+                case ProcessState.Manual:
+                    {
+                        CanConfAlone = true;
+                        CanEditReadingList = true;
+                        break;
+                    }
+                    ;
                 case ProcessState.Transit:
                     {
                         break;
-                    };
-
+                    }
+                    ;
             }
         }
 
@@ -208,6 +279,11 @@ namespace MVVM_Base.ViewModel
         private void UIAllFalse()
         {
             CanMFM = false;
+            CanEditReadingList = false;
+            CanCalcGain = false;
+            CanConfAlone = false;
+            CanEditGainData = false;
+            CanReadWriteGain = false;
             FlowEnable = false;
             MSettingEnable = false;
             RBtnEnable = false;

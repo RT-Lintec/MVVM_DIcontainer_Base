@@ -1,9 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MVVM_Base.Model;
-using System;
 using System.IO;
-using System.Windows.Markup;
 
 namespace MVVM_Base.ViewModel
 {
@@ -37,7 +34,7 @@ namespace MVVM_Base.ViewModel
             }
 
             vmService.CanTransit = false;
-            ChangeState(ProcessState.MFMStarted);
+            await ChangeState(ProcessState.MFMStarted);
             _mfmCts = new CancellationTokenSource();
 
             string res = "";
@@ -56,22 +53,23 @@ namespace MVVM_Base.ViewModel
             {
                 if(res == "canceled")
                 {
+                    await ChangeState(ProcessState.Initial);
+                    // VC
+                    await CommMFCAsyncType1("VC", _mfmCts.Token);
+
                     await messageService.ShowMessage("Operation Canceled");
                     await Task.Delay(messageFadeTime);
-                    await messageService.CloseWithFade();
-
-                    ChangeState(ProcessState.Initial);
+                    await messageService.CloseWithFade();                    
                 }
                 else if(res == "failed")
                 {
-                    //await messageService.ShowMessage("Operation failed");
-                    //await Task.Delay(messageFadeTime);
-                    //await messageService.CloseWithFade();
-                    ChangeState(ProcessState.Initial);
+                    // VC
+                    await CommMFCAsyncType1("VC", _mfmCts.Token);
+                    await ChangeState(ProcessState.Initial);
                 }
                 else
                 {
-                    ChangeState(ProcessState.AfterMFM);
+                    await ChangeState(ProcessState.AfterMFM);
                 }
                 vmService.CanTransit = true;
                 _mfmCts?.Dispose();
@@ -113,10 +111,7 @@ namespace MVVM_Base.ViewModel
             try
             {
                 // True値の計算・格納
-                for (int i = 1; i < TrueValueArray.Count; i++)
-                {
-                    TrueValueArray[i] = (float.Parse(FlowValue) / 10f * (float)i).ToString("F2");
-                }
+                CalAndSetTrueValue();
 
                 token.ThrowIfCancellationRequested();
 
@@ -296,7 +291,7 @@ namespace MVVM_Base.ViewModel
                 token.ThrowIfCancellationRequested();
 
                 // ゼロ調整実行
-                ChangeState(ProcessState.ZeroAdjust);
+                await ChangeState(ProcessState.ZeroAdjust);
                 res = await ZeroAdjust(token);
                 if (res == "failed" || res == "canceled")
                 {                    
@@ -306,7 +301,7 @@ namespace MVVM_Base.ViewModel
                 token.ThrowIfCancellationRequested();
 
                 //Span合わせ
-                ChangeState(ProcessState.Span);
+                await ChangeState(ProcessState.Span);
                 res = await SpanAdjust(linearValues, token);
                 if (res == "failed" || res == "canceled")
                 {                    
@@ -319,23 +314,23 @@ namespace MVVM_Base.ViewModel
             }
             catch (NullReferenceException)
             {
-                
+                return "failed";
             }
             catch (TimeoutException)
             {
-                
+                return "failed";
             }
             catch (IOException ex)
             {
-                
+                return "failed";
             }
             catch (InvalidOperationException ex)
             {
-                
+                return "failed";
             }
             catch (Exception ex)
             {
-                
+                return "failed";
             }
 
             return "";
@@ -573,23 +568,29 @@ namespace MVVM_Base.ViewModel
             // 非同期精密タイマースレッド開始
             // →天秤とインターバル値間隔で通信
             // →結果をテキストボックスに表示
-            precisionTimer.Start(() =>
+            precisionTimer.Start(async() =>
             {
                 cntBalCom++;
-                var res = Gn5GnComm(index, token);
+                var res = await Gn5GnComm(index, token);
+                
                 if (index >= 10)
                 {
                     index = 1;
-                    return Task.CompletedTask;
+                    Logging(res, true);
+                    return;
                 }
                 else if (!commStatusService.IsBalanceConnected)
                 {
                     isSucceed = false;
                     precisionTimer.Stop();
                 }
+                else
+                {
+                    Logging(res, false);
+                }
 
                 index++;
-                return Task.CompletedTask;
+                return;
             }, interval, token);
 
             while (true)
@@ -597,6 +598,7 @@ namespace MVVM_Base.ViewModel
                 try
                 {
                     token.ThrowIfCancellationRequested();
+
                     await Task.Delay(10, token);
                     if (!commStatusService.IsBalanceConnected)
                     {
@@ -634,7 +636,7 @@ namespace MVVM_Base.ViewModel
         {
             isSpanOK = true;
 
-            foreach (var col in Column1)
+            foreach (var col in MesurementValues)
             {
                 col.IsUpdate = false;
             }

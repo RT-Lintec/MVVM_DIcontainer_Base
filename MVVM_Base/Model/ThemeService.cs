@@ -42,6 +42,7 @@ namespace MVVM_Base.Model
                     resources["RippleColorBrush"] = newDict["RippleColorBrush"];
                     resources["CommIconColorFrom"] = newDict["CommIconColorFrom"];
                     resources["CommIconColorTo"] = newDict["CommIconColorTo"];
+                    resources["CoffButtonGColor"] = newDict["CoffButtonGColor"];
                 }
             }
         }

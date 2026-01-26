@@ -329,16 +329,29 @@ namespace MVVM_Base.Model
         /// <returns></returns>
         private Task<string?> ReadLineAsync(CancellationToken token)
         {
+            // TODO : 処理内容の理解が浅い
             if (Port == null || !Port.IsOpen)
                 return Task.FromResult<string?>(null);
 
-            // lineTcsを発生させ、bufferからのデータ格納を待つ
-            lineTcs = new TaskCompletionSource<string?>();
+            var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            //if (token != default)
-                token.Register(() => lineTcs?.TrySetCanceled());
+            // token でキャンセル
+            CancellationTokenRegistration? registration = null;
+            if (token.CanBeCanceled)
+            {
+                registration = token.Register(() =>
+                {
+                    tcs.TrySetCanceled();
+                });
+            }
 
-            return lineTcs.Task;
+            // ここでデータ受信側にtcsを渡す
+            lineTcs = tcs;
+
+            // tcs 完了後に登録解除
+            tcs.Task.ContinueWith(_ => registration?.Dispose(), TaskScheduler.Default);
+
+            return tcs.Task;
         }
 
         /// <summary>

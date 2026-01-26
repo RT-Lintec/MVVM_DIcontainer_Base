@@ -28,7 +28,10 @@
 
             <!-- デバッグ用フラグのコンバータ -->
             <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-            <local:NumericOnlyBehavior x:Key="NumericOnlyBehavior"/>
+            <local:PositiveIntegerBehavior x:Key="PositiveIntegerBehavior"/>
+            <local:FpNumberBehavior x:Key="FpNumberBehavior"/>
+            <local:EqualityConverter x:Key="EqualityConverter"/>
+            <local:HexCheckAssist x:Key="HexCheckAssist"/>
             <!--<local:StringToBooleanConverter x:Key="StringToBooleanConverter"/>-->
 
             <!-- 共通ボタンスタイル（ホバー・押下色だけ） -->
@@ -107,20 +110,22 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="GroupBox">
-                            <Border BorderBrush="{TemplateBinding BorderBrush}" 
-                        BorderThickness="1" 
-                        CornerRadius="5" 
-                        Background="Transparent" 
-                        SnapsToDevicePixels="True">
+                            <Border 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="1" 
+                                CornerRadius="5" 
+                                Background="Transparent" 
+                                SnapsToDevicePixels="True">
 
                                 <DockPanel>
                                     <!-- ★ 下線つきヘッダーをテンプレートで差し替える -->
-                                    <ContentPresenter x:Name="HeaderContent"
-                                          ContentSource="Header" 
-                                          RecognizesAccessKey="True"
-                                          Margin="5"
-                                          DockPanel.Dock="Top"
-                                          ContentTemplate="{TemplateBinding HeaderTemplate}"/>
+                                    <ContentPresenter 
+                                        x:Name="HeaderContent"
+                                        ContentSource="Header" 
+                                        RecognizesAccessKey="True"
+                                        Margin="5"
+                                        DockPanel.Dock="Top"
+                                        ContentTemplate="{TemplateBinding HeaderTemplate}"/>
 
                                     <ContentPresenter Margin="{TemplateBinding Padding}"/>
                                 </DockPanel>
@@ -234,27 +239,27 @@
                             <Grid>
                                 <!-- 下線ボーダー -->
                                 <Border x:Name="Border"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    Background="{TemplateBinding Background}"
-                    SnapsToDevicePixels="True"/>
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Background="{TemplateBinding Background}"
+                                        SnapsToDevicePixels="True"/>
 
                                 <!-- 選択中のアイテム表示 -->
                                 <ContentPresenter x:Name="ContentSite"
-                              IsHitTestVisible="False"
-                              Content="{TemplateBinding SelectionBoxItem}"
-                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                              Margin="3,0,25,0"
-                              VerticalAlignment="Center"
-                              HorizontalAlignment="Left"/>
+                                                  IsHitTestVisible="False"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  Margin="3,0,25,0"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"/>
 
                                 <!-- ドロップダウンボタン -->
                                 <ToggleButton x:Name="DropDownToggle"
-                                  Width="24" Height="20"
-                                  Background="Transparent"
-                                  HorizontalAlignment="Right"
-                                  VerticalAlignment="Center"
-                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Cursor="">
+                                              Width="24" Height="20"
+                                              Background="Transparent"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Cursor="">
                                     <ToggleButton.Style>
                                         <Style TargetType="ToggleButton">
                                             <Setter Property="Background" Value="Transparent"/>
@@ -267,12 +272,12 @@
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="ToggleButton">
                                                         <Border x:Name="border"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                                    CornerRadius="4">
+                                                                Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                CornerRadius="4">
                                                             <ContentPresenter HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center"/>
+                                                                              VerticalAlignment="Center"/>
                                                         </Border>
 
                                                         <ControlTemplate.Triggers>
@@ -298,29 +303,29 @@
                                     </ToggleButton.Style>
                                     <!-- ドロップダウンアイコン -->
                                     <Path Data="M 0 0 L 4 4 L 8 0 Z"
-                              Fill="{TemplateBinding Foreground}"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center">
+                                          Fill="{TemplateBinding Foreground}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center">
                                     </Path>
                                 </ToggleButton>
 
                                 <!-- ドロップダウンリスト -->
                                 <Popup x:Name="Popup"
-                           Placement="Bottom"
-                           IsOpen="{TemplateBinding IsDropDownOpen}"
-                           AllowsTransparency="True"
-                           Focusable="False"
-                           PopupAnimation="Slide">
+                                       Placement="Bottom"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="Slide">
 
                                     <Grid Name="DropDown"
-                              SnapsToDevicePixels="True"
-                              MinWidth="{TemplateBinding ActualWidth}"
-                              MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                          SnapsToDevicePixels="True"
+                                          MinWidth="{TemplateBinding ActualWidth}"
+                                          MaxHeight="{TemplateBinding MaxDropDownHeight}">
 
                                         <Border x:Name="DropDownBorder"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="1"
-                                    Background="{DynamicResource LeftWindowColor2Brush}"/>
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1"
+                                                Background="{DynamicResource LeftWindowColor2Brush}"/>
 
                                         <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
                                             <ItemsPresenter />
@@ -351,7 +356,7 @@
             <Style x:Key="StatusRadioButtonStyle" TargetType="RadioButton">
                 <!-- 共通プロパティ -->
                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-                <Setter Property="FontSize" Value="{Binding StatusFontSize}"/>
+
                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="Template">
                     <Setter.Value>
@@ -503,75 +508,6 @@
                 </Setter>
             </Style>
 
-
-            <!-- セル：背景透明＋上下左右に罫線 -->
-            <Style x:Key="TransparentCell" TargetType="DataGridCell">
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="DataGridCell">
-                            <Border x:Name="Bd"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{DynamicResource ButtonThemeColorBrush}"
-                                    BorderThickness="1">
-                                <!-- 四辺すべて -->
-                                <ContentPresenter
-                                    Margin="0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"/>
-                            </Border>
-
-                            <ControlTemplate.Triggers>
-                                <!-- 選択時 -->
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter TargetName="Bd"
-                                            Property="Background"
-                                            Value="{DynamicResource ButtonThemeColorBrush}" />
-                                    <!--<Setter Property="Foreground" Value="White"/>-->
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
-            <!-- カラムヘッダ：背景透明＋四辺罫線 -->
-            <Style x:Key="TransparentColumnHeader" TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
-                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                <Setter Property="BorderThickness" Value="0"/>
-
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="DataGridColumnHeader">
-                            <Border x:Name="Hd"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{DynamicResource ButtonThemeColorBrush}"
-                                    BorderThickness="1">
-                                <ContentPresenter Margin="0"
-                                      VerticalAlignment="Center"
-                                      HorizontalAlignment="Center"/>
-                            </Border>
-
-                            <ControlTemplate.Triggers>
-                                <!-- ソート時の色変更を無効化したいならコメントで残す -->
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-
-
-            <!-- 編集時 TextBox の背景色 -->
-            <Style x:Key="EditingTextBoxStyle" TargetType="TextBox">
-                <Setter Property="Background" Value="{DynamicResource ButtonThemeColorBrush2}" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="FontSize" Value="{Binding DataGridFontSize}" />
-            </Style>
-
             <!-- 11行出力のひな形 -->
             <ItemsPanelTemplate x:Key="11RowGridPanel">
                 <Grid>
@@ -591,67 +527,7 @@
                 </Grid>
             </ItemsPanelTemplate>
 
-            <!--  -->
-            <Style x:Key="MeasureTextCenterStyle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="12"/>
-                <Setter Property="HorizontalAlignment" Value="Center"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-            </Style>
-
-            <Style x:Key="MeasureTextLeftStyle"
-                    TargetType="TextBlock"
-                    BasedOn="{StaticResource MeasureTextCenterStyle}">
-                <Setter Property="HorizontalAlignment" Value="Left"/>
-                <Setter Property="Margin" Value="4,0,0,0"/>
-            </Style>
-
-            <Style x:Key="MeasureCellBorderStyle" TargetType="Border">
-                <Setter Property="BorderBrush" Value="{DynamicResource ButtonThemeColorBrush}" />
-                <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="Background" Value="Transparent" />
-
-                <Style.Triggers>
-                    <!-- 1行目（AlternationIndex == 0） -->
-                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
-                                       Path=(ItemsControl.AlternationIndex)}"
-                                Value="0">
-                        <Setter Property="BorderBrush" Value="{DynamicResource ButtonThemeColorBrush2}" />
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
-
-            <!-- 共通ボタンスタイル（ホバー・押下色だけ） -->
-            <Style x:Key="ConfirmButtonStyle" TargetType="Button">
-                <Setter Property="Template">
-                    <Setter.Value>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}">
-                                <ContentPresenter HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" 
-                                        Value="True">
-                                    <Setter TargetName="border" 
-                                            Property="Background" 
-                                            Value="{DynamicResource ButtonThemeColorBrush2}">
-                                    </Setter>
-                                </Trigger>
-                                <Trigger Property="IsPressed" 
-                                         Value="True">
-                                    <Setter TargetName="border"
-                                            Property="Background" 
-                                            Value="{DynamicResource ButtonThemeColorBrush}">
-                                    </Setter>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
+            
 
         </ResourceDictionary>
     </Application.Resources>

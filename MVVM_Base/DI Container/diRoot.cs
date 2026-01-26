@@ -31,6 +31,7 @@ namespace MVVM_Base.DiContainer
             diEntry.Configure(services);
             diViewMain.Configure(services);
             diViewLinear.Configure(services);
+            diViewBalw.Configure(services);
 
             provider = services.BuildServiceProvider();
         }
@@ -75,7 +76,7 @@ namespace MVVM_Base.DiContainer
                 // view
                 services.AddSingleton<viewMain>();
                 services.AddSingleton<viewLinear>();
-                services.AddTransient<viewB>();
+                services.AddTransient<viewBalw>();
             }
         }
 
@@ -96,6 +97,26 @@ namespace MVVM_Base.DiContainer
 
                 // view
                 services.AddSingleton<viewLinear>();
+            }
+        }
+
+        /// <summary>
+        /// Balw画面のDIコンテナ
+        /// </summary>
+        private static class diViewBalw
+        {
+            public static void Configure(IServiceCollection services)
+            {
+                // vm
+                services.AddSingleton<vmBalw>();
+
+                // service
+                services.AddSingleton<PortWatcherService>();
+                services.AddTransient<IMessageService, MessageBlocker>();
+                services.AddSingleton<ViewModelManagerService>();
+
+                // view
+                services.AddSingleton<viewBalw>();
             }
         }
     }

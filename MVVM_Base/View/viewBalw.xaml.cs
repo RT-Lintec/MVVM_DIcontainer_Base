@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using static MVVM_Base.ViewModel.vmLinear;
+using static MVVM_Base.ViewModel.vmBalw;
 using Color = System.Windows.Media.Color;
 using Point = System.Windows.Point;
 
@@ -16,12 +16,12 @@ namespace MVVM_Base.View
     /// <summary>
     /// viewA.xaml の相互作用ロジック
     /// </summary>
-    public partial class viewLinear : UserControl
+    public partial class viewBalw : UserControl
     {
         /// <summary>
         /// vmからのイベント通知を受け取るために保持
         /// </summary>
-        private vmLinear? vm;
+        private vmBalw? vm;
 
         /// <summary>
         /// 通信時のアイコンのアニメーションSB
@@ -59,31 +59,19 @@ namespace MVVM_Base.View
 
         bool IsDark = true;
 
-        public viewLinear(vmLinear _vm)
+        public viewBalw(vmBalw _vm)
         {
             InitializeComponent();
-            
+
             this.DataContextChanged += View_DataContextChanged;
             DataContext = _vm;
-
-            // ログ更新で最下部を表示する
-            _vm.Logs.CollectionChanged += (_, __) =>
-            {
-                Application.Current.Dispatcher.BeginInvoke(() =>
-                {
-                    if (LogListBox.Items.Count > 0)
-                    {
-                        LogListBox.ScrollIntoView(LogListBox.Items[^1]);
-                    }
-                }, System.Windows.Threading.DispatcherPriority.Background);
-            };
         }
 
         private void View_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (vm != null) return;  // 1回だけ実行
 
-            if (e.NewValue is vmLinear _vm)
+            if (e.NewValue is vmBalw _vm)
             {
                 vm = _vm;
 
@@ -94,10 +82,7 @@ namespace MVVM_Base.View
                 {
                     if (args.PropertyName == nameof(vm.IsMfcConnected) ||
                         args.PropertyName == nameof(vm.IsBalanceConnected) ||
-                        args.PropertyName == nameof(vm.IsDarkTheme) ||
-                        args.PropertyName == nameof(vm.IsMfmStarted) ||
-                        args.PropertyName == nameof(vm.ConfIndex) ||
-                        args.PropertyName == nameof(vm.CanEditGainData))
+                        args.PropertyName == nameof(vm.IsDarkTheme))
                     {
                         Vm_PropertyChanged(s, args);
                     }
@@ -134,70 +119,9 @@ namespace MVVM_Base.View
 
             // 画面表示時に拡縮対応させる
             this.Focusable = true;
-            this.Focus();
-
-            // FBデータ取得・設定
-            if (isContinueMfcIconAnim)
-            {
-                UpperFBData.ItemsSource = new List<vmLinear> { vm };
-
-                lowerFBData.ItemsSource = new List<vmLinear> { vm };
-            }
-            else
-            {
-                UpperFBData.ItemsSource = new List<UpperFBModel>
-                {
-                    new UpperFBModel {
-                        Fb90="00", Fb92="00", Fb94="00", Fb96="00", Fb98="00",
-                        Fb9a="00", Fb9c="00", Fb9e="00", Fba0="00", Fba2="00", Fb41="00"
-                    }
-                };
-
-                lowerFBData.ItemsSource = new List<LowerFBModel>
-                {
-                    new LowerFBModel {
-                        Fb91="00", Fb93="00", Fb95="00", Fb97="00", Fb99="00",
-                        Fb9b="00", Fb9d="00", Fb9f="00", Fba1="00", Fba3="00", Fb42="00"
-                    }
-                };
-            }
+            this.Focus();            
         }
 
-        /// <summary>
-        /// 上位FBデータ
-        /// </summary>
-        private class UpperFBModel
-        {
-            public string Fb90 { get; set; }
-            public string Fb92 { get; set; }
-            public string Fb94 { get; set; }
-            public string Fb96 { get; set; }
-            public string Fb98 { get; set; }
-            public string Fb9a { get; set; }
-            public string Fb9c { get; set; }
-            public string Fb9e { get; set; }
-            public string Fba0 { get; set; }
-            public string Fba2 { get; set; }
-            public string Fb41 { get; set; }
-        }
-
-        /// <summary>
-        /// 下位FBデータ
-        /// </summary>
-        private class LowerFBModel
-        {
-            public string Fb91 { get; set; }
-            public string Fb93 { get; set; }
-            public string Fb95 { get; set; }
-            public string Fb97 { get; set; }
-            public string Fb99 { get; set; }
-            public string Fb9b { get; set; }
-            public string Fb9d { get; set; }
-            public string Fb9f { get; set; }
-            public string Fba1 { get; set; }
-            public string Fba3 { get; set; }
-            public string Fb42 { get; set; }
-        }
         /// <summary>
         /// vmからのプロパティ値変更イベント通知時の処理
         /// </summary>
@@ -210,24 +134,10 @@ namespace MVVM_Base.View
                 return;
             }
 
-            if (e.PropertyName == nameof(vmLinear.CanEditGainData))
-            {
-                if (((vmLinear)sender).CanEditGainData)
-                {
-                    lowerFBData.IsEnabled = true;
-                    UpperFBData.IsEnabled = true;
-                }
-                else
-                {
-                    lowerFBData.IsEnabled = false;
-                    UpperFBData.IsEnabled = false;
-                }
-            }
-
             // MFCポート接続状態の通知に対する処理
-            if (e.PropertyName == nameof(vmLinear.IsMfcConnected))
+            if (e.PropertyName == nameof(vmBalw.IsMfcConnected))
             {
-                if (((vmLinear)sender).IsMfcConnected)
+                if (((vmBalw)sender).IsMfcConnected)
                 {
                     isContinueMfcIconAnim = true;
                 }
@@ -236,31 +146,31 @@ namespace MVVM_Base.View
                     isContinueMfcIconAnim = false;
                     StopTitleBarAnimation(icMfcStoryboard);
 
-                    Application.Current.Dispatcher.BeginInvoke(() =>
-                    {
-                        UpperFBData.ItemsSource = new List<UpperFBModel>
-                        {
-                            new UpperFBModel {
-                                Fb90="00", Fb92="00", Fb94="00", Fb96="00", Fb98="00",
-                                Fb9a="00", Fb9c="00", Fb9e="00", Fba0="00", Fba2="00", Fb41="00"
-                            }
-                        };
+                    //Application.Current.Dispatcher.BeginInvoke(() =>
+                    //{
+                    //    UpperFBData.ItemsSource = new List<UpperFBModel>
+                    //    {
+                    //        new UpperFBModel {
+                    //            Fb90="00", Fb92="00", Fb94="00", Fb96="00", Fb98="00",
+                    //            Fb9a="00", Fb9c="00", Fb9e="00", Fba0="00", Fba2="00", Fb41="00"
+                    //        }
+                    //    };
 
-                        lowerFBData.ItemsSource = new List<LowerFBModel>
-                        {
-                            new LowerFBModel {
-                                Fb91="00", Fb93="00", Fb95="00", Fb97="00", Fb99="00",
-                                Fb9b="00", Fb9d="00", Fb9f="00", Fba1="00", Fba3="00", Fb42="00"
-                            }
-                        };
-                    });
+                    //    lowerFBData.ItemsSource = new List<LowerFBModel>
+                    //    {
+                    //        new LowerFBModel {
+                    //            Fb91="00", Fb93="00", Fb95="00", Fb97="00", Fb99="00",
+                    //            Fb9b="00", Fb9d="00", Fb9f="00", Fba1="00", Fba3="00", Fb42="00"
+                    //        }
+                    //    };
+                    //});
 
                 }
             }
             // 天秤ポート接続状態の通知に対する処理
-            else if (e.PropertyName == nameof(vmLinear.IsBalanceConnected))
+            else if (e.PropertyName == nameof(vmBalw.IsBalanceConnected))
             {
-                if (((vmLinear)sender).IsBalanceConnected)
+                if (((vmBalw)sender).IsBalanceConnected)
                 {
                     isContinueBalanceIconAnim = true;
                 }
@@ -271,83 +181,22 @@ namespace MVVM_Base.View
                 }
             }
             // カラーテーマ変更通知に対する処理
-            else if (e.PropertyName == nameof(vmLinear.IsDarkTheme))
+            else if (e.PropertyName == nameof(vmBalw.IsDarkTheme))
             {
-                IsDark = ((vmLinear)sender).IsDarkTheme;
+                IsDark = ((vmBalw)sender).IsDarkTheme;
 
-                if (((vmLinear)sender).IsMfcConnected && ((vmLinear)sender).IsBalanceConnected)
+                if (((vmBalw)sender).IsMfcConnected && ((vmBalw)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueMfcIconAnim);
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueBalanceIconAnim);
                 }
-                else if (((vmLinear)sender).IsMfcConnected)
+                else if (((vmBalw)sender).IsMfcConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueMfcIconAnim);
                 }
-                else if (((vmLinear)sender).IsBalanceConnected)
+                else if (((vmBalw)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueBalanceIconAnim);
-                }
-                ThemeChangeCommConfButton(((vmLinear)sender).IsDarkTheme);
-            }
-            // MFMコマンドが開始されたかどうか
-            else if(e.PropertyName == nameof(vmLinear.IsMfmStarted))
-            {
-                if(((vmLinear)sender).IsMfmStarted)
-                {
-                    UpperFBData.IsEnabled = false;
-                    lowerFBData.IsEnabled = false;
-                }
-                else
-                {
-                    UpperFBData.IsEnabled = true;
-                    lowerFBData.IsEnabled = true;
-                }
-            }
-            // Fix me：使わないなら消す
-            // confインデクスが変更された場合
-            if (e.PropertyName == nameof(vmLinear.ConfIndex))
-            {
-                // conf1
-                if (((vmLinear)sender).ConfIndex == 1)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 2)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 3)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 4)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 5)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 6)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 7)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 8)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 9)
-                {
-
-                }
-                else if (((vmLinear)sender).ConfIndex == 10)
-                {
-
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueBalanceIconAnim);
                 }
             }
         }
@@ -442,47 +291,6 @@ namespace MVVM_Base.View
             if (res is string s && System.Windows.Media.ColorConverter.ConvertFromString(s) is Color parsed)
                 return parsed;
             return fallback;
-        }
-
-        /// <summary>
-        /// カラーテーマ変更時、Confirmボタンのカラー遷移アニメーション
-        /// </summary>
-        /// <param name="isDark"></param>
-        private void ThemeChangeCommConfButton(bool isDark)
-        {
-            string theme = isDark ? "Dark" : "Light";
-
-            // 変更後カラーの取得
-            var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{theme}Theme.xaml", UriKind.Relative) };
-            Color newAccentColor = (Color)newDict["TagColor"];
-            Color newCoffButtonGColor = (Color)newDict["CoffButtonGColor"];
-
-            // ブラシの取得
-            var brush1 = (SolidColorBrush)RootGrid.Resources["GlowColorReference1"];
-            var brush2 = (SolidColorBrush)RootGrid.Resources["GlowColorReference2"];
-
-            // 変更前カラーの取得
-            Color oldAccentColor = brush1.Color;
-            Color oldCoffButtonGColor = brush2.Color;
-
-            var anim1 = new ColorAnimation
-            {
-                From = oldAccentColor,
-                To = newAccentColor,
-                Duration = TimeSpan.FromSeconds(animInterval),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
-            };
-
-            var anim2 = new ColorAnimation
-            {
-                From = oldCoffButtonGColor,
-                To = newCoffButtonGColor,
-                Duration = TimeSpan.FromSeconds(animInterval),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
-            };
-
-            brush1.BeginAnimation(SolidColorBrush.ColorProperty, anim1);
-            brush2.BeginAnimation(SolidColorBrush.ColorProperty, anim2);
         }
 
         /// <summary>

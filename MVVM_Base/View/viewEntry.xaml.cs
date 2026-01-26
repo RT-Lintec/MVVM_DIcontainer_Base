@@ -297,9 +297,7 @@ namespace MVVM_Base.View
         /// </summary>
         /// <param name="btn"></param>
         private void ShowCornerBrackets(ToggleButton _btn, bool isAnimate)
-        {
-            
-
+        {  
             // 画面遷移不可時に括弧位置を前のボタン位置に固定する
             if (!CanTransit)
             {
@@ -623,7 +621,6 @@ namespace MVVM_Base.View
                     thumb.Background = new SolidColorBrush(Color.FromRgb((byte)255, (byte)30, (byte)0));
                     // Bloom有効化
                     SetThumbBloom(thumb, tt.X >= maxX);
-
                 }
                 return;
             }

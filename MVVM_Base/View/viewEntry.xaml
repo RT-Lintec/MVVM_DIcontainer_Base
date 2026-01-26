@@ -111,14 +111,14 @@
                                 PreviewMouseLeftButtonDown="NavToggleButton_Click"
                                 Checked="NavToggleButton_Check"
                                 Style="{StaticResource menuToggleButton}"
-                                IsChecked="{Binding IsBViewSelected}" 
+                                IsChecked="{Binding IsBalwSelected}" 
                                 IsEnabled="{Binding CanTransit}"
                                 Command="{Binding ShowViewCommand}"
-                                CommandParameter="{x:Static local:ViewType.BView}" >
+                                CommandParameter="{x:Static local:ViewType.Balw}" >
                                 <StackPanel Orientation="Horizontal">
                                     <fa:IconImage Icon="EnvelopeOpenText" 
                                                   Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="B View" 
+                                    <TextBlock Text="Balw" 
                                                Style="{StaticResource menuToggleButtonText}"/>
                                 </StackPanel>
                             </ToggleButton>

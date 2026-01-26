@@ -15,7 +15,7 @@ namespace MVVM_Base.ViewModel
     {
         Main,
         LinearView,
-        BView,
+        Balw,
         Help,
         End
     }
@@ -63,7 +63,7 @@ namespace MVVM_Base.ViewModel
         /// B_Viewボタン選択
         /// </summary>
         private bool isBViewSelected;
-        public bool IsBViewSelected
+        public bool IsBalwSelected
         {
             get => isBViewSelected;
             set
@@ -103,7 +103,7 @@ namespace MVVM_Base.ViewModel
         {
             IsMainSelected = type == ViewType.Main;
             IsLinearViewSelected = type == ViewType.LinearView;
-            IsBViewSelected = type == ViewType.BView;
+            IsBalwSelected = type == ViewType.Balw;
             IsHelpSelected = type == ViewType.Help;
             IsEndSelected = type == ViewType.End;
         }
@@ -228,10 +228,21 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         /// <param name="type"></param>
         [RelayCommand]
-        public void ShowView(ViewType type)
+        public async void ShowView(ViewType type)
         {
             // 選択状態を一括で更新
             SelectView(type);
+
+            // 各画面で未保存の出力結果が存在する場合
+            if (vmService.HasNonsavedOutput)
+            {
+                CurrentView = null;
+
+                while (vmService.HasNonsavedOutput)
+                {
+                    await Task.Delay(10);
+                }
+            }
 
             if (vmService.CanTransit)
             {
@@ -240,7 +251,7 @@ namespace MVVM_Base.ViewModel
                 {
                     ViewType.Main => mainView ??= diRoot.Instance.GetService<viewMain>(),
                     ViewType.LinearView => diRoot.Instance.GetService<viewLinear>(),
-                    ViewType.BView => diRoot.Instance.GetService<viewB>(),
+                    ViewType.Balw => diRoot.Instance.GetService<viewBalw>(),
                     _ => CurrentView
                 };
             }

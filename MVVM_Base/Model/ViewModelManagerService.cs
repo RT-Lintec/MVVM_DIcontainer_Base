@@ -54,6 +54,23 @@ namespace MVVM_Base.Model
         }
 
         /// <summary>
+        /// 未保存の出力結果が存在するか
+        /// </summary>
+        private bool hasNonsavedOutput = false;
+        public bool HasNonsavedOutput
+        {
+            get => hasNonsavedOutput;
+            set
+            {
+                if (hasNonsavedOutput != value)
+                {
+                    hasNonsavedOutput = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
         /// 全vmの終了可否を確認し、OKならアプリ終了
         /// </summary>
         public void CheckCanQuit()

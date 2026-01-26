@@ -1,6 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.IO;
+using System.Text;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Markup;
 
 namespace MVVM_Base.ViewModel
 {
@@ -41,14 +45,42 @@ namespace MVVM_Base.ViewModel
 
             TitleFontSize += delta;
             LabelFontSize += delta;
-            //StatusFontSize += delta;
+            UnitFontSize += delta;
+            DataGridFontSize += delta;
+            StatusFontSize += delta;
+            LogFontSize += (float)delta * 0.5f;
+            ConfHeightSize += (float)delta * 0.68f;
+            ConfBtnFontSize += (float)delta * 0.5f;
+            OtherSettingFontSize += delta;
             //ComboFontSize += delta;
+            RadioBtnSIze += delta;
             IconSize += delta;
+            CmdBtnSIze += delta * 6;
+            MfmBtnSIze += delta * 4;
+            ZaBtnSIze += delta * 6;
+            SpanGainSIze += delta * 2;
+            OutputBtnSIze += delta * 4;
             //StatusIconSize += delta;
-
-            SmallGBWidth += delta * 12;
+            GroupBoxWidth90 += delta * 4;
+            GroupBoxWidth100 += delta * 4;
+            SmallGBWidth += delta * 14;
             MiddleGBWidth += delta * 18;
             LargeGBWidth += delta * 18;
+            GroupBoxWidth700 += delta * 32;
+            GroupBoxWidth150 += delta * 8;
+            GroupBoxWidth500 += delta * 24;
+            GroupBoxWidth245 += delta * 14;
+            GroupBoxWidth200 += delta * 10;
+            UnitTextboxWidth += delta * 5;
+            MeasureColumNameWidth += delta * 4;
+            SpanInputWidth += delta * 3;
+            FlowOutputBoxWidth += delta * 5;
+
+            MiddleGBHeight += delta * 8;
+            GroupBoxHeight250 += delta * 9;
+            LogHeightSize += delta * 29;
+            //GainMatrixWidth += delta * 3;
+            //GainMatrixTotalWidth += delta * 33;
             //GroupBoxStatusWidth += delta * 16;
             //GroupBoxDebugWidthA += delta * 32;
             //GroupBoxDebugWidthB += delta * 16;
@@ -69,38 +101,90 @@ namespace MVVM_Base.ViewModel
         }
 
         /// <summary>
+        /// ログ追加
+        /// </summary>
+        /// <param name="message"></param>
+        private void Logging(string message, bool isNeedLinebreak)
+        {
+            // 改行不要
+            if (!isNeedLinebreak)
+            {
+                Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    Logs.Add($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} {message}");
+                });
+            }
+            else
+            {
+                Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    Logs.Add($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} {message}");
+                    
+                    // TODO : ユニークな文字列しか反応してくれない
+                    Logs.Add($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff}");
+                });
+            }
+        }
+
+        /// <summary>
         /// viewロード時に呼ばれる。要イベント登録
         /// </summary>
         public async void OnViewLoaded()
         {
-            vmService.CanTransit = false;
-
-            // 誤操作防止
-            SwitchAllbtn(false);
-
-            IsViewVisible = true;
-
-            // TODO 以下二つの処理でエラー出た場合の処理
-            _loadCts = new CancellationTokenSource();
-
-            if (commStatusService.IsMfcConnected && commStatusService.IsBalanceConnected)
+            // 計算を何もしていない場合
+            if (!isCalculated && !isCalcedAndConfed)
             {
-                SerialNum = await ReadSerialNumber(_loadCts.Token);
-                var res = await FBDataRead(_loadCts.Token);
+                isSavedOutput = false;
+
+                // 誤操作防止
+                await ChangeState(ProcessState.Transit);
+                vmService.CanTransit = false;
+
+                // TODO 以下二つの処理でエラー出た場合の処理
+                _loadCts = new CancellationTokenSource();
+
+                if (commStatusService.IsMfcConnected)
+                {
+                    SerialNum = await ReadSerialNumber(_loadCts.Token);
+                    var res = await FBDataRead(_loadCts.Token);
+                }
+
+                // MFM必須コマンド以外を有効化(Initial状態)
+                await ChangeState(ProcessState.Initial);
+                vmService.CanTransit = true;
             }
-
-            // MFM必須コマンド以外を有効化(Initial状態)
-            SwitchBeforeMFMBtn(true);
-
-            vmService.CanTransit = true;
+            // Calc済み
+            else if(isCalculated && !isCalcedAndConfed)
+            {
+                isSavedOutput = false;
+                await ChangeState(ProcessState.AfterCalc);
+            }
+            // Calc、Conf済み
+            else if (isCalculated && isCalcedAndConfed)
+            {
+                await ChangeState(ProcessState.AfterCalcAndConf);
+            }
         }
 
         /// <summary>
         /// viewアンロード時に呼ばれる。要イベント登録
         /// </summary>
-        public void OnViewUnloaded()
+        public async void OnViewUnloaded()
         {
-            IsViewVisible = false;
+            //IsViewVisible = false;
+            // TODO : 画面遷移を待ちたい
+            await ChangeState(ProcessState.Initial);
+        }
+
+        /// <summary>
+        /// True値の計算・格納
+        /// </summary>
+        private void CalAndSetTrueValue()
+        {
+            for (int i = 1; i < TrueValueArray.Count; i++)
+            {
+                TrueValueArray[i] = (float.Parse(FlowValue) / 10f * (float)i).ToString("F2");
+            }
         }
 
         /// <summary>
@@ -109,7 +193,7 @@ namespace MVVM_Base.ViewModel
         private void ResetMeasureResult()
         {
             // 計測結果の表を新規形成
-            if (Column0.Count == 0)
+            if (MesurementItems.Count == 0)
             {                
                 for (int i = 0; i < 11; i++)
                 {
@@ -119,11 +203,11 @@ namespace MVVM_Base.ViewModel
                     {
                         MeasureResult temp1 = new MeasureResult();
                         temp1.Value = "gn5-gn";
-                        Column0.Add(temp1);
+                        MesurementItems.Add(temp1);
 
                         MeasureResult temp2 = new MeasureResult();
                         temp2.Value = ($"");
-                        Column1.Add(temp2);
+                        MesurementValues.Add(temp2);
 
                         dateList[i] = new DateTime();
                         continue;
@@ -131,12 +215,12 @@ namespace MVVM_Base.ViewModel
 
                     MeasureResult di = new MeasureResult();
                     di.Value = ($"d{i}");
-                    Column0.Add(di);
+                    MesurementItems.Add(di);
                     dateList[i] = new DateTime();
 
                     MeasureResult m = new MeasureResult();
                     m.Value = ($"");
-                    Column1.Add(m);
+                    MesurementValues.Add(m);
 
                     SetPointArray[i] = (i * 10).ToString();
                     
@@ -147,7 +231,7 @@ namespace MVVM_Base.ViewModel
             {
                 for (int i = 0; i < 11; i++)
                 {
-                    Column1[i].Value = "";                    
+                    MesurementValues[i].Value = "";                    
                 }
             }            
         }
@@ -163,7 +247,7 @@ namespace MVVM_Base.ViewModel
             {
                 SetPointArray[0] = "Set Point";
                 TrueValueArray[0] = "True_V";
-                ReadingValueArray[0] = "Reading_V";
+                ReadingValueArray[0].Value = "Reading_V";
                 InitialVoArray[0] = "Initial VO";
                 CorrectDataArray[0] = "C_Data";
                 VoutArray[0] = "VOUT";
@@ -176,7 +260,7 @@ namespace MVVM_Base.ViewModel
             {
                 for (int i = 1; i < 11; i++)
                 {
-                    ReadingValueArray[i] = "";
+                    ReadingValueArray[i].Value = "";
                     InitialVoArray[i] = "";
                     CorrectDataArray[i] = "";
                     VoutArray[i] = "";
@@ -197,6 +281,162 @@ namespace MVVM_Base.ViewModel
             }            
         }
 
+        /// <summary>
+        /// Reading値をcsv出力
+        /// </summary>
+        /// <param name="path"></param>
+        [RelayCommand]
+        private async Task ExportParamsToCsv()
+        {
+            // 空欄なしチェック
+            // VO
+            foreach (var val in VOArray)
+            {
+                if (val == "")
+                {
+                    return;
+                }
+            }
+
+            // True値
+            foreach (var val in TrueValueArray)
+            {
+                if (val == "")
+                {
+                    return;
+                }
+            }
+
+            // Reading値
+            foreach (var val in ReadingValueArray) 
+            {
+                if (val.Value == "")
+                {
+                    return;
+                }
+            }
+
+            // VOUT
+            foreach (var val in VoutArray)
+            {
+                if (val == "")
+                {
+                    return;
+                }
+            }
+
+            // FB
+            var props = this.GetType().GetProperties()
+                .Select(p => new
+                {
+                    Property = p,
+                    Attr = p.GetCustomAttributes(typeof(FbCodeAttribute), false)
+                            .Cast<FbCodeAttribute>()
+                            .FirstOrDefault()
+                })
+                .Where(x => x.Attr != null)
+                .ToList();
+
+            var fbPairs = new List<Tuple<string, string>>();
+            for (int i = 0; i < props.Count; i++)
+            {
+                string value = (string)props[i].Property.GetValue(this);
+                string code = props[i].Attr.Code;
+
+                fbPairs.Add(Tuple.Create(code, value));
+            }
+
+            // Vtemp 基準1を取得
+            var res = await CommMFCAsyncType3("ER", "FB22", _loadCts.Token);
+            if (res == "failed" || res == "canceled")
+            {
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("VO,True,Reading,Vout,Vtemp lower, Vtemp upper");
+
+            for (int i = 1; i < VOArray.Count; i++)
+            {
+                var line = new StringBuilder();
+                line.Append($"=\"{VOArray[i]}\",=\"{TrueValueArray[i]}\",=\"{ReadingValueArray[i].Value}\",=\"{VoutArray[i]}\"");
+                if (i == 1)
+                {
+                    line.Append($",=\"{res.Substring(0, 2)}\"");
+                    line.Append($",=\"{res.Substring(3, 2)}\"");
+                }
+                sb.AppendLine(line.ToString());
+            }
+
+            sb.AppendLine("");
+            sb.AppendLine("FB90,FB91,FB92,FB93,FB94,FB95,FB96,FB97,FB98,FB99," +
+                "FB9A,FB9B,FB9C,FB9D,FB9E,FB9F,FBA0,FBA1,FBA2,FBA3,FB41,FB42");
+
+            var line2 = new StringBuilder();
+            for (int j = 0; j < fbPairs.Count; j++)
+            {
+                line2.Append($"=\"{fbPairs[j].Item2}\",");
+            }
+            sb.AppendLine(line2.ToString());       
+
+            string baseDir = AppContext.BaseDirectory;
+            string csvDir = System.IO.Path.Combine(baseDir, "CSV\\Parameters");
+
+            if (!Directory.Exists(csvDir))
+            {
+                Directory.CreateDirectory(csvDir);
+            }
+
+            string now = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = "\\"+ SerialNum + "_" + now + "_Parameters.csv";
+            string path = csvDir + fileName;
+
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+            isSavedOutput = true;
+        }
+
+        /// <summary>
+        /// Reading値をcsv出力
+        /// </summary>
+        /// <param name="path"></param>
+
+        private void ExportReadingCsv()
+        {
+            foreach (var val in ReadingValueArray)
+            {
+                if (val.Value == "")
+                {
+                    return;
+                }
+            }
+
+            var sb = new StringBuilder();
+
+            sb.AppendLine("Reading Value");
+
+            for (int i = 1; i < ReadingValueArray.Count; i++)
+            {
+                sb.AppendLine(ReadingValueArray[i].Value);
+            }
+
+            string baseDir = AppContext.BaseDirectory;
+            string csvDir = System.IO.Path.Combine(baseDir, "CSV\\Reading");
+
+            if (Directory.Exists(csvDir))
+            {
+                // フォルダあり
+            }
+            else
+            {
+                Directory.CreateDirectory(csvDir);
+            }
+
+            string now = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = "\\" + SerialNum + "_" + now + "Reading.csv";
+            string path = csvDir + fileName;
+
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+        }
 
         #region ボタンのスイッチング
         /// <summary>
@@ -205,6 +445,8 @@ namespace MVVM_Base.ViewModel
         /// <param name="enable"></param>
         private void SwitchAllbtn(bool enable)
         {
+            CanExport = enable;
+            CanConfAlone = enable;
             SwitchAfterMFMBtn(enable);
             SwitchBeforeMFMBtn(enable);
             SwitchZeroBtn(enable);

@@ -529,6 +529,7 @@
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
                                              Content="Enable"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermA"
                                              Command="{Binding commMFCAsyncType1WithCommand }"
@@ -537,6 +538,7 @@
 
                                 <RadioButton Grid.Row="1"
                                              Content="Disable"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermA"
                                              Margin="0,5,0,0"
@@ -550,6 +552,7 @@
                         <!-- 上段中央：Slow / Fast -->
                         <GroupBox Grid.Row="0" 
                                   Grid.Column="1" 
+                                  FontSize="{Binding StatusFontSize}"
                                   Style="{StaticResource GroupBoxThinBorderStyle}" 
                                   Width="{Binding GroupBoxStatusWidth}" 
                                   Margin="5" 
@@ -574,6 +577,7 @@
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
                                              Content="Slow"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="SF"
                                                 Command="{Binding commMFCAsyncType1WithCommand }"
@@ -582,6 +586,7 @@
 
                                 <RadioButton Grid.Row="1"
                                              Content="Fast"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="SF"
                                              Margin="0,5,0,0"
@@ -619,6 +624,7 @@
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
                                              Content="Analog"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AD"
                                              Margin="0,3,0,0"
@@ -628,6 +634,7 @@
 
                                 <RadioButton Grid.Row="1"
                                              Content="Digital"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AD"
                                              Margin="0,5,0,0"
@@ -676,6 +683,7 @@
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
                                              Content="Enable"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermB"
                                              Command="{Binding commMFCAsyncType1WithCommand }"
@@ -684,6 +692,7 @@
 
                                 <RadioButton Grid.Row="1"
                                              Content="Disable"
+                                             FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermB"
                                              Margin="0,5,0,0"
@@ -727,6 +736,7 @@
                                 <RadioButton Content="VO" 
                                              Grid.Row="0" 
                                              Grid.Column="1" 
+                                             FontSize="{Binding StatusFontSize}"
                                              Margin="0 0 0 5" 
                                              GroupName="Valve" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 
@@ -736,6 +746,7 @@
                                 <RadioButton Content="VC" 
                                              Grid.Row="0" 
                                              Grid.Column="0" 
+                                             FontSize="{Binding StatusFontSize}"
                                              Margin="0 0 0 5"
                                              GroupName="Valve" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 
@@ -747,6 +758,7 @@
                                 <RadioButton Content="Control"
                                              Grid.Row="1" 
                                              Grid.Column="1" 
+                                             FontSize="{Binding StatusFontSize}"
                                              Margin="0 0 0 0"
                                              GroupName="Valve" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 
@@ -756,6 +768,7 @@
                                 <RadioButton Content="Hold" 
                                              Grid.Row="1" 
                                              Grid.Column="0" 
+                                             FontSize="{Binding StatusFontSize}"
                                              Margin="0"
                                              GroupName="Valve" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 
@@ -789,6 +802,7 @@
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
                                              Content="(CN)Normal" 
+                                             FontSize="{Binding StatusFontSize}"
                                              GroupName="Cmode" 
                                              Margin="3 -2 0 5" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 
@@ -797,6 +811,7 @@
                                              IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=N, Mode=TwoWay}"/>
                                 <RadioButton Grid.Row="1"
                                              Content="(C4)Hold" 
+                                             FontSize="{Binding StatusFontSize}"
                                              GroupName="Cmode" 
                                              Margin="3 0 0 5" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 
@@ -804,7 +819,8 @@
                                              CommandParameter="C4"
                                              IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=H, Mode=TwoWay}"/>
                                 <RadioButton Grid.Row="2"
-                                             Content="(C3)Close" 
+                                             Content="(C3)Close"
+                                             FontSize="{Binding StatusFontSize}"
                                              GroupName="Cmode" 
                                              Margin="3 0 0 5" 
                                              Style="{StaticResource StatusRadioButtonStyle}" 

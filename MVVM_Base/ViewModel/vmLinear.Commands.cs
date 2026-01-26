@@ -2,6 +2,8 @@
 using CommunityToolkit.Mvvm.Input;
 using MVVM_Base.Model;
 using MathNet.Numerics.LinearAlgebra;
+using System.Collections.ObjectModel;
+using static System.Windows.Forms.AxHost;
 
 namespace MVVM_Base.ViewModel
 {
@@ -34,6 +36,7 @@ namespace MVVM_Base.ViewModel
         }
 
         private bool isCalculated = false;
+        private bool isCalcedAndConfed = false;
 
         /// <summary>
         /// 停止
@@ -44,6 +47,7 @@ namespace MVVM_Base.ViewModel
             if (_calculateCts != null)
             {
                 _calculateCts.Cancel();
+                ConfIndex = -1;
             }
         }
 
@@ -54,8 +58,153 @@ namespace MVVM_Base.ViewModel
         [RelayCommand]
         private async Task CalAndConf()
         {
-            await Calculate(Calc);
-            await Calculate(Conf);
+            //await Calculate(Calc);
+            //if (_calculateCts != null &&!_calculateCts.IsCancellationRequested)
+            //{
+            //    await Calculate(Conf);
+            //}
+            if (!commStatusService.IsMfcConnected)
+            {
+                await messageService.ShowMessage("MFC isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+            else if (!commStatusService.IsBalanceConnected)
+            {
+                await messageService.ShowMessage("Balance isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
+            isCalculated = false;
+            isCalcedAndConfed = false;
+
+            vmService.CanTransit = false;
+            await ChangeState(ProcessState.Measurement);
+            _calculateCts = new CancellationTokenSource();
+            string res = "";
+
+            // Calc
+            try
+            {
+                res = await CalculateCoreAsync(Calc, _calculateCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                await messageService.ShowMessage("Operation Canceled");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+            }
+            finally
+            {
+                if (res == "canceled")
+                {
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+
+                    await ChangeState(ProcessState.AfterMFM);
+                }
+                else if (res == "failed")
+                {
+                    // VC
+                    await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    await ChangeState(ProcessState.AfterMFM);
+                }
+                else
+                {                    
+                    ExportReadingCsv();
+                    await ChangeState(ProcessState.AfterCalc);                    
+                }
+            }
+
+            if(_calculateCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // Conf
+            try
+            {
+                res = await CalculateCoreAsync(Conf, _calculateCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                await messageService.ShowMessage("Operation Canceled");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+            }
+            finally
+            {
+                if (res == "canceled")
+                {
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+
+                    if (!isCalculated)
+                    {
+                        await ChangeState(ProcessState.AfterMFM);
+                    }
+                    else
+                    {
+                        await ChangeState(ProcessState.AfterCalc);
+                    }
+                }
+                else if (res == "failed")
+                {
+                    // VC
+                    await CommMFCAsyncType1("VC", _calculateCts.Token);
+
+                    if (!isCalculated)
+                    {
+                        await ChangeState(ProcessState.AfterMFM);
+                    }
+                    else
+                    {
+                        await ChangeState(ProcessState.AfterCalc);
+                    }
+                }
+                else
+                {
+                    isCalcedAndConfed = true;
+                    vmService.HasNonsavedOutput = true;
+                    await ChangeState(ProcessState.AfterCalcAndConf);                    
+                }
+            }
+
+            vmService.CanTransit = true;
+            _calculateCts?.Dispose();
+            _calculateCts = null;
+        }
+
+        [RelayCommand]
+        private async Task GainReadWrite(string mode)
+        {
+            var oldState = curState;
+            await ChangeState(ProcessState.Transit);
+
+            if (!commStatusService.IsMfcConnected)
+            {
+                await ChangeState(oldState);
+                return;
+            }
+            _fbRWCts = new CancellationTokenSource();
+
+            // read
+            if (mode == "r")
+            {             
+                var res = await FBDataRead(_fbRWCts.Token);
+            }
+            // write
+            else if(mode == "w")
+            {
+                var res = await FBDataWrite(_fbRWCts.Token);
+            }
+
+            await ChangeState(oldState);
         }
 
         /// <summary>
@@ -64,31 +213,209 @@ namespace MVVM_Base.ViewModel
         /// <returns></returns>
         [RelayCommand]
         private async Task Manual()
-        {
+        {            
+            if (!commStatusService.IsMfcConnected)
+            {
+                await messageService.ShowMessage("MFC isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+            if (!commStatusService.IsBalanceConnected)
+            {
+                await messageService.ShowMessage("Balance isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
             _calculateCts = new CancellationTokenSource();
-            ChangeState(ProcessState.Measurement);
+            CalAndSetTrueValue();
+            ResetMeasureResult();
+
+            vmService.CanTransit = false;
+
+            await ChangeState(ProcessState.Manual);
+
+            // Reading値のコピーを取得しておく
+            var oldReadingArray = new ObservableCollection<ReadingValue>(
+                                    ReadingValueArray.Select(x => new ReadingValue { Value = x.Value }));
+
+            bool isSame = true;
 
             // 天秤との定期通信開始
             var res = await StartTimerWIthBalCom(_calculateCts.Token);
+
+            // MFM終了後なら
+            if (isFinishedMFM)
+            {
+                await ChangeState(ProcessState.AfterMFM);                
+            }
+            else if (isCalculated)
+            {
+                // Reading値の変化を確認する
+                for (int i = 1; i < ReadingValueArray.Count; i++)
+                {
+                    if (ReadingValueArray[i].Value != oldReadingArray[i].Value)
+                    {
+                        isSame = false;
+                        break;
+                    }
+                }
+
+                // Reading値が書き変えられていない場合
+                if (isSame)
+                {
+                    if (!isCalcedAndConfed)
+                    {
+                        await ChangeState(ProcessState.AfterCalc);
+                    }
+                    else
+                    {
+                        await ChangeState(ProcessState.AfterCalcAndConf);
+                    }
+                }
+                // Reading値が書き変えられている場合
+                else
+                {
+                    // MFM終了後なら
+                    if (isCalculated)
+                    {
+                        await ChangeState(ProcessState.AfterMFM);                        
+                    }
+                    else
+                    {
+                        await ChangeState(ProcessState.Initial);
+                    }
+                }
+            }
+            // 未計算なら initial
+            else
+            {
+                await ChangeState(ProcessState.Initial);
+            }
+
             if (res == "canceled")
             {
+                // VC
+                await CommMFCAsyncType1("VC", _calculateCts.Token);
+
                 await messageService.ShowMessage("Operation Canceled");
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
             }
 
+            vmService.CanTransit = true;
+            return;
+        }
+
+        /// <summary>
+        /// ゲイン計算
+        /// </summary>
+        /// <returns></returns>
+        [RelayCommand]
+        private async Task CalculateGain()
+        {
+            bool HasNull = false;
+            foreach (var readingValue in ReadingValueArray)
+            {
+                if(readingValue.Value == "" || readingValue.Value == null)
+                {
+                    HasNull = true;
+                    break;
+                }
+            }
+            if (HasNull)
+            {
+                await messageService.ShowMessage("Ten measurement points are required to calculate the gain");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
+            if (!commStatusService.IsMfcConnected)
+            {
+                await messageService.ShowMessage("MFC isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+            else if (!commStatusService.IsBalanceConnected)
+            {
+                await messageService.ShowMessage("Balance isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
+            // Fix me : 計算実行によってゲイン値書き換わる注意喚起メッセージ
+
+            vmService.CanTransit = false;
+            await ChangeState(ProcessState.Measurement);
+
+            _calculateCts = new CancellationTokenSource();
+            var token = _calculateCts.Token;
+            // 10点リニア補正値の計算
+            // 可変BPではない場合
+            if (BPValue == BPType.Invariable)
+            {
+                var res = await CorrectLinearData(0, null, token);
+                if (res == "canceled")
+                {
+                    // VC
+                    res = await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    if (res == "failed" || res == "canceled")
+                    {
+                        return;
+                    }
+
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+                }
+            }
+            // 可変BPの場合
+            else
+            {
+                var bpList = await CalculateAndWriteBP(token);
+                if (bpList == null)
+                {
+                    // TODO : エラーメッセージ
+                    return;
+                }
+                else if (bpList.Length == 1 && bpList[0] == double.MaxValue)
+                {
+                    return;
+                }
+
+                var res = await CorrectLinearData(1, bpList, token);
+                if (res == "canceled")
+                {
+                    // VC
+                    res = await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    if (res == "failed" || res == "canceled")
+                    {
+                        return;
+                    }
+
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+                }
+            }
+
             // 計算終了後なら
             if (isCalculated)
             {
-                ChangeState(ProcessState.AfterMFM);
+                await ChangeState(ProcessState.AfterCalc);
             }
-            // 未計算なら initial
+            // 未計算ならinitial
             else
             {
-                ChangeState(ProcessState.Initial);
+                await ChangeState(ProcessState.Initial);
             }
-                
-            return;
+
+            vmService.CanTransit = true;
         }
 
         /// <summary>
@@ -114,8 +441,14 @@ namespace MVVM_Base.ViewModel
                 return;
             }
 
+            if (mode == Calc)
+            {
+                isCalculated = false;
+                isCalcedAndConfed = false;
+            }
+
             vmService.CanTransit = false;
-            ChangeState(ProcessState.Measurement);
+            await ChangeState(ProcessState.Measurement);
             _calculateCts = new CancellationTokenSource();
             string res = "";
 
@@ -136,25 +469,100 @@ namespace MVVM_Base.ViewModel
                     await messageService.ShowMessage("Operation Canceled");
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
+
+                    if (mode == calc)
+                    {
+                        await ChangeState(ProcessState.AfterMFM);
+                    }
+                    else
+                    {
+                        if (isCalculated && CanMFM)
+                        {
+                            await ChangeState(ProcessState.AfterCalcAndConf);
+                        }
+                        else if(!isCalculated && CanMFM)
+                        {
+                            await ChangeState(ProcessState.AfterMFM);
+                        }                        
+                        else
+                        {
+                            if (isFinishedMFM || isCalculated)
+                            {
+                                await ChangeState(ProcessState.AfterMFM);
+                            }
+                            else
+                            {
+                                await ChangeState(ProcessState.Initial);
+
+                            }
+                        }
+                    }
                 }
                 else if (res == "failed")
                 {
-                    //await messageService.ShowMessage("Operation failed");
-                    //await Task.Delay(messageFadeTime);
-                    //await messageService.CloseWithFade();
+                    // VC
+                    await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    if (mode == calc)
+                    {
+                        isCalculated = true;
+                        await ChangeState(ProcessState.AfterMFM);
+                    }
+                    else
+                    {
+                        if (isCalculated && CanMFM)
+                        {
+                            isCalcedAndConfed = true;
+                            vmService.HasNonsavedOutput = true;
+                            await ChangeState(ProcessState.AfterCalcAndConf);
+                        }
+                        else if (!isCalculated && CanMFM)
+                        {
+                            await ChangeState(ProcessState.AfterMFM);
+                        }
+                        else
+                        {
+                            if (isFinishedMFM || isCalculated)
+                            {
+                                await ChangeState(ProcessState.AfterMFM);
+                            }
+                            else
+                            {
+                                await ChangeState(ProcessState.Initial);
+                            }
+                        }
+                    }
                 }
                 else
                 {
-
+                    if (mode == Calc)
+                    {
+                        ExportReadingCsv();
+                        await ChangeState(ProcessState.AfterCalc);
+                    }
+                    else
+                    {
+                        if (isCalculated)
+                        {
+                            isCalcedAndConfed = true;
+                            vmService.HasNonsavedOutput = true;
+                            await ChangeState(ProcessState.AfterCalcAndConf);
+                        }
+                        else if(!isFinishedMFM)
+                        {
+                            await ChangeState(ProcessState.Initial);
+                        }                        
+                        else
+                        {
+                            await ChangeState(ProcessState.AfterMFM);
+                        }
+                    }
                 }
-
-                ChangeState(ProcessState.AfterMFM);
+                //ChangeState(ProcessState.AfterCalc);
                 vmService.CanTransit = true;
-                _mfmCts?.Dispose();
-                _mfmCts = null;
+                _calculateCts?.Dispose();
+                _calculateCts = null;
             }
         }
-
 
         /// <summary>
         /// CalculateおよびConfirm押下時の処理
@@ -235,12 +643,13 @@ namespace MVVM_Base.ViewModel
 
                 // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
                 var firstVal = await CommBalanceAsyncCommand(token);
+                Logging(firstVal, false);
                 if (res == "failed" || res == "canceled")
                 {
                     return res;
                 }
                 lastBalanceVal = ConvertBalanceResToMS(firstVal);
-                Column1[1].Value = lastBalanceVal.ToString();
+                MesurementValues[1].Value = lastBalanceVal.ToString();
                
                 // 比較値格納インデクス
                 int interval = int.Parse(IntervalValue) * 1000;
@@ -268,8 +677,9 @@ namespace MVVM_Base.ViewModel
                         break;
                     }
 
-                    // 通信&リスト書き込み
+                    // 通信&リスト書き込み                    
                     res = await Gn1GnComm(index, token);
+                    Logging(res, false);
                     if (res == "failed" || res == "canceled")
                     {
                         return res;
@@ -279,6 +689,7 @@ namespace MVVM_Base.ViewModel
                 // 最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
                 // レースコンディションにより意図しないタイミングで終了する
                 res = await Gn1GnComm(index, token);
+                Logging(res, true);
                 if (res == "failed" || res == "canceled")
                 {
                     return res;
@@ -332,7 +743,6 @@ namespace MVVM_Base.ViewModel
                     if (bpList == null)
                     {
                         // TODO : エラーメッセージ
-                        vmService.CanTransit = true;
                         return "failed";
                     }
                     else if (bpList.Length == 1 && bpList[0] == double.MaxValue)
@@ -368,8 +778,6 @@ namespace MVVM_Base.ViewModel
                 return res;
             }
 
-            vmService.CanTransit = true;
-
             return "";
         }
 
@@ -401,7 +809,7 @@ namespace MVVM_Base.ViewModel
                 return res;
             }
 
-            return "success";
+            return "";
         }
 
         /// <summary>
@@ -507,7 +915,7 @@ namespace MVVM_Base.ViewModel
             var attemptNum = int.Parse(attemptsValue);
 
             // 計測結果リストから最初と最後の項目を除いたリスト
-            var target = Column1.Skip(1).Take(attemptNum - 1).ToList();
+            var target = MesurementValues.Skip(1).Take(attemptNum - 1).ToList();
 
             // 測定結果の内のmax値およびインデクスを求める。最後の計測結果は含まない。
             var max = target.Select((v, i) => (v, i)).MaxBy(x => float.Parse(x.v.Value));
@@ -642,7 +1050,9 @@ namespace MVVM_Base.ViewModel
         /// <param name="initialVo"></param>
         private void UpdateUI_WithCacl(int index, string readingVal, string vOut, string initialVo)
         {
-            ReadingValueArray[index] = readingVal;
+            var rv = new ReadingValue();
+            rv.Value = readingVal;
+            ReadingValueArray[index] = rv;
             VoutArray[index] = vOut;
             InitialVoArray[index] = initialVo;
         }
@@ -731,13 +1141,13 @@ namespace MVVM_Base.ViewModel
 
                 // 10点リニア係数のFBアドレス(1~10までのペア)
                 List<Tuple<string, string>> InitPairList = new List<Tuple<string, string>>()
-            {
-                Tuple.Create("FB90", "FB91"), Tuple.Create("FB92", "FB93"),
-                Tuple.Create("FB94", "FB95"), Tuple.Create("FB96", "FB97"),
-                Tuple.Create("FB98", "FB99"), Tuple.Create("FB9A", "FB9B"),
-                Tuple.Create("FB9C", "FB9D"), Tuple.Create("FB9E", "FB9F"),
-                Tuple.Create("FBA0", "FBA1"), Tuple.Create("FBA2", "FBA3")
-            };
+                {
+                    Tuple.Create("FB90", "FB91"), Tuple.Create("FB92", "FB93"),
+                    Tuple.Create("FB94", "FB95"), Tuple.Create("FB96", "FB97"),
+                    Tuple.Create("FB98", "FB99"), Tuple.Create("FB9A", "FB9B"),
+                    Tuple.Create("FB9C", "FB9D"), Tuple.Create("FB9E", "FB9F"),
+                    Tuple.Create("FBA0", "FBA1"), Tuple.Create("FBA2", "FBA3")
+                };
 
                 // 非可変BPモード
                 if (mode == 0)
@@ -748,13 +1158,13 @@ namespace MVVM_Base.ViewModel
                         {
                             if (i == 1)
                             {
-                                double temp = double.Parse(ReadingValueArray[i]) / double.Parse(TrueValueArray[i]);
+                                double temp = double.Parse(ReadingValueArray[i].Value) / double.Parse(TrueValueArray[i]);
                                 //noMulInitialGainList.Add(temp);
                                 newGain = initialGain * temp;
                             }
                             else
                             {
-                                double temp = (double.Parse(ReadingValueArray[i]) - double.Parse(ReadingValueArray[i - 1])) /
+                                double temp = (double.Parse(ReadingValueArray[i].Value) - double.Parse(ReadingValueArray[i - 1].Value)) /
                                               (double.Parse(TrueValueArray[i]) - double.Parse(TrueValueArray[i - 1]));
                                 //noMulInitialGainList.Add(temp);
                                 newGain = initialGain * temp;
@@ -936,9 +1346,8 @@ namespace MVVM_Base.ViewModel
                 {
                     return res;
                 }
-
-                await Task.Delay(100);
                 isCalculated = true;
+                await Task.Delay(100);
                 return "";
             }
             catch (OperationCanceledException)
@@ -977,20 +1386,20 @@ namespace MVVM_Base.ViewModel
                 1d//,1d,1d,1d,1d
             };
 
-                double fullScaleOutput = double.Parse(readingList[10]);
+                double fullScaleOutput = double.Parse(readingList[10].Value);
 
                 double[] yData =
                 {
-                double.Parse(readingList[1])  / fullScaleOutput * 100d,
-                double.Parse(readingList[2])  / fullScaleOutput * 100d,
-                double.Parse(readingList[3])  / fullScaleOutput * 100d,
-                double.Parse(readingList[4])  / fullScaleOutput * 100d,
-                double.Parse(readingList[5])  / fullScaleOutput * 100d,
-                double.Parse(readingList[6])  / fullScaleOutput * 100d,
-                double.Parse(readingList[7])  / fullScaleOutput * 100d,
-                double.Parse(readingList[8])  / fullScaleOutput * 100d,
-                double.Parse(readingList[9])  / fullScaleOutput * 100d,
-                double.Parse(readingList[10]) / fullScaleOutput * 100d
+                double.Parse(readingList[1].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[2].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[3].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[4].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[5].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[6].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[7].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[8].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[9].Value)  / fullScaleOutput * 100d,
+                double.Parse(readingList[10].Value) / fullScaleOutput * 100d
             };
 
                 // 5次多項式の回帰曲線を求める
@@ -1127,6 +1536,72 @@ namespace MVVM_Base.ViewModel
                 double[] canceledArray = new double[1];
                 canceledArray[0] = double.MaxValue;
                 return canceledArray;
+            }
+        }
+
+        /// <summary>
+        /// confボタン押下でセットポイントを変える
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        [RelayCommand]
+        private async Task ManualChangeSetpoint(string index)
+        {
+            if (!commStatusService.IsMfcConnected)
+            {
+                await messageService.ShowMessage("MFC isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+            else if (!commStatusService.IsBalanceConnected)
+            {
+                await messageService.ShowMessage("Balance isn't connected");
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
+            // viewに通知いくが、使っていない。アニメーション実装を要する場合に使う。
+            ConfIndex = int.Parse(index);
+
+            // Manual押下前提なので、CancellationTokenSourceはManualのものを共用する
+            if (_calculateCts != null)
+            {
+                var token = _calculateCts.Token;
+
+                List<string> swValueList = new List<string>()
+                {
+                    "01000", "02000", "03000", "04000", "05000", "06000", "07000", "08000", "09000", "10000",
+                };
+
+                // 繰り返し処理 各流量出力において計測開始
+                // CD, VS, SW, 01000~10000
+                var res = await CommMFCAsyncType1("CD", token);
+                if (res == "canceled")
+                {
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+                }
+
+                // CD送信
+                res = await CommMFCAsyncType1("VS", token);
+                if (res == "canceled")
+                {
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+                }
+
+                // 流量設定
+                res = await CommMFCAsyncType3("SW", swValueList[ConfIndex - 1], token);
+                if (res == "canceled")
+                {
+                    await messageService.ShowMessage("Operation Canceled");
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+                }
             }
         }
 

@@ -32,6 +32,9 @@ namespace MVVM_Base
             // viewLinearを作成
             var linear = diRoot.Instance.GetService<viewLinear>();
 
+            // viewBalwを作成
+            var balw = diRoot.Instance.GetService<viewBalw>();
+
             // PortWatcherサービス取得
             portWatcher = diRoot.Instance.GetService<PortWatcherService>();
 

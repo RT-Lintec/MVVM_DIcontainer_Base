@@ -244,23 +244,23 @@ namespace MVVM_Base.ViewModel
             }
             catch (TimeoutException)
             {
-                return result;
+                return "failed";
             }
             catch (IOException ex)
             {
-                return result;
+                return "failed";
             }
             catch (InvalidOperationException ex)
             {
-                return result;
+                return "failed";
             }
             catch (OperationCanceledException ex)
             {
-                return result;
+                return "canceled";
             }
             catch (Exception ex)
             {
-                return result;
+                return "failed";
             }
         }
 
@@ -311,15 +311,15 @@ namespace MVVM_Base.ViewModel
             }
             catch (TimeoutException)
             {
-                return "";
+                return "failed";
             }
             catch (IOException ex)
             {
-                return "";
+                return "failed";
             }
             catch (InvalidOperationException ex)
             {
-                return "";
+                return "failed";
             }
             catch (OperationCanceledException ex)
             {
@@ -327,7 +327,68 @@ namespace MVVM_Base.ViewModel
             }
             catch (Exception ex)
             {
+                return "failed";
+            }
+        }
+        /// <summary>
+        /// ゲイン表の値をMFCに書き込む
+        /// </summary>
+        /// <returns></returns>
+        private async Task<string> FBDataWrite(CancellationToken token)
+        {
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                // 10点リニア補正値読み出し
+                var props = this.GetType().GetProperties()
+                    .Select(p => new
+                    {
+                        Property = p,
+                        Attr = p.GetCustomAttributes(typeof(FbCodeAttribute), false)
+                                .Cast<FbCodeAttribute>()
+                                .FirstOrDefault()
+                    })
+                    .Where(x => x.Attr != null)
+                    .ToList();
+
+                for (int i = 0; i < props.Count - 1; i++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    string value = (string)props[i].Property.GetValue(this);
+                    string code = props[i].Attr.Code;
+
+                    var command = Tuple.Create(code, value);
+
+                    // 該当アドレスに書き込む
+                    var res = await CommMFCAsyncTypeRW("EW", command, token);
+                    if (res == "failed" || res == "canceled")
+                    {
+                        return res;
+                    }
+                }
+
                 return "";
+            }
+            catch (TimeoutException)
+            {
+                return "failed";
+            }
+            catch (IOException ex)
+            {
+                return "failed";
+            }
+            catch (InvalidOperationException ex)
+            {
+                return "failed";
+            }
+            catch (OperationCanceledException ex)
+            {
+                return "canceled";
+            }
+            catch (Exception ex)
+            {
+                return "failed";
             }
         }
 
@@ -405,7 +466,7 @@ namespace MVVM_Base.ViewModel
                         var intervalUTC = currentUTC - lastUTC;
 
                         // 取得した値を分単位のmg変化量に変換して格納
-                        Column1[index].Value = (60 / intervalUTC.TotalSeconds * (val - lastBalanceVal)).ToString("F3");
+                        MesurementValues[index].Value = (60 / intervalUTC.TotalSeconds * (val - lastBalanceVal)).ToString("F3");
                         MarkUpdatedTemporarily(index, int.Parse(intervalValue) * 1000);
                         balNumList[index] = val;
 
@@ -426,26 +487,26 @@ namespace MVVM_Base.ViewModel
                             {
                                 if (index >= 5)
                                 {
-                                    Column1[0].Value = (60 / (dateList[index] - dateList[index - 5]).TotalSeconds * (balNumList[index] - balNumList[index - 5])).ToString("F3");
+                                    MesurementValues[0].Value = (60 / (dateList[index] - dateList[index - 5]).TotalSeconds * (balNumList[index] - balNumList[index - 5])).ToString("F3");
                                 }
                                 else
                                 {
-                                    Column1[0].Value = (60 / (dateList[index] - dateList[index + 5]).TotalSeconds * (balNumList[index] - balNumList[index + 5])).ToString("F3");
+                                    MesurementValues[0].Value = (60 / (dateList[index] - dateList[index + 5]).TotalSeconds * (balNumList[index] - balNumList[index + 5])).ToString("F3");
                                 }
                             }
                             else
                             {
                                 if (index > 5)
                                 {
-                                    Column1[0].Value = (60 / (dateList[index] - dateList[index - 5]).TotalSeconds * (balNumList[index] - balNumList[index - 5])).ToString("F3");
+                                    MesurementValues[0].Value = (60 / (dateList[index] - dateList[index - 5]).TotalSeconds * (balNumList[index] - balNumList[index - 5])).ToString("F3");
                                 }
                                 else
                                 {
-                                    Column1[0].Value = (60 / (dateList[index] - dateList[index + 5]).TotalSeconds * (balNumList[index] - balNumList[index + 5])).ToString("F3");
+                                    MesurementValues[0].Value = (60 / (dateList[index] - dateList[index + 5]).TotalSeconds * (balNumList[index] - balNumList[index + 5])).ToString("F3");
                                 }
                             }
 
-                            //Column1[0].Value = measureResultAverage.Value;
+                            //MesurementValues[0].Value = measureResultAverage.Value;
                         }
 
                         return result;
@@ -488,7 +549,7 @@ namespace MVVM_Base.ViewModel
                         var intervalUTC = currentUTC - lastUTC;
 
                         // 測定値をindexの指す位置に格納
-                        Column1[index].Value = val.ToString();
+                        MesurementValues[index].Value = val.ToString();
                         balNumList[index] = val;
 
                         // 前回の値を保持
@@ -499,7 +560,7 @@ namespace MVVM_Base.ViewModel
                         dateList[index] = currentUTC;
 
                         // 値の格納
-                        Column1[index - 1].Value = (60 / (dateList[index] - dateList[index - 1]).TotalSeconds * (float.Parse(Column1[index].Value) - float.Parse(Column1[index - 1].Value))).ToString("F3");
+                        MesurementValues[index - 1].Value = (60 / (dateList[index] - dateList[index - 1]).TotalSeconds * (float.Parse(MesurementValues[index].Value) - float.Parse(MesurementValues[index - 1].Value))).ToString("F3");
 
                         return result;
                     }
@@ -536,12 +597,12 @@ namespace MVVM_Base.ViewModel
             var token = cts.Token;
 
             // 開始前に念のため止める
-            Column1[index].IsUpdate = false;
+            MesurementValues[index].IsUpdate = false;
 
             // 次のフレームで開始
             await Task.Yield();
 
-            Column1[index].IsUpdate = true;
+            MesurementValues[index].IsUpdate = true;
 
             try
             {
@@ -555,7 +616,7 @@ namespace MVVM_Base.ViewModel
             finally
             {
                 // 正常終了・キャンセルどちらでも必ず元に戻す
-                Column1[index].IsUpdate = false;
+                MesurementValues[index].IsUpdate = false;
             }
         }
 

@@ -3,6 +3,7 @@ using MVVM_Base.Model;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Controls;
 
 namespace MVVM_Base.ViewModel
 {
@@ -105,7 +106,7 @@ namespace MVVM_Base.ViewModel
         }
         #endregion
 
-        #region サービスからの通知対応プロパティ
+        #region 通知対応プロパティ
 
         /// <summary>
         /// MFC接続状態
@@ -174,9 +175,41 @@ namespace MVVM_Base.ViewModel
                 }
             }
         }
+
+        /// <summary>
+        /// 押下したConfirmボタンのインデクス
+        /// </summary>
+        private int confIndex = -1;
+        public int ConfIndex
+        {
+            get => confIndex;
+            private set
+            {
+                if (confIndex != value)
+                {
+                    confIndex = value;
+                    OnPropertyChanged(); // CallerMemberName を使っている場合
+                }
+            }
+        }
+
         #endregion
 
         #region サイズ変数
+        /// <summary>
+        /// グループボックス幅 100
+        /// </summary>
+        private double _groupBoxWidth90 = 90;
+        public double GroupBoxWidth90
+        {
+            get => _groupBoxWidth90;
+            set
+            {
+                _groupBoxWidth90 = value;
+                OnPropertyChanged();
+            }
+        }
+
         /// <summary>
         /// グループボックス幅 100
         /// </summary>
@@ -223,7 +256,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// 小グループボックス幅
         /// </summary>
-        private double _smallGBWidth = 280;
+        private double _smallGBWidth = 290;
         public double SmallGBWidth
         {
             get => _smallGBWidth;
@@ -265,7 +298,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// グループボックス幅 340
         /// </summary>
-        private double _groupBoxWidth245 = 245;
+        private double _groupBoxWidth245 = 320;
         public double GroupBoxWidth245
         {
             get => _groupBoxWidth245;
@@ -549,7 +582,7 @@ namespace MVVM_Base.ViewModel
         ///　スパン調整ゲイン増減ボタンのサイズ
         /// </summary>
         private int spnaGainSIze = 40;
-        public int SpnaGainSIze
+        public int SpanGainSIze
         {
             get => spnaGainSIze;
             set
@@ -557,6 +590,176 @@ namespace MVVM_Base.ViewModel
                 if (spnaGainSIze != value)
                 {
                     spnaGainSIze = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　出力関連のボタンサイズ
+        /// </summary>
+        private int outputBtnSIze = 120;
+        public int OutputBtnSIze
+        {
+            get => outputBtnSIze;
+            set
+            {
+                if (outputBtnSIze != value)
+                {
+                    outputBtnSIze = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　出力関連のボタンサイズ
+        /// </summary>
+        private float logFontSize = 12;
+        public float LogFontSize
+        {
+            get => logFontSize;
+            set
+            {
+                if (logFontSize != value)
+                {
+                    logFontSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　confirmボタン高さ
+        /// </summary>
+        private float confBtnFontSize = 10;
+        public float ConfBtnFontSize
+        {
+            get => confBtnFontSize;
+            set
+            {
+                if (confBtnFontSize != value)
+                {
+                    confBtnFontSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　confirmボタン高さ
+        /// </summary>
+        private float confHeightSize = 18;
+        public float ConfHeightSize
+        {
+            get => confHeightSize;
+            set
+            {
+                if (confHeightSize != value)
+                {
+                    confHeightSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　ログ高さ
+        /// </summary>
+        private float logHeightSize = 770;
+        public float LogHeightSize
+        {
+            get => logHeightSize;
+            set
+            {
+                if (logHeightSize != value)
+                {
+                    logHeightSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　他設定高さ
+        /// </summary>
+        private float otherSettingFontSize = 16;
+        public float OtherSettingFontSize
+        {
+            get => otherSettingFontSize;
+            set
+            {
+                if (otherSettingFontSize != value)
+                {
+                    otherSettingFontSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　他設定高さ
+        /// </summary>
+        private float unitTextboxWidth = 100;
+        public float UnitTextboxWidth
+        {
+            get => unitTextboxWidth;
+            set
+            {
+                if (unitTextboxWidth != value)
+                {
+                    unitTextboxWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　他設定高さ
+        /// </summary>
+        private float measureColumNameWidth = 60;
+        public float MeasureColumNameWidth
+        {
+            get => measureColumNameWidth;
+            set
+            {
+                if (measureColumNameWidth != value)
+                {
+                    measureColumNameWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　他設定高さ
+        /// </summary>
+        private float spanInputWidth = 30;
+        public float SpanInputWidth
+        {
+            get => spanInputWidth;
+            set
+            {
+                if (spanInputWidth != value)
+                {
+                    spanInputWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　flow出力ボックス幅
+        /// </summary>
+        private int flowOutputBoxWidth = 100;
+        public int FlowOutputBoxWidth
+        {
+            get => flowOutputBoxWidth;
+            set
+            {
+                if (flowOutputBoxWidth != value)
+                {
+                    flowOutputBoxWidth = value;
                     OnPropertyChanged();
                 }
             }
@@ -733,8 +936,6 @@ namespace MVVM_Base.ViewModel
             }
         }
 
-
-
         /// <summary>
         /// Calculateボタンの押下可否
         /// </summary>
@@ -748,6 +949,60 @@ namespace MVVM_Base.ViewModel
                 if (canManual != value)
                 {
                     canManual = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 単独Confボタンの押下可否
+        /// </summary>
+        private bool canConfAlone = true;
+        //[CanBeforeMFMAttribute("ConfAlone")]
+        public bool CanConfAlone
+        {
+            get => canConfAlone;
+            set
+            {
+                if (canConfAlone != value)
+                {
+                    canConfAlone = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 単独Confボタンの押下可否
+        /// </summary>
+        private bool canReadWriteGain = true;
+        //[CanBeforeMFMAttribute("ConfAlone")]
+        public bool CanReadWriteGain
+        {
+            get => canReadWriteGain;
+            set
+            {
+                if (canReadWriteGain != value)
+                {
+                    canReadWriteGain = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// csvエクスポートボタンの押下可否
+        /// </summary>
+        private bool canExport = false;
+        //[CanBeforeMFMAttribute("ConfAlone")]
+        public bool CanExport
+        {
+            get => canExport;
+            set
+            {
+                if (canExport != value)
+                {
+                    canExport = value;
                     OnPropertyChanged();
                 }
             }
@@ -832,6 +1087,62 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        /// <summary>
+        /// Calculate Gainボタンの押下可否
+        /// </summary>
+        private bool canCalcGain = false;
+        [CanBeforeMFMAttribute("CanCalcGain")]
+        public bool CanCalcGain
+        {
+            get => canCalcGain;
+            set
+            {
+                if (canCalcGain != value)
+                {
+                    canCalcGain = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        #endregion
+
+        #region UI編集可否フラグ
+        /// <summary>
+        /// Reading Listの編集可否
+        /// </summary>
+        private bool canEditReadingList = false;
+
+        public bool CanEditReadingList
+        {
+            get => canEditReadingList;
+            set
+            {
+                if (canEditReadingList != value)
+                {
+                    canEditReadingList = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gainデータの編集可否
+        /// </summary>
+        private bool canEditGainData = true;
+
+        public bool CanEditGainData
+        {
+            get => canEditGainData;
+            set
+            {
+                if (canEditGainData != value)
+                {
+                    canEditGainData = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
         #endregion
 
         #region FBデータ
@@ -1379,6 +1690,14 @@ namespace MVVM_Base.ViewModel
         #endregion
 
         #region MFM関連フラグ
+
+        /// <summary>
+        /// MFMが完了したかどうか。初期値はfalse
+        /// MFMが完了したらtrueに、アプリ起動時およびゲインのCalc後にfalseに変化する。
+        /// 解釈としては、既存のゲイン値を初期化して調整・計算し直すための事前処理(初期化)がMFM
+        /// </summary>
+        private bool isFinishedMFM = false;
+
         /// <summary>
         /// MFM中か否か
         /// </summary>
@@ -1419,23 +1738,38 @@ namespace MVVM_Base.ViewModel
             ZeroAdjust,
             Span,
             AfterMFM,
+            AfterCalc,
+            AfterCalcAndConf,
             Measurement,
+            Manual,
             Transit
         }
 
+        ProcessState curState = ProcessState.Initial;
+
+        private bool isSavedOutput = false;
+
         /// <summary>
-        /// 拡縮回数
+        /// UI拡縮回数
         /// </summary>
         private int tcnt = 0;
-        public bool IsViewVisible { get; private set; }
 
+        //public bool IsViewVisible { get; private set; }
+
+        /// <summary>
+        /// メッセージのフェードアウト開始までの時間
+        /// </summary>
         private int messageFadeTime = 2000;
 
         /// <summary>
-        /// 計測結果の構成要素
+        /// 計測結果の項目名格納先
         /// </summary>
-        public ObservableCollection<MeasureResult> Column0 { get; set; }
-        public ObservableCollection<MeasureResult> Column1 { get; set; }
+        public ObservableCollection<MeasureResult> MesurementItems { get; set; }
+
+        /// <summary>
+        /// 計測結果の値格納先
+        /// </summary>
+        public ObservableCollection<MeasureResult> MesurementValues { get; set; }
 
         /// <summary>
         /// 天秤との通信回数
@@ -1462,11 +1796,31 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         DateTime[] dateList = new DateTime[11];
 
+        #region 出力関連
+
         public ObservableCollection<string> SetPointArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
         public ObservableCollection<string> TrueValueArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
-        public ObservableCollection<string> ReadingValueArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
+        public class ReadingValue : INotifyPropertyChanged
+        {
+            private string? _value;
+            public string? Value
+            {
+                get => _value;
+                set
+                {
+                    if (_value == value) return;
+                    _value = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+        }
+
+        public ObservableCollection<ReadingValue> ReadingValueArray { get; }
+            = new ObservableCollection<ReadingValue>(Enumerable.Range(0, 11).Select(_ => new ReadingValue()));
 
         public ObservableCollection<string> InitialVoArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
@@ -1477,10 +1831,6 @@ namespace MVVM_Base.ViewModel
         public ObservableCollection<string> VOArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
         public ObservableCollection<string> ConfirmArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
-
-        private CancellationTokenSource? _loadCts;
-        private CancellationTokenSource? _mfmCts;
-        private CancellationTokenSource? _calculateCts;
 
         public class MeasureResult : INotifyPropertyChanged
         {
@@ -1507,8 +1857,78 @@ namespace MVVM_Base.ViewModel
             }
 
             public event PropertyChangedEventHandler? PropertyChanged;
+
             protected void OnPropertyChanged([CallerMemberName] string? name = null)
                 => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        #endregion
+
+        #region キャンセレーショントークン
+        /// <summary>
+        /// ロード時
+        /// </summary>
+        private CancellationTokenSource? _loadCts;
+
+        /// <summary>
+        /// ゲインR/W時
+        /// </summary>
+        private CancellationTokenSource? _fbRWCts;
+
+        /// <summary>
+        /// MFM処理時
+        /// </summary>
+        private CancellationTokenSource? _mfmCts;
+
+        /// <summary>
+        /// Calc, Conf処理時
+        /// </summary>
+        private CancellationTokenSource? _calculateCts;
+        #endregion
+
+
+        /// <summary>
+        /// ログ
+        /// </summary>
+        public ObservableCollection<string> Logs { get; } = new();
+
+        /// <summary>
+        /// ステータスのラベルフォントサイズ
+        /// </summary>
+        private double _statusFontSize = 12;
+        public double StatusFontSize
+        {
+            get => _statusFontSize;
+            set
+            {
+                _statusFontSize = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// ゲイン表セルの幅サイズ
+        /// </summary>
+        private double gainMatrixWidth = 55;
+        public double GainMatrixWidth
+        {
+            get => gainMatrixWidth;
+            set
+            {
+                gainMatrixWidth = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private double gainMatrixTotalWidth = 607;
+        public double GainMatrixTotalWidth
+        {
+            get => gainMatrixTotalWidth;
+            set
+            {
+                gainMatrixTotalWidth = value;
+                OnPropertyChanged();
+            }
         }
     }
 }
