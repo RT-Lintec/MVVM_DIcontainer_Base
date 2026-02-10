@@ -486,12 +486,13 @@ namespace MVVM_Base.ViewModel
             var sb = new StringBuilder();
 
             //sb.AppendLine("Reading Value");
-
+            int lineBreak = 20;
             for (int i = 0; i < Logs.Count; i++)
             {
-                if (i != 0 && i % 10 == 0 )
+                if (i != 0 && i % lineBreak == 0 )
                 {
-                    sb.AppendLine($"=\"{Logs[i]}\"");               
+                    sb.AppendLine($"=\"{Logs[i]}\"");
+                    lineBreak = lineBreak + 20 + 1;
                 }
                 else
                 {

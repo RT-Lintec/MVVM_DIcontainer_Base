@@ -610,6 +610,7 @@ namespace MVVM_Base.ViewModel
             foreach (var swValue in swValueList) 
             {
                 // OSさせる
+                Logging("Waiting for OS.", false);
                 res = await DoOverShoot(token);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
@@ -618,6 +619,7 @@ namespace MVVM_Base.ViewModel
 
                 // オーバーシュート後の安定待ち
                 await WaitUntilStableAfterOS(token);
+                Logging("Finished OS.", false);
 
                 // 繰り返し処理 各流量出力において計測開始
                 // CD, VS, SW, 01000~10000
@@ -643,11 +645,13 @@ namespace MVVM_Base.ViewModel
 
                 // 捨て待ち
                 int waitTime = int.Parse(waitOSValue) * 1000;
+                Logging("Start purge wait.", false);
                 res = await WaitForDispose(waitTime, token);
                 if (res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
+                Logging("End purge wait.", false);
 
                 // 天秤との通信を指定回数行い、測定ボックスに格納していく
                 // 開始してすぐに初期値を取る。これは回数に含める
@@ -891,6 +895,7 @@ namespace MVVM_Base.ViewModel
             foreach (var swValue in swValueList)
             {
                 // OSさせる
+                Logging("Waiting for OS.", false);
                 res = await DoOverShoot(token);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
@@ -899,6 +904,7 @@ namespace MVVM_Base.ViewModel
 
                 // オーバーシュート後の安定待ち
                 await WaitUntilStableAfterOS(token);
+                Logging("Finished OS.", false);
 
                 // 繰り返し処理 各流量出力において計測開始
                 // CD, VS, SW, 01000~10000
@@ -924,11 +930,13 @@ namespace MVVM_Base.ViewModel
 
                 // 捨て待ち
                 int waitTime = int.Parse(waitOSValue) * 1000;
+                Logging("Start purge wait.", false);
                 res = await WaitForDispose(waitTime, token);
                 if (res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
+                Logging("End purge wait.", false);
 
                 // 天秤との通信を指定回数行い、測定ボックスに格納していく
                 // 開始してすぐに初期値を取る。これは回数に含める
@@ -1266,7 +1274,7 @@ namespace MVVM_Base.ViewModel
 
             // 計測結果リストから最後の項目を除いたリスト(最後の計測結果は含まない)
             // 最初の項目はグリッド最上段のため(空欄)除去している
-            var target = MeasurementValues.Take(attemptNum - 1).ToList();
+            var target = MeasurementValues.Skip(1).Take(attemptNum - 1).ToList();
 
             // 測定結果の内のmax値およびインデクスを求める。
             var max = target.Select((v, i) => (v, i)).MaxBy(x => float.Parse(x.v.Value));
