@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MVVM_Base.Model;
 using System.Windows;
 
 namespace MVVM_Base.ViewModel
@@ -84,6 +85,7 @@ namespace MVVM_Base.ViewModel
             async () =>
             {
                 cntBalCom++;
+                LogQ();
                 var res = await Gn5GnComm(index, token);
 
                 if (index >= 10)
@@ -147,6 +149,18 @@ namespace MVVM_Base.ViewModel
 
             if (isSucceed) return "";
             else return identifierService.Failed;
+        }
+
+        private void LogQ()
+        {
+            if (languageService.CurrentLanguage == LanguageType.Japanese)
+            {
+                Logging("送信：Q", false);
+            }
+            else
+            {
+                Logging("Send : Q", false);
+            }
         }
 
         /// <summary>

@@ -668,20 +668,7 @@ namespace MVVM_Base.ViewModel
 
                     return;
                 }, vtInterval, token);
-
-                lastUTC = DateTime.UtcNow;
-                dateList[1] = lastUTC;
-
-                // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
-                var firstVal = await CommBalanceAsyncCommand(token);
-                Logging(firstVal.Payload, false);
-                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
-                {
-                    return res;
-                }
-                lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
-                MeasurementValues[1].Value = lastBalanceVal.ToString();
-               
+                              
                 // 比較値格納インデクス
                 int interval = int.Parse(IntervalValue) * 1000;
                 int index = 1;
@@ -690,37 +677,96 @@ namespace MVVM_Base.ViewModel
                 // ループ回数は一回少ない
                 attempts = (attempts - 1);
 
+                // 非同期精密タイマースレッド開始
+                // →天秤とインターバル値間隔で通信
+                // →結果をテキストボックスに表示
+                precisionTimer2.StartForLinearCommand(
+                    async () =>
+                    {
+                        lastUTC = DateTime.UtcNow;
+                        dateList[1] = lastUTC;
+
+                        // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
+                        LogQ();
+                        var firstVal = await CommBalanceAsyncCommand(token);
+                        Logging(firstVal.Payload, false);
+                        if (firstVal.Status == OperationResultType.Failure || firstVal.Status == OperationResultType.Canceled)
+                        {
+                            precisionTimer2.Stop();
+                            return;
+                        }
+                        lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
+                        MeasurementValues[index].Value = lastBalanceVal.ToString();
+
+                        index++;
+                        return;
+                    }
+                    , async () =>
+                    {
+                        cntBalCom++;
+
+                        if (index > attempts)
+                        {
+                            LogQ();
+                            res = await Gn1GnComm(index, token);
+                            Logging(res.Payload, true);
+                            precisionTimer2.Stop();
+                            return;
+                        }
+                        else if (!commStatusService.IsBalanceConnected)
+                        {                       
+                            precisionTimer2.Stop();
+                        }
+                        else
+                        {
+                            LogQ();
+                            var res = await Gn1GnComm(index, token);
+                            Logging(res.Payload, false);
+                        }
+
+                        index++;
+                        return;
+                    }, interval, token);
+
                 while (true)
                 {
-                    // 2回目以降はインターバル待ち
-                    await WaitForDispose(interval, token);
-                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                    try
                     {
-                        return res;
+                        token.ThrowIfCancellationRequested();
+
+                        await Task.Delay(10, token);
+                        if (!commStatusService.IsBalanceConnected)
+                        {
+                            break;
+                        }
+
+                        if (isSpanOK)
+                        {
+                            // 非同期精密タイマースレッドを終了
+                            if (precisionTimer2.IsRun)
+                            {
+                                precisionTimer2.Stop();
+                            }
+                            break;
+                        }
+
+                        if (!precisionTimer2.IsRun)
+                        {
+                            break;
+                        }
                     }
-
-                    // index進める
-                    index++;
-
-                    // indexが規定回数を超えたら終了
-                    if (index > attempts)
+                    catch (OperationCanceledException)
                     {
-                        break;
-                    }
+                        precisionTimer2.Stop();
 
-                    // 通信&リスト書き込み                    
-                    res = await Gn1GnComm(index, token);
-                    Logging(res.Payload, false);
-                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
-                    {
-                        return res;
+                        return OperationResult.Canceled();
                     }
                 }
 
-                // 最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
+                // 最後の通信応答結果をタイマー内自動変数とすると通信エラーが起きる
+                // 元の実装では以下のような状態だった。
+                // ➡最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
                 // レースコンディションにより意図しないタイミングで終了する
-                res = await Gn1GnComm(index, token);
-                Logging(res.Payload, true);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
@@ -904,19 +950,6 @@ namespace MVVM_Base.ViewModel
                     return;
                 }, vtInterval, token);
 
-                lastUTC = DateTime.UtcNow;
-                dateList[1] = lastUTC;
-
-                // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
-                var firstVal = await CommBalanceAsyncCommand(token);
-                Logging(firstVal.Payload, false);
-                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
-                {
-                    return res;
-                }
-                lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
-                MeasurementValues[1].Value = lastBalanceVal.ToString();
-
                 // 比較値格納インデクス
                 int interval = int.Parse(IntervalValue) * 1000;
                 int index = 1;
@@ -925,37 +958,96 @@ namespace MVVM_Base.ViewModel
                 // ループ回数は一回少ない
                 attempts = (attempts - 1);
 
+                // 非同期精密タイマースレッド開始
+                // →天秤とインターバル値間隔で通信
+                // →結果をテキストボックスに表示
+                precisionTimer2.StartForLinearCommand(
+                    async () =>
+                    {
+                        lastUTC = DateTime.UtcNow;
+                        dateList[1] = lastUTC;
+
+                        // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
+                        LogQ();
+                        var firstVal = await CommBalanceAsyncCommand(token);
+                        Logging(firstVal.Payload, false);
+                        if (firstVal.Status == OperationResultType.Failure || firstVal.Status == OperationResultType.Canceled)
+                        {
+                            precisionTimer2.Stop();
+                            return;
+                        }
+                        lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
+                        MeasurementValues[index].Value = lastBalanceVal.ToString();
+
+                        index++;
+                        return;
+                    }
+                    , async () =>
+                    {
+                        cntBalCom++;
+
+                        if (index > attempts)
+                        {
+                            LogQ();
+                            res = await Gn1GnComm(index, token);
+                            Logging(res.Payload, true);
+                            precisionTimer2.Stop();
+                            return;
+                        }
+                        else if (!commStatusService.IsBalanceConnected)
+                        {
+                            precisionTimer2.Stop();
+                        }
+                        else
+                        {
+                            LogQ();
+                            var res = await Gn1GnComm(index, token);
+                            Logging(res.Payload, false);
+                        }
+
+                        index++;
+                        return;
+                    }, interval, token);
+
                 while (true)
                 {
-                    // 2回目以降はインターバル待ち
-                    await WaitForDispose(interval, token);
-                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                    try
                     {
-                        return res;
+                        token.ThrowIfCancellationRequested();
+
+                        await Task.Delay(10, token);
+                        if (!commStatusService.IsBalanceConnected)
+                        {
+                            break;
+                        }
+
+                        if (isSpanOK)
+                        {
+                            // 非同期精密タイマースレッドを終了
+                            if (precisionTimer2.IsRun)
+                            {
+                                precisionTimer2.Stop();
+                            }
+                            break;
+                        }
+
+                        if (!precisionTimer2.IsRun)
+                        {
+                            break;
+                        }
                     }
-
-                    // index進める
-                    index++;
-
-                    // indexが規定回数を超えたら終了
-                    if (index > attempts)
+                    catch (OperationCanceledException)
                     {
-                        break;
-                    }
+                        precisionTimer2.Stop();
 
-                    // 通信&リスト書き込み                    
-                    res = await Gn1GnComm(index, token);
-                    Logging(res.Payload, false);
-                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
-                    {
-                        return res;
+                        return OperationResult.Canceled();
                     }
                 }
 
-                // 最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
+                // 最後の通信応答結果をタイマー内自動変数とすると通信エラーが起きる
+                // 元の実装では以下のような状態だった。
+                // ➡最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
                 // レースコンディションにより意図しないタイミングで終了する
-                res = await Gn1GnComm(index, token);
-                Logging(res.Payload, true);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
@@ -1174,7 +1266,7 @@ namespace MVVM_Base.ViewModel
 
             // 計測結果リストから最後の項目を除いたリスト(最後の計測結果は含まない)
             // 最初の項目はグリッド最上段のため(空欄)除去している
-            var target = MeasurementValues.Skip(1).Take(attemptNum - 1).ToList();
+            var target = MeasurementValues.Take(attemptNum - 1).ToList();
 
             // 測定結果の内のmax値およびインデクスを求める。
             var max = target.Select((v, i) => (v, i)).MaxBy(x => float.Parse(x.v.Value));
@@ -1860,6 +1952,18 @@ namespace MVVM_Base.ViewModel
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
                 }
+            }
+        }
+
+        private void LogQ()
+        {
+            if (languageService.CurrentLanguage == LanguageType.Japanese)
+            {
+                Logging("送信：Q", false);
+            }
+            else
+            {
+                Logging("Send : Q", false);
             }
         }
 

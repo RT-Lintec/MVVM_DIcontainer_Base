@@ -9,7 +9,7 @@ namespace MVVM_Base.ViewModel
     public partial class vmLinear : ObservableObject, IViewModel
     {
         public vmLinear(ThemeService _themeService, CommStatusService _commStatusService, IMessageService _messageService,
-            ViewModelManagerService _vmService, ApplicationStatusService _appStatusService, HighPrecisionTimer _precisionTimer,
+            ViewModelManagerService _vmService, ApplicationStatusService _appStatusService, HighPrecisionTimer _precisionTimer, HighPrecisionTimer _precisionTimer2,
             LanguageService _languageService)
         {
             PropertyChanged += OnPropertyChanged;
@@ -31,6 +31,7 @@ namespace MVVM_Base.ViewModel
             appStatusService.PropertyChanged += AppStatusService_PropertyChanged;            
 
             precisionTimer = _precisionTimer;
+            precisionTimer2 = _precisionTimer2;
 
             MesurementItems = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
             MeasurementValues = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();

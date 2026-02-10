@@ -17,6 +17,7 @@ namespace MVVM_Base.ViewModel
         private readonly ViewModelManagerService vmService;
         private readonly ApplicationStatusService appStatusService;
         private readonly HighPrecisionTimer precisionTimer;
+        private readonly HighPrecisionTimer precisionTimer2;
         private readonly IMessageService messageService;
         private readonly LanguageService languageService;
         //private readonly HexCheckBehavior hexCheckBehavior;

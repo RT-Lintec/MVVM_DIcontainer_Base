@@ -588,11 +588,13 @@ namespace MVVM_Base.ViewModel
             bool isSucceed = true;
             // 比較初期値として天秤からの値を取得しておく
             lastUTC = DateTime.UtcNow;
+            //LogQ();
             var firstVal = await CommBalanceAsyncCommand(token);
             if (firstVal.Status == OperationResultType.Failure || firstVal.Status == OperationResultType.Canceled)
             {
                 return firstVal;
             }
+            //Logging(firstVal.Payload, false);
             lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
             balNumList[0] = lastBalanceVal;
             dateList[0] = lastUTC;
@@ -609,6 +611,7 @@ namespace MVVM_Base.ViewModel
             precisionTimer.Start(async() =>
             {
                 cntBalCom++;
+                LogQ();
                 var res = await Gn5GnComm(index, token);
                 
                 if (index >= 10)

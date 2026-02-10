@@ -16,7 +16,7 @@
     <!-- Entry画面 -->
     <sys:String x:Key="EntryWord">エントリー</sys:String>
     <sys:String x:Key="LinearWord">リニア</sys:String>
-    <sys:String x:Key="BalwWord">バルゥ</sys:String>
+    <sys:String x:Key="BalwWord">バルー</sys:String>
 
     <!-- メイン画面 -->
     <sys:String x:Key="CommunicationWord">通信</sys:String>

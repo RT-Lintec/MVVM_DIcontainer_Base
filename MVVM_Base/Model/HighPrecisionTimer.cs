@@ -65,6 +65,54 @@
         }
 
         /// <summary>
+        /// 即座にcallback1を実行し、その後指示秒ごとにcallback2を実行する
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="intervalMs"></param>
+        /// <param name="token"></param>
+        public void StartForLinearCommand(Func<Task> callback1, Func<Task> callback2, int intervalMs, CancellationToken token)
+        {
+            isRun = true;
+
+            // 多重起動防止
+            if (cts != null)
+            {
+                return;
+            }
+
+            //cts = new CancellationTokenSource();
+            //CancellationToken token = cts.Token;
+
+            long intervalTicks = (long)(Stopwatch.Frequency * (intervalMs / 1000.0));
+
+            timerTask = Task.Run(async () =>
+            {
+                var sw = Stopwatch.StartNew();
+                long next = intervalTicks;
+                token.ThrowIfCancellationRequested();
+                await callback1();
+                while (isRun)
+                {
+                    long now = sw.ElapsedTicks;
+                    
+                    if (now >= next)
+                    {
+                        // インターバルごとの処理
+                        await callback2();
+
+                        // 遅延があっても想定クロックを維持
+                        next += intervalTicks;
+                    }
+
+                    token.ThrowIfCancellationRequested();
+
+                    // CPU・精度バランスの良い待ち
+                    Thread.Sleep(1);
+                }
+            }, token);
+        }
+
+        /// <summary>
         /// 毎秒　callbackPerSecも実行する
         /// </summary>
         /// <param name="callback"></param>
