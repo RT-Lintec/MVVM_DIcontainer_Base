@@ -1,4 +1,5 @@
-﻿using MVVM_Base.Model;
+﻿using MVVM_Base.Common;
+using MVVM_Base.Model;
 using MVVM_Base.View;
 using MVVM_Base.ViewModel;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,10 @@ namespace MVVM_Base.DiContainer
             services.AddSingleton<ApplicationStatusService>();
             services.AddSingleton<ViewModelManagerService>();
             services.AddSingleton<HighPrecisionTimer>();
+            services.AddSingleton<LanguageService>();
+            services.AddSingleton<IdentifierService>();
+            services.AddSingleton<MfcCommand>();
+            //services.AddSingleton<HexCheckBehavior>();
 
             // 各画面DIにサービス登録させる
             diEntry.Configure(services);
@@ -55,6 +60,7 @@ namespace MVVM_Base.DiContainer
 
                 // service
                 services.AddSingleton<ViewModelManagerService>();
+                services.AddTransient<IMessageService, MessageBlocker>();
             }
         }
 

@@ -112,6 +112,9 @@ namespace MVVM_Base.ViewModel
         private readonly ThemeService themeService;
         private readonly ViewModelManagerService vmService;
         private readonly ApplicationStatusService appStatusService;
+        private readonly IMessageService messageService;
+        private readonly LanguageService languageService;
+        private readonly IdentifierService identifierService;
 
         /// <summary>
         /// 終了可否
@@ -126,16 +129,24 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        public vmEntry(ThemeService _themeService, ViewModelManagerService _vmService, ApplicationStatusService _appStatusService) 
+        public vmEntry(ThemeService _themeService, ViewModelManagerService _vmService, ApplicationStatusService _appStatusService,
+            IMessageService _messageService, LanguageService _languageService, IdentifierService _identifierService) 
         { 
             themeService = _themeService;
             themeService.PropertyChanged += ThemeService_PropertyChanged;
+            ColorTheme = themeService.Dark;
 
             vmService = _vmService;
             vmService.Register(this);
             vmService.PropertyChanged += VmService_PropertyChanged;
 
             appStatusService = _appStatusService;
+            messageService = _messageService;
+
+            languageService = _languageService;
+            languageService.PropertyChanged += LanguageService_PropertyChanged;
+
+            identifierService = _identifierService;
 
             canTransitOther = true;
         }
@@ -153,21 +164,70 @@ namespace MVVM_Base.ViewModel
 
 
         #region 変更通知関連
+
+        /// <summary>
+        /// 言語変更通知の検知
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LanguageService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // 言語
+            if (e.PropertyName == nameof(LanguageService.CurrentLanguage))
+            {
+                OnLanguageChanged(languageService.CurrentLanguage);
+            }
+        }
+
+        /// <summary>
+        /// 言語変更通知の発行　日本語ベース
+        /// </summary>
+        /// <param name="newTheme"></param>
+        private void OnLanguageChanged(LanguageType languageType)
+        {
+            // View に依存せず ViewModel 内で処理可能
+            // 例：内部フラグ更新や別プロパティ更新など
+            IsJapanese = languageType == LanguageType.Japanese; // フラグ例
+                                                     // 必要であれば PropertyChanged 通知も出す
+            OnPropertyChanged(nameof(IsJapanese));
+        }
+
         private void ThemeService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            // カラーテーマ
             if (e.PropertyName == nameof(ThemeService.CurrentTheme))
             {
-                // ここで CurrentTheme 変化を検知可能
                 OnThemeChanged(themeService.CurrentTheme);
             }
         }
 
+        /// <summary>
+        /// LanguageServiceにイベント通知を委任しているので、プロパティ変化の通知は行わない
+        /// 行うと二重発火となり、viewEntryでのプロパティ変更イベントが二回発生する。
+        /// </summary>
+        private bool isJapanese;
+        public bool IsJapanese
+        {
+            get => isJapanese;
+            set
+            {
+                if (isJapanese != value)
+                {
+                    isJapanese = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// カラーテーマ変更通知発行
+        /// </summary>
+        /// <param name="newTheme"></param>
         private void OnThemeChanged(string newTheme)
         {
             // View に依存せず ViewModel 内で処理可能
             // 例：内部フラグ更新や別プロパティ更新など
-            IsDarkTheme = newTheme == "Dark"; // フラグ例
-                                                   // 必要であれば PropertyChanged 通知も出す
+            IsDarkTheme = newTheme == themeService.Dark;
+            ColorTheme = newTheme;
             OnPropertyChanged(nameof(IsDarkTheme));
         }
 
@@ -186,6 +246,16 @@ namespace MVVM_Base.ViewModel
                     isDarkTheme = value;
                 }
             }
+        }
+
+        /// <summary>
+        /// 現在のカラーテーマ
+        /// </summary>
+        private string colorTheme = "";
+        public string ColorTheme
+        {
+            get => colorTheme;
+            private set => colorTheme = value;
         }
 
         private void VmService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -252,14 +322,38 @@ namespace MVVM_Base.ViewModel
                     ViewType.Main => mainView ??= diRoot.Instance.GetService<viewMain>(),
                     ViewType.LinearView => diRoot.Instance.GetService<viewLinear>(),
                     ViewType.Balw => diRoot.Instance.GetService<viewBalw>(),
-                    _ => CurrentView
+                    _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
                 };
             }
         }
 
         [RelayCommand]
         /// <summary>
-        /// 天秤のポートオープン
+        /// 言語変更
+        /// </summary>
+        private void ChangeLanguage()
+        {
+            try
+            {
+                // サービスに変更通知出させる
+                if (languageService.CurrentLanguage == LanguageType.Japanese)
+                {
+                    languageService.CurrentLanguage = LanguageType.English;
+                }
+                else
+                {
+                    languageService.CurrentLanguage = LanguageType.Japanese;
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        [RelayCommand]
+        /// <summary>
+        /// カラーテーマ変更
         /// </summary>
         private void ChangeColorTheme()
         {
@@ -277,13 +371,13 @@ namespace MVVM_Base.ViewModel
                 Color oldTagColor = (Color)resources["TagColor"];
 
                 // サービスに変更通知出させる
-                if (themeService.CurrentTheme == "Dark")
+                if (themeService.CurrentTheme == themeService.Dark)
                 {
-                    themeService.CurrentTheme = "Light";
+                    themeService.CurrentTheme = themeService.Light;
                 }
                 else
                 {
-                    themeService.CurrentTheme = "Dark";
+                    themeService.CurrentTheme = themeService.Dark;
                 }
 
                 // 変更後カラーの取得
@@ -352,7 +446,6 @@ namespace MVVM_Base.ViewModel
             }
         }
 
-
         /// <summary>
         /// LinearGradientBrush参照UIのテーマ変化アニメーション
         /// </summary>
@@ -400,8 +493,26 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// 終了ボタンの終了側スライド完了
         /// </summary>
-        public void OnThumbSlideCompleted()
+        public async void OnThumbSlideCompleted()
         {
+            // 未保存のリニア調整データがあるときの確認
+            if (vmService.HasNonsavedOutput)
+            {
+                var confirm = await messageService.ShowModalAsync(languageService.FirstConfirmBeforeQuit);
+                if (confirm.Value)
+                {
+                    confirm = await messageService.ShowModalAsync(languageService.SecondConfirmBeforeQuit);
+                    if (!confirm.Value)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+
             // trueにして各vmの終了イベント発火
             appStatusService.IsQuit = true;
             Dispose();

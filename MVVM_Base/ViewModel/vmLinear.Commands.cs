@@ -1,9 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MVVM_Base.Common;
 using MVVM_Base.Model;
 using MathNet.Numerics.LinearAlgebra;
 using System.Collections.ObjectModel;
-using static System.Windows.Forms.AxHost;
+using System.Windows;
 
 namespace MVVM_Base.ViewModel
 {
@@ -58,21 +59,25 @@ namespace MVVM_Base.ViewModel
         [RelayCommand]
         private async Task CalAndConf()
         {
-            //await Calculate(Calc);
-            //if (_calculateCts != null &&!_calculateCts.IsCancellationRequested)
-            //{
-            //    await Calculate(Conf);
-            //}
             if (!commStatusService.IsMfcConnected)
             {
-                await messageService.ShowMessage("MFC isn't connected");
+                await messageService.ShowMessage(languageService.MfcPortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
             }
             else if (!commStatusService.IsBalanceConnected)
             {
-                await messageService.ShowMessage("Balance isn't connected");
+                await messageService.ShowMessage(languageService.BalancePortError);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
+            // 5%刻みでは実施させない
+            if (incrementValue == IncerementType.FivePercent)
+            {
+                await messageService.ShowMessage(languageService.CannotCalWith5per);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
@@ -80,11 +85,11 @@ namespace MVVM_Base.ViewModel
 
             isCalculated = false;
             isCalcedAndConfed = false;
-
+            lastState = curState;
             vmService.CanTransit = false;
             await ChangeState(ProcessState.Measurement);
             _calculateCts = new CancellationTokenSource();
-            string res = "";
+            OperationResult res = new OperationResult(OperationResultType.Success, null, null);
 
             // Calc
             try
@@ -93,30 +98,30 @@ namespace MVVM_Base.ViewModel
             }
             catch (OperationCanceledException)
             {
-                await messageService.ShowMessage("Operation Canceled");
+                await messageService.ShowMessage(languageService.OperationCanceled);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
             }
             finally
             {
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
-                    await messageService.ShowMessage("Operation Canceled");
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
 
-                    await ChangeState(ProcessState.AfterMFM);
+                    await ChangeState(/*ProcessState.AfterMFM*/lastState);
                 }
-                else if (res == "failed")
+                else if (res.Status == OperationResultType.Failure)
                 {
                     // VC
                     await CommMFCAsyncType1("VC", _calculateCts.Token);
-                    await ChangeState(ProcessState.AfterMFM);
+                    await ChangeState(/*ProcessState.AfterMFM*/lastState);
                 }
                 else
                 {                    
                     ExportReadingCsv();
-                    await ChangeState(ProcessState.AfterCalc);                    
+                    //await ChangeState(ProcessState.AfterCalc);                    
                 }
             }
 
@@ -132,15 +137,15 @@ namespace MVVM_Base.ViewModel
             }
             catch (OperationCanceledException)
             {
-                await messageService.ShowMessage("Operation Canceled");
+                await messageService.ShowMessage(languageService.OperationCanceled);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
             }
             finally
             {
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
-                    await messageService.ShowMessage("Operation Canceled");
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
 
@@ -153,7 +158,7 @@ namespace MVVM_Base.ViewModel
                         await ChangeState(ProcessState.AfterCalc);
                     }
                 }
-                else if (res == "failed")
+                else if (res.Status == OperationResultType.Failure)
                 {
                     // VC
                     await CommMFCAsyncType1("VC", _calculateCts.Token);
@@ -183,28 +188,45 @@ namespace MVVM_Base.ViewModel
         [RelayCommand]
         private async Task GainReadWrite(string mode)
         {
-            var oldState = curState;
+            lastState = curState;
+            noNeedConfirmUnsaved = true;
             await ChangeState(ProcessState.Transit);
 
             if (!commStatusService.IsMfcConnected)
             {
-                await ChangeState(oldState);
+                await messageService.ShowMessage(languageService.MfcPortError);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                await ChangeState(lastState);
                 return;
             }
             _fbRWCts = new CancellationTokenSource();
 
+            OperationResult res = new OperationResult(OperationResultType.Success, null, null);
+
             // read
             if (mode == "r")
             {             
-                var res = await FBDataRead(_fbRWCts.Token);
+                res = await FBDataRead(_fbRWCts.Token);
             }
             // write
             else if(mode == "w")
             {
-                var res = await FBDataWrite(_fbRWCts.Token);
+                res = await FBDataWrite(_fbRWCts.Token);
+
+                // 表のゲインとEEPROMのゲインは同一である
+                isGainDirectChanged = false;
             }
 
-            await ChangeState(oldState);
+            if (res.Status == OperationResultType.Failure)
+            {
+                await messageService.ShowMessage(languageService.MfcCommError);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+            }
+
+            await ChangeState(lastState);
+            noNeedConfirmUnsaved = false;
         }
 
         /// <summary>
@@ -216,14 +238,14 @@ namespace MVVM_Base.ViewModel
         {            
             if (!commStatusService.IsMfcConnected)
             {
-                await messageService.ShowMessage("MFC isn't connected");
+                await messageService.ShowMessage(languageService.MfcPortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
             }
             if (!commStatusService.IsBalanceConnected)
             {
-                await messageService.ShowMessage("Balance isn't connected");
+                await messageService.ShowMessage(languageService.BalancePortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
@@ -234,7 +256,7 @@ namespace MVVM_Base.ViewModel
             ResetMeasureResult();
 
             vmService.CanTransit = false;
-
+            lastState = curState;
             await ChangeState(ProcessState.Manual);
 
             // Reading値のコピーを取得しておく
@@ -242,12 +264,23 @@ namespace MVVM_Base.ViewModel
                                     ReadingValueArray.Select(x => new ReadingValue { Value = x.Value }));
 
             bool isSame = true;
-
+            noNeedConfirmUnsaved = true;
             // 天秤との定期通信開始
             var res = await StartTimerWIthBalCom(_calculateCts.Token);
 
+            if (res.Status == OperationResultType.Canceled)
+            {
+                // VC
+                //await CommMFCAsyncType1("VC", _calculateCts.Token);
+
+                await messageService.ShowMessage(languageService.OperationCanceled);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+
+                await ChangeState(lastState);
+            }
             // MFM終了後なら
-            if (isFinishedMFM)
+            else if (isFinishedMFM)
             {
                 await ChangeState(ProcessState.AfterMFM);                
             }
@@ -295,17 +328,10 @@ namespace MVVM_Base.ViewModel
                 await ChangeState(ProcessState.Initial);
             }
 
-            if (res == "canceled")
-            {
-                // VC
-                await CommMFCAsyncType1("VC", _calculateCts.Token);
-
-                await messageService.ShowMessage("Operation Canceled");
-                await Task.Delay(messageFadeTime);
-                await messageService.CloseWithFade();
-            }
-
+            // VC
+            await CommMFCAsyncType1("VC", _calculateCts.Token);
             vmService.CanTransit = true;
+            noNeedConfirmUnsaved = false;
             return;
         }
 
@@ -327,7 +353,7 @@ namespace MVVM_Base.ViewModel
             }
             if (HasNull)
             {
-                await messageService.ShowMessage("Ten measurement points are required to calculate the gain");
+                await messageService.ShowMessage(languageService.CalAgainConfirm);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
@@ -335,14 +361,14 @@ namespace MVVM_Base.ViewModel
 
             if (!commStatusService.IsMfcConnected)
             {
-                await messageService.ShowMessage("MFC isn't connected");
+                await messageService.ShowMessage(languageService.MfcPortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
             }
             else if (!commStatusService.IsBalanceConnected)
             {
-                await messageService.ShowMessage("Balance isn't connected");
+                await messageService.ShowMessage(languageService.BalancePortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
@@ -355,21 +381,22 @@ namespace MVVM_Base.ViewModel
 
             _calculateCts = new CancellationTokenSource();
             var token = _calculateCts.Token;
+
             // 10点リニア補正値の計算
             // 可変BPではない場合
             if (BPValue == BPType.Invariable)
             {
                 var res = await CorrectLinearData(0, null, token);
-                if (res == "canceled")
-                {
-                    // VC
-                    res = await CommMFCAsyncType1("VC", _calculateCts.Token);
-                    if (res == "failed" || res == "canceled")
-                    {
-                        return;
-                    }
 
-                    await messageService.ShowMessage("Operation Canceled");
+                if (res.Status == OperationResultType.Canceled)
+                {
+                    await messageService.ShowMessage(languageService.OperationCanceled);
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
+                }
+                else if (res.Status == OperationResultType.Failure)
+                {
+                    await messageService.ShowMessage(languageService.MfcCommError);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
                 }
@@ -380,25 +407,31 @@ namespace MVVM_Base.ViewModel
                 var bpList = await CalculateAndWriteBP(token);
                 if (bpList == null)
                 {
-                    // TODO : エラーメッセージ
+                    // TODO : CalculateAndWriteBPの返り値の型をOperationResultに統一する
+                    await messageService.ShowMessage(languageService.MfcCommError);
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
                     return;
                 }
                 else if (bpList.Length == 1 && bpList[0] == double.MaxValue)
                 {
+                    await messageService.ShowMessage(languageService.OperationCanceled);
+                    await Task.Delay(messageFadeTime);
+                    await messageService.CloseWithFade();
                     return;
                 }
 
                 var res = await CorrectLinearData(1, bpList, token);
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
                     // VC
-                    res = await CommMFCAsyncType1("VC", _calculateCts.Token);
-                    if (res == "failed" || res == "canceled")
+                    //res = await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return;
                     }
 
-                    await messageService.ShowMessage("Operation Canceled");
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
                 }
@@ -415,6 +448,8 @@ namespace MVVM_Base.ViewModel
                 await ChangeState(ProcessState.Initial);
             }
 
+            // VC
+            await CommMFCAsyncType1("VC", _calculateCts.Token);
             vmService.CanTransit = true;
         }
 
@@ -428,14 +463,14 @@ namespace MVVM_Base.ViewModel
         {
             if (!commStatusService.IsMfcConnected)
             {
-                await messageService.ShowMessage("MFC isn't connected");
+                await messageService.ShowMessage(languageService.MfcPortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
             }
             else if (!commStatusService.IsBalanceConnected)
             {
-                await messageService.ShowMessage("Balance isn't connected");
+                await messageService.ShowMessage(languageService.BalancePortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
@@ -448,25 +483,47 @@ namespace MVVM_Base.ViewModel
             }
 
             vmService.CanTransit = false;
-            await ChangeState(ProcessState.Measurement);
+
+            lastState = curState;
+            // 5%刻みとの状態遷移を分ける
+            if (IncrementValue != IncerementType.FivePercent)
+            {
+                await ChangeState(ProcessState.Measurement);
+            }
+            else
+            {
+                noNeedConfirmUnsaved = true;
+                await ChangeState(ProcessState.FiveperConf);
+            }
+
             _calculateCts = new CancellationTokenSource();
-            string res = "";
+            OperationResult res = new OperationResult(OperationResultType.Success, null, null);
 
             try
             {
-                res = await CalculateCoreAsync(mode, _calculateCts.Token);
+                // 5%刻みのConfのみ別
+                if (mode == conf && IncrementValue == IncerementType.FivePercent)
+                {
+                    res = await ConfBy5Per(mode, _calculateCts.Token);
+                }                 
+                else
+                {
+                    res = await CalculateCoreAsync(mode, _calculateCts.Token);
+                }
             }
             catch (OperationCanceledException)
             {
-                await messageService.ShowMessage("Operation Canceled");
+                await messageService.ShowMessage(languageService.OperationCanceled);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
             }
             finally
             {
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
-                    await messageService.ShowMessage("Operation Canceled");
+                    // VC
+                    //await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
 
@@ -476,65 +533,22 @@ namespace MVVM_Base.ViewModel
                     }
                     else
                     {
-                        if (isCalculated && CanMFM)
-                        {
-                            await ChangeState(ProcessState.AfterCalcAndConf);
-                        }
-                        else if(!isCalculated && CanMFM)
-                        {
-                            await ChangeState(ProcessState.AfterMFM);
-                        }                        
-                        else
-                        {
-                            if (isFinishedMFM || isCalculated)
-                            {
-                                await ChangeState(ProcessState.AfterMFM);
-                            }
-                            else
-                            {
-                                await ChangeState(ProcessState.Initial);
-
-                            }
-                        }
+                        await ChangeState(lastState);
                     }
                 }
-                else if (res == "failed")
+                else if (res.Status == OperationResultType.Failure)
                 {
                     // VC
-                    await CommMFCAsyncType1("VC", _calculateCts.Token);
-                    if (mode == calc)
-                    {
-                        isCalculated = true;
-                        await ChangeState(ProcessState.AfterMFM);
-                    }
-                    else
-                    {
-                        if (isCalculated && CanMFM)
-                        {
-                            isCalcedAndConfed = true;
-                            vmService.HasNonsavedOutput = true;
-                            await ChangeState(ProcessState.AfterCalcAndConf);
-                        }
-                        else if (!isCalculated && CanMFM)
-                        {
-                            await ChangeState(ProcessState.AfterMFM);
-                        }
-                        else
-                        {
-                            if (isFinishedMFM || isCalculated)
-                            {
-                                await ChangeState(ProcessState.AfterMFM);
-                            }
-                            else
-                            {
-                                await ChangeState(ProcessState.Initial);
-                            }
-                        }
-                    }
+                    //await CommMFCAsyncType1("VC", _calculateCts.Token);
+                    await ChangeState(lastState);                    
                 }
                 else
                 {
-                    if (mode == Calc)
+                    if (curState == ProcessState.FiveperConf)
+                    {
+                        await ChangeState(lastState);
+                    }
+                    else if (mode == Calc)
                     {
                         ExportReadingCsv();
                         await ChangeState(ProcessState.AfterCalc);
@@ -547,20 +561,24 @@ namespace MVVM_Base.ViewModel
                             vmService.HasNonsavedOutput = true;
                             await ChangeState(ProcessState.AfterCalcAndConf);
                         }
-                        else if(!isFinishedMFM)
+                        else if (!isFinishedMFM)
                         {
                             await ChangeState(ProcessState.Initial);
-                        }                        
+                        }
                         else
                         {
                             await ChangeState(ProcessState.AfterMFM);
                         }
                     }
                 }
-                //ChangeState(ProcessState.AfterCalc);
+
+                // VC
+                await CommMFCAsyncType1("VC", _calculateCts.Token);
+                lastState = curState;
                 vmService.CanTransit = true;
                 _calculateCts?.Dispose();
                 _calculateCts = null;
+                noNeedConfirmUnsaved = false;
             }
         }
 
@@ -568,15 +586,15 @@ namespace MVVM_Base.ViewModel
         /// CalculateおよびConfirm押下時の処理
         /// </summary>
         /// <param name="mode"></param>
-        private async Task<string> CalculateCoreAsync(string mode, CancellationToken token)
+        private async Task<OperationResult> CalculateCoreAsync(string mode, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
-            string res = "";
+            OperationResult res;
 
             if (mode == Calc)
             {
-                ResetOutputResult();
+                ResetOutputResult(false);
             }
             else
             {
@@ -593,7 +611,7 @@ namespace MVVM_Base.ViewModel
             {
                 // OSさせる
                 res = await DoOverShoot(token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
@@ -604,21 +622,21 @@ namespace MVVM_Base.ViewModel
                 // 繰り返し処理 各流量出力において計測開始
                 // CD, VS, SW, 01000~10000
                 res = await CommMFCAsyncType1("CD", token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
 
                 // CD送信
                 res = await CommMFCAsyncType1("VS", token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
 
                 // 流量設定
                 res = await CommMFCAsyncType3("SW", swValue, token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
@@ -626,7 +644,7 @@ namespace MVVM_Base.ViewModel
                 // 捨て待ち
                 int waitTime = int.Parse(waitOSValue) * 1000;
                 res = await WaitForDispose(waitTime, token);
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
@@ -638,18 +656,31 @@ namespace MVVM_Base.ViewModel
                 // 初期化処理
                 ResetMeasureResult();
 
+                // vtempタイマー生成(Calcモードの場合のみ。毎回生成)
+                // vtempタイマースタート とりあえず一回読んでおく
+                await GetAndOutputVtemp(mode, token);
+                int vtInterval = int.Parse(VtempInterval) * 1000;
+                precisionTimer.Start(async () =>
+                {
+                    cntBalCom++;
+                    // Vtemp 基準1を取得
+                    await GetAndOutputVtemp(mode,token);
+
+                    return;
+                }, vtInterval, token);
+
                 lastUTC = DateTime.UtcNow;
                 dateList[1] = lastUTC;
 
                 // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
                 var firstVal = await CommBalanceAsyncCommand(token);
-                Logging(firstVal, false);
-                if (res == "failed" || res == "canceled")
+                Logging(firstVal.Payload, false);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
-                lastBalanceVal = ConvertBalanceResToMS(firstVal);
-                MesurementValues[1].Value = lastBalanceVal.ToString();
+                lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
+                MeasurementValues[1].Value = lastBalanceVal.ToString();
                
                 // 比較値格納インデクス
                 int interval = int.Parse(IntervalValue) * 1000;
@@ -663,7 +694,7 @@ namespace MVVM_Base.ViewModel
                 {
                     // 2回目以降はインターバル待ち
                     await WaitForDispose(interval, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
@@ -679,8 +710,8 @@ namespace MVVM_Base.ViewModel
 
                     // 通信&リスト書き込み                    
                     res = await Gn1GnComm(index, token);
-                    Logging(res, false);
-                    if (res == "failed" || res == "canceled")
+                    Logging(res.Payload, false);
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
@@ -689,11 +720,14 @@ namespace MVVM_Base.ViewModel
                 // 最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
                 // レースコンディションにより意図しないタイミングで終了する
                 res = await Gn1GnComm(index, token);
-                Logging(res, true);
-                if (res == "failed" || res == "canceled")
+                Logging(res.Payload, true);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
+
+                // vtempタイマーストップ
+                precisionTimer.Stop();        
 
                 // calculate時のみ
                 if (mode == "calc")
@@ -703,7 +737,7 @@ namespace MVVM_Base.ViewModel
                     // 1. VO値を取得、0.5掛けしてVOUTに格納
                     // 2. 初期VO：FE26,27(空き領域)の値を読み取り加工して格納
                     res = await CalcAsync(outputIndex, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
@@ -714,7 +748,7 @@ namespace MVVM_Base.ViewModel
                 else
                 {
                     res = await ConfAsync(outputIndex, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
@@ -731,7 +765,7 @@ namespace MVVM_Base.ViewModel
                 if (BPValue == BPType.Invariable)
                 {
                     res = await CorrectLinearData(0, null, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
@@ -742,23 +776,28 @@ namespace MVVM_Base.ViewModel
                     var bpList = await CalculateAndWriteBP(token);
                     if (bpList == null)
                     {
-                        // TODO : エラーメッセージ
-                        return "failed";
+                        await messageService.ShowMessage(languageService.MfcCommError);
+                        await Task.Delay(messageFadeTime);
+                        await messageService.CloseWithFade();
+                        return OperationResult.Failed();
                     }
                     else if (bpList.Length == 1 && bpList[0] == double.MaxValue)
                     {
-                        return "canceled";
+                        await messageService.ShowMessage(languageService.OperationCanceled);
+                        await Task.Delay(messageFadeTime);
+                        await messageService.CloseWithFade();
+                        return OperationResult.Canceled();
                     }
 
                     res = await CorrectLinearData(1, bpList, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
                 }
 
                 var result = await FBDataRead(token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
@@ -766,50 +805,269 @@ namespace MVVM_Base.ViewModel
 
             // VC
             res = await CommMFCAsyncType1("VC", token);
-            if (res == "failed" || res == "canceled")
+            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
             {
                 return res;
             }
 
             // CA
             res = await CommMFCAsyncType1("CA", token);
-            if (res == "failed" || res == "canceled")
+            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
             {
                 return res;
             }
 
-            return "";
+            return OperationResult.Success();
+        }
+
+
+
+        /// <summary>
+        /// 5%刻みのconf
+        /// </summary>
+        /// <param name="mode"></param>
+        private async Task<OperationResult> ConfBy5Per(string mode, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+
+            OperationResult res;
+
+            // 出力表の初期化
+            ResetOutputResult(true);
+
+            List<string> swValueList = new List<string>()
+            {
+                "00500", "01000", "01500", "02000", "02500", "03000", "03500", "04000", "04500", "05000",
+                "05500", "06000", "06500", "07000", "07500", "08000", "08500", "09000", "09500", "10000",
+            };
+
+            int outputIndex = 1;
+            foreach (var swValue in swValueList)
+            {
+                // OSさせる
+                res = await DoOverShoot(token);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                // オーバーシュート後の安定待ち
+                await WaitUntilStableAfterOS(token);
+
+                // 繰り返し処理 各流量出力において計測開始
+                // CD, VS, SW, 01000~10000
+                res = await CommMFCAsyncType1("CD", token);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                // CD送信
+                res = await CommMFCAsyncType1("VS", token);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                // 流量設定
+                res = await CommMFCAsyncType3("SW", swValue, token);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                // 捨て待ち
+                int waitTime = int.Parse(waitOSValue) * 1000;
+                res = await WaitForDispose(waitTime, token);
+                if (res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                // 天秤との通信を指定回数行い、測定ボックスに格納していく
+                // 開始してすぐに初期値を取る。これは回数に含める
+                // 2回目以降の測定ではは(60 / 実際のインターバル * g(n-1) - g(n))をn行に書き込んでいく
+
+                // 初期化処理
+                ResetMeasureResult();
+
+                // vtempタイマー生成(Calcモードの場合のみ。毎回生成)
+                // vtempタイマースタート とりあえず一回読んでおく
+                await GetAndOutputVtemp(mode, token);
+                int vtInterval = int.Parse(VtempInterval) * 1000;
+                precisionTimer.Start(async () =>
+                {
+                    cntBalCom++;
+                    // Vtemp 基準1を取得
+                    await GetAndOutputVtemp(mode, token);
+
+                    return;
+                }, vtInterval, token);
+
+                lastUTC = DateTime.UtcNow;
+                dateList[1] = lastUTC;
+
+                // 計算式においてn, n-1項目を必要とするため、一度目の通信を先行して行っておく
+                var firstVal = await CommBalanceAsyncCommand(token);
+                Logging(firstVal.Payload, false);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+                lastBalanceVal = ConvertBalanceResToMS(firstVal.Payload);
+                MeasurementValues[1].Value = lastBalanceVal.ToString();
+
+                // 比較値格納インデクス
+                int interval = int.Parse(IntervalValue) * 1000;
+                int index = 1;
+                int attempts = int.Parse(AttemptsValue);
+
+                // ループ回数は一回少ない
+                attempts = (attempts - 1);
+
+                while (true)
+                {
+                    // 2回目以降はインターバル待ち
+                    await WaitForDispose(interval, token);
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                    {
+                        return res;
+                    }
+
+                    // index進める
+                    index++;
+
+                    // indexが規定回数を超えたら終了
+                    if (index > attempts)
+                    {
+                        break;
+                    }
+
+                    // 通信&リスト書き込み                    
+                    res = await Gn1GnComm(index, token);
+                    Logging(res.Payload, false);
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                    {
+                        return res;
+                    }
+                }
+
+                // 最後の通信はループ外でawaitしないと、通信がワーカースレッドによる
+                // レースコンディションにより意図しないタイミングで終了する
+                res = await Gn1GnComm(index, token);
+                Logging(res.Payload, true);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                // vtempタイマーストップ
+                precisionTimer.Stop();
+
+                res = await CalculateReadingValue(index, token);
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
+
+                if (outputIndex <= 10)
+                {
+                    ReadingValueBelow50Array[outputIndex] = res.Payload;
+                }
+                else 
+                {
+                    ReadingValueAbove50Array[outputIndex - 10] = res.Payload;
+                }
+
+                outputIndex++;        
+            }
+
+            // VC
+            res = await CommMFCAsyncType1("VC", token);
+            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+            {
+                return res;
+            }
+
+            // CA
+            res = await CommMFCAsyncType1("CA", token);
+            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
+            {
+                return res;
+            }
+
+            return OperationResult.Success();
+        }
+
+        private async Task<OperationResult> GetAndOutputVtemp(string mode, CancellationToken token)
+        {
+            var vTempLower = await CommMFCAsyncType3("ER", "FC1C", token);
+            if (vTempLower.Status == OperationResultType.Failure || vTempLower.Status == OperationResultType.Canceled)
+            {
+                return vTempLower;
+            }
+
+            var vTempUpper = await CommMFCAsyncType3("ER", "FC1D", token);
+            if (vTempUpper.Status == OperationResultType.Failure || vTempUpper.Status == OperationResultType.Canceled)
+            {
+                return vTempUpper;
+            }
+
+            if (vTempLower.Payload == null || vTempUpper.Payload == null)
+            {
+                return OperationResult.Failed("ER");
+            }
+
+            var vtLowerVal = vTempLower.Payload.Substring(3, 2);
+            var vtUpperVal = vTempUpper.Payload.Substring(3, 2);
+
+            if (mode == calc)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    VtempValueCal = vtUpperVal + "/" + vtLowerVal;
+                });
+            }
+            else if (mode == conf)
+            {
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    VtempValueConf = vtUpperVal + "/" + vtLowerVal;
+                });
+            }
+
+            return OperationResult.Success();
         }
 
         /// <summary>
         /// オーバーシュート実行
         /// </summary>
         /// <returns></returns>
-        private async Task<string> DoOverShoot(CancellationToken token)
+        private async Task<OperationResult> DoOverShoot(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
             // CD送信
             var res = await CommMFCAsyncType1("CD", token);
-            if(res == "failed" || res == "canceled")
+            if(res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
             {
                 return res;
             }
 
             // CD送信
             res = await CommMFCAsyncType1("VS", token);
-            if (res == "failed" || res == "canceled")
+            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
             {
                 return res;
             }
 
             // OSさせる
             res = await CommMFCAsyncType3("SW", "11000", token);
-            if (res == "failed" || res == "canceled")
+            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
             {
                 return res;
             }
 
-            return "";
+            return OperationResult.Success();
         }
 
         /// <summary>
@@ -828,7 +1086,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         /// <param name="waitTime"></param>
         /// <returns></returns>
-        private async Task<string> WaitForDispose(int waitTime, CancellationToken token)
+        private async Task<OperationResult> WaitForDispose(int waitTime, CancellationToken token)
         {
             try
             {
@@ -836,16 +1094,16 @@ namespace MVVM_Base.ViewModel
 
                 var waitOS = new HighPrecisionDelay();
                 var res = await waitOS.WaitAsync(waitTime, token);
-                if(res == "canceled")
+                if(res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
 
-                return "";
+                return res;
             }
             catch(OperationCanceledException)
             {
-                return "canceled";
+                return OperationResult.Canceled();
             }
         }
 
@@ -855,7 +1113,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        private async Task<string> CalcAsync(int index, CancellationToken token)
+        private async Task<OperationResult> CalcAsync(int index, CancellationToken token)
         {
             var readingTask = CalculateReadingValue(index, token);
             var voutTask = GetAndCalVOUT(index, token);
@@ -865,16 +1123,16 @@ namespace MVVM_Base.ViewModel
             var vout = await voutTask;
             var vo = await voTask;
 
-            if (reading == "failed" || vout == "failed" || vo == "failed")
+            if (reading.Status == OperationResultType.Failure || vout.Status == OperationResultType.Failure || vo.Status == OperationResultType.Failure)
             {
-                return "failed";
+                return OperationResult.Failed();
             }
 
             //await Task.WhenAll(readingTask, voutTask, voTask);
 
             // UI更新
-            UpdateUI_WithCacl(index, readingTask.Result, voutTask.Result, voTask.Result);
-            return "";
+            UpdateUI_WithCacl(index, readingTask.Result.Payload, voutTask.Result.Payload, voTask.Result.Payload);
+            return OperationResult.Success();
         }
 
         /// <summary>
@@ -883,7 +1141,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        private async Task<string> ConfAsync(int index, CancellationToken token)
+        private async Task<OperationResult> ConfAsync(int index, CancellationToken token)
         {
             var readingTask = CalculateReadingValue(index, token);
             var voutTask = GetAndCalVOUT(index, token);
@@ -893,36 +1151,37 @@ namespace MVVM_Base.ViewModel
             var vout = await voutTask;
             var vo = await voTask;
 
-            if (reading == "failed" || vout == "failed" || vo == "failed")
+            if (reading.Status == OperationResultType.Failure || vout.Status == OperationResultType.Failure || vo.Status == OperationResultType.Failure)
             {
-                return "failed";
+                return OperationResult.Failed();
             }
 
             //await Task.WhenAll(readingTask, voutTask, voTask);
 
             // UI更新
-            UpdateUI_WithConf(index, readingTask.Result, voutTask.Result, voTask.Result);
-            return "";
+            UpdateUI_WithConf(index, readingTask.Result.Payload, voutTask.Result.Payload, voTask.Result.Payload);
+            return OperationResult.Success();
         }
 
         /// <summary>
         /// Reading値を計算して、該当グリッドに格納する
         /// </summary>
         /// <param name="index"></param>
-        private Task<string> CalculateReadingValue(int index, CancellationToken token)
+        private Task<OperationResult> CalculateReadingValue(int index, CancellationToken token)
         {
             // 計測回数の取得
             var attemptNum = int.Parse(attemptsValue);
 
-            // 計測結果リストから最初と最後の項目を除いたリスト
-            var target = MesurementValues.Skip(1).Take(attemptNum - 1).ToList();
+            // 計測結果リストから最後の項目を除いたリスト(最後の計測結果は含まない)
+            // 最初の項目はグリッド最上段のため(空欄)除去している
+            var target = MeasurementValues.Skip(1).Take(attemptNum - 1).ToList();
 
-            // 測定結果の内のmax値およびインデクスを求める。最後の計測結果は含まない。
+            // 測定結果の内のmax値およびインデクスを求める。
             var max = target.Select((v, i) => (v, i)).MaxBy(x => float.Parse(x.v.Value));
             var maxNum = float.Parse(max.v.Value);
             var maxNumIndex = max.i;
 
-            // 測定結果の内のmin値およびインデクスを求める。最後の計測結果は含まない。
+            // 測定結果の内のmin値およびインデクスを求める。
             var min  = target.Select((v, i) => (v, i)).MinBy(x => float.Parse(x.v.Value));
             var minNum = float.Parse(min.v.Value);
             var minNumIndex = min.i;
@@ -943,7 +1202,7 @@ namespace MVVM_Base.ViewModel
             // (合計値 ÷ 加算回数)を小数第一位まで計算し、該当グリッドに格納する。
             float readingVal = sum / sumCounts;
 
-            return Task<string>.FromResult(readingVal.ToString("F1"));
+            return Task<OperationResult>.FromResult(OperationResult.Success(readingVal.ToString("F1")));
         }
 
         // 通信処理用のセマフォ　GetAndCalVOUTとGetAndCalInitialVOで共有するのでここに記述
@@ -954,24 +1213,24 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        private async Task<string> GetAndCalVOUT(int index, CancellationToken token)
+        private async Task<OperationResult> GetAndCalVOUT(int index, CancellationToken token)
         {
             await _commLock.WaitAsync();
 
-            string res = "";
+            OperationResult res = new OperationResult(OperationResultType.Success, null, null);
 
             try
             {
                 var result = await CommMFCAsyncType2("OR", token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
-                    return res;
+                    return OperationResult.Canceled();
                 }
 
-                result = result.Substring(3, result.Length - 3);
-                int val = int.Parse(result);
+                result.Payload = result.Payload.Substring(3, result.Payload.Length - 3);
+                int val = int.Parse(result.Payload);
                 int rest = (int)(val / 2.0 + (val >= 0 ? 0.5 : -0.5));
-                res = rest.ToString();                
+                res.Payload = rest.ToString();                
 
                 return res;
             }
@@ -986,7 +1245,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        private async Task<string> GetAndCalInitialVO(int index, CancellationToken token)
+        private async Task<OperationResult> GetAndCalInitialVO(int index, CancellationToken token)
         {
             await _commLock.WaitAsync();
 
@@ -996,31 +1255,31 @@ namespace MVVM_Base.ViewModel
 
                 // 上位バイト
                 var res = await CommMFCAsyncType3("ER", "FE27", token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
 
-                if (res.Length < 5)
+                if (res.Payload.Length < 5)
                 {
-                    return "falied";
+                    return OperationResult.Failed("ER");
                 }
 
-                var upper = res.Substring(3, 2);
+                var upper = res.Payload.Substring(3, 2);
                 var upperVal = Convert.ToInt32(upper, 16);
 
                 // 下位バイト
                 res = await CommMFCAsyncType3("ER", "FE26", token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
 
-                if (res.Length < 5)
+                if (res.Payload.Length < 5)
                 {
-                    return "failed";
+                    return OperationResult.Failed("ER");
                 }
-                var lower = res.Substring(3, 2);
+                var lower = res.Payload.Substring(3, 2);
                 var lowerVal = Convert.ToInt32(lower, 16);
 
                 var hex80 = Convert.ToInt32("80", 16);
@@ -1029,11 +1288,11 @@ namespace MVVM_Base.ViewModel
                 decimal tempD = (decimal)temp / ((decimal)hex80 * 256);
                 decimal x = Math.Round(tempD, 3, MidpointRounding.AwayFromZero);
 
-                return x.ToString();
+                return OperationResult.Success(x.ToString());
             }
             catch(OperationCanceledException)
             {
-                return "canceled";
+                return OperationResult.Canceled();
             }
             finally 
             { 
@@ -1073,25 +1332,35 @@ namespace MVVM_Base.ViewModel
 
 
         List<string> test = new List<string>()
-            {
-                "",
-                "14.5567",
-                "25.918",
-                "53.2634",
-                "67.4411",
-                "111.911",
-                "159.11222",
-                "180.1222",
-                "245.9924",
-                "309.12455",
-                "400.1213"
-            };
-
+        {
+            //"",
+            //"14.5567",
+            //"25.918",
+            //"53.2634",
+            //"67.4411",
+            //"111.911",
+            //"159.11222",
+            //"180.1222",
+            //"245.9924",
+            //"309.12455",
+            //"400.1213"
+            "",
+            "-687.3",
+            "-1002.5",
+            "2051",
+            "-45",
+            "342.2",
+            "-2663.9",
+            "1757.4",
+            "-441",
+            "6456.8",
+            "-750.2"
+        };
 
         /// <summary>
-        /// 10点リニア補正値の計算を行う。非可変BPの場合。
+        /// 10点リニア補正値の計算を行う。非可変BP/可変BP対応
         /// </summary>
-        private async Task<string> CorrectLinearData(int mode, double[]? bpValueList, CancellationToken token)
+        private async Task<OperationResult> CorrectLinearData(int mode, double[]? bpValueList, CancellationToken token)
         {
             try
             {
@@ -1109,7 +1378,7 @@ namespace MVVM_Base.ViewModel
                 mulNum = 10;
 
                 // 通信処理の返り値
-                string res = "";
+                OperationResult res;
 
                 // バージョンによってゲイン初期値が変わる
                 string initValStr = VersionValue == VersionType.Ver298 ? "08" : "10";
@@ -1142,11 +1411,11 @@ namespace MVVM_Base.ViewModel
                 // 10点リニア係数のFBアドレス(1~10までのペア)
                 List<Tuple<string, string>> InitPairList = new List<Tuple<string, string>>()
                 {
-                    Tuple.Create("FB90", "FB91"), Tuple.Create("FB92", "FB93"),
-                    Tuple.Create("FB94", "FB95"), Tuple.Create("FB96", "FB97"),
-                    Tuple.Create("FB98", "FB99"), Tuple.Create("FB9A", "FB9B"),
-                    Tuple.Create("FB9C", "FB9D"), Tuple.Create("FB9E", "FB9F"),
-                    Tuple.Create("FBA0", "FBA1"), Tuple.Create("FBA2", "FBA3")
+                    Tuple.Create(FbMap["FB90"], FbMap["FB91"]), Tuple.Create(FbMap["FB92"], FbMap["FB93"]),
+                    Tuple.Create(FbMap["FB94"], FbMap["FB95"]), Tuple.Create(FbMap["FB96"], FbMap["FB97"]),
+                    Tuple.Create(FbMap["FB98"], FbMap["FB99"]), Tuple.Create(FbMap["FB9A"], FbMap["FB9B"]),
+                    Tuple.Create(FbMap["FB9C"], FbMap["FB9D"]), Tuple.Create(FbMap["FB9E"], FbMap["FB9F"]),
+                    Tuple.Create(FbMap["FBA0"], FbMap["FBA1"]), Tuple.Create(FbMap["FBA2"], FbMap["FBA3"])
                 };
 
                 // 非可変BPモード
@@ -1193,14 +1462,14 @@ namespace MVVM_Base.ViewModel
                             // 該当アドレスに書き込む
                             var command1 = Tuple.Create(InitPairList[i - 1].Item2, hexUpperGain);
                             res = await CommMFCAsyncTypeRW("EW", command1, token);
-                            if (res == "failed" || res == "canceled")
+                            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                             {
                                 return res;
                             }
 
                             var command2 = Tuple.Create(InitPairList[i - 1].Item1, hexLowerGain);
                             res = await CommMFCAsyncTypeRW("EW", command2, token);
-                            if (res == "failed" || res == "canceled")
+                            if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                             {
                                 return res;
                             }
@@ -1229,14 +1498,14 @@ namespace MVVM_Base.ViewModel
                     // 該当アドレスに書き込む
                     var command10_1 = Tuple.Create(InitPairList[InitPairList.Count() - 1].Item2, hexUpperGain);
                     res = await CommMFCAsyncTypeRW("EW", command10_1, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
 
                     var command10_2 = Tuple.Create(InitPairList[InitPairList.Count() - 1].Item1, hexLowerGain);
                     res = await CommMFCAsyncTypeRW("EW", command10_2, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
@@ -1280,14 +1549,14 @@ namespace MVVM_Base.ViewModel
                         // 該当アドレスに書き込む
                         var command1 = Tuple.Create(InitPairList[i - 1].Item2, hexUpperGain);
                         res = await CommMFCAsyncTypeRW("EW", command1, token);
-                        if (res == "failed" || res == "canceled")
+                        if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                         {
                             return res;
                         }
 
                         var command2 = Tuple.Create(InitPairList[i - 1].Item1, hexLowerGain);
                         res = await CommMFCAsyncTypeRW("EW", command2, token);
-                        if (res == "failed" || res == "canceled")
+                        if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                         {
                             return res;
                         }
@@ -1303,38 +1572,39 @@ namespace MVVM_Base.ViewModel
 
                     // 上位確認
                     res = await CommMFCAsyncType3("ER", pair.Item2, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
 
-                    if (res.Length < 5)
+                    if (res.Payload.Length < 5)
                     {
-                        return "failed";
+                        return OperationResult.Failed("ER");
                     }
 
-                    var temp = res.Substring(3, 2);
+                    var temp = res.Payload.Substring(3, 2);
                     if (temp != bytes.Item2)
                     {
-                        return "failed";
+                        return OperationResult.Failed();
                     }
 
                     // 下位確認
                     res = await CommMFCAsyncType3("ER", pair.Item1, token);
-                    if (res == "failed" || res == "canceled")
+                    if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                     {
                         return res;
                     }
 
-                    if (res.Length < 5)
+                    if (res.Payload.Length < 5)
                     {
-                        return "failed";
+                        return OperationResult.Failed("ER");
                     }
 
-                    temp = res.Substring(3, 2);
+                    // アドレスが重複していると必ずここで失敗する
+                    temp = res.Payload.Substring(3, 2);
                     if (temp != bytes.Item1)
                     {
-                        return "failed";
+                        return OperationResult.Failed();
                     }
 
                     index++;
@@ -1342,17 +1612,17 @@ namespace MVVM_Base.ViewModel
 
                 // リセット実行
                 res = await CommMFCAsyncType1("RE", token);
-                if (res == "failed" || res == "canceled")
+                if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
                 isCalculated = true;
                 await Task.Delay(100);
-                return "";
+                return OperationResult.Success();
             }
             catch (OperationCanceledException)
             {
-                return "canceled";
+                return OperationResult.Canceled();
             }
         }
 
@@ -1366,41 +1636,29 @@ namespace MVVM_Base.ViewModel
             {
                 List<Tuple<string, string>> bpValueList = new List<Tuple<string, string>>();
 
-                string res = "";
+                OperationResult res = new OperationResult(OperationResultType.Success, null, null);
 
-                // Reading値を格納　要素数はr11[10]
+                // Reading値を格納
                 var readingList = ReadingValueArray; // test;
 
-                // 次に5次多項式の係数計算のための数学アルゴリズム検証
-                double[] xData =
-                {
-                0.1d,// 0.01d, 0.001d, 0.0001d, 0.00001d,
-                0.2d,// 0.04d, 0.008d, 0.0016d, 0.00032d,
-                0.3d,// 0.09d, 0.027d, 0.0081d, 0.00243d,
-                0.4d,// 0.16d, 0.064d, 0.0256d, 0.01024d,
-                0.5d,// 0.25d, 0.125d, 0.0625d, 0.03125d,
-                0.6d,// 0.36d, 0.216d, 0.1296d, 0.07776d,
-                0.7d,// 0.49d, 0.343d, 0.2401d, 0.16807d,
-                0.8d,// 0.64d, 0.512d, 0.4096d, 0.32768d,
-                0.9d,// 0.81d, 0.729d, 0.6561d, 0.59049d,
-                1d//,1d,1d,1d,1d
-            };
+                // 5次多項式の係数計算のための数学アルゴリズム検証
+                double[] xData = {0.1d, 0.2d, 0.3d, 0.4d, 0.5d, 0.6d, 0.7d, 0.8d, 0.9d, 1d};
 
                 double fullScaleOutput = double.Parse(readingList[10].Value);
 
                 double[] yData =
                 {
-                double.Parse(readingList[1].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[2].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[3].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[4].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[5].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[6].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[7].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[8].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[9].Value)  / fullScaleOutput * 100d,
-                double.Parse(readingList[10].Value) / fullScaleOutput * 100d
-            };
+                    double.Parse(readingList[1].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[2].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[3].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[4].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[5].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[6].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[7].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[8].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[9].Value)  / fullScaleOutput * 100d,
+                    double.Parse(readingList[10].Value) / fullScaleOutput * 100d
+                };
 
                 // 5次多項式の回帰曲線を求める
                 int degree = 5;
@@ -1453,24 +1711,24 @@ namespace MVVM_Base.ViewModel
                 // 新BP書き込み
                 // 10点リニア閾値(FBA4~FBB5)の初期化
                 List<Tuple<string, string>> cmdPairList = new List<Tuple<string, string>>()
-            {
-                Tuple.Create("FBA4", "FBA5"), Tuple.Create("FBA6", "FBA7"),
-                Tuple.Create("FBA8", "FBA9"), Tuple.Create("FBAA", "FBAB"),
-                Tuple.Create("FBAC", "FBAD"), Tuple.Create("FBAE", "FBAF"),
-                Tuple.Create("FBB0", "FBB1"), Tuple.Create("FBB2", "FBB3"),
-                Tuple.Create("FBB4", "FBB5")
-            };
+                {
+                    Tuple.Create(ThresholdMap["FBA4"], ThresholdMap["FBA5"]), Tuple.Create(ThresholdMap["FBA6"], ThresholdMap["FBA7"]),
+                    Tuple.Create(ThresholdMap["FBA8"], ThresholdMap["FBA9"]), Tuple.Create(ThresholdMap["FBAA"], ThresholdMap["FBAB"]),
+                    Tuple.Create(ThresholdMap["FBAC"], ThresholdMap["FBAD"]), Tuple.Create(ThresholdMap["FBAE"], ThresholdMap["FBAF"]),
+                    Tuple.Create(ThresholdMap["FBB0"], ThresholdMap["FBB1"]), Tuple.Create(ThresholdMap["FBB2"], ThresholdMap["FBB3"]),
+                    Tuple.Create(ThresholdMap["FBB4"], ThresholdMap["FBB5"])
+                };
 
                 // 該当アドレスに書き込む。最後の要素(B4/B5)は除く。
                 for (int i = 0; i < cmdPairList.Count() - 1; i++)
                 {
                     var command1 = Tuple.Create(cmdPairList[i].Item2, bpValueList[i].Item2);
                     res = await CommMFCAsyncTypeRW("EW", command1, token);
-                    if (res == "failed")
+                    if (res.Status == OperationResultType.Failure)
                     {
                         return null;
                     }
-                    else if (res == "canceled")
+                    else if (res.Status == OperationResultType.Canceled)
                     {
                         double[] canceledArray = new double[1];
                         canceledArray[0] = double.MaxValue;
@@ -1479,11 +1737,11 @@ namespace MVVM_Base.ViewModel
 
                     var command2 = Tuple.Create(cmdPairList[i].Item1, bpValueList[i].Item1);
                     res = await CommMFCAsyncTypeRW("EW", command2, token);
-                    if (res == "failed")
+                    if (res.Status == OperationResultType.Failure)
                     {
                         return null;
                     }
-                    else if (res == "canceled")
+                    else if (res.Status == OperationResultType.Canceled)
                     {
                         double[] canceledArray = new double[1];
                         canceledArray[0] = double.MaxValue;
@@ -1495,35 +1753,35 @@ namespace MVVM_Base.ViewModel
                 foreach (var cmdPair in cmdPairList)
                 {
                     var result = await CommMFCAsyncType3("ER", cmdPair.Item1, token);
-                    if (res == "failed")
+                    if (res.Status == OperationResultType.Failure)
                     {
                         return null;
                     }
-                    else if (res == "canceled")
+                    else if (res.Status == OperationResultType.Canceled)
                     {
                         double[] canceledArray = new double[1];
                         canceledArray[0] = double.MaxValue;
                         return canceledArray;
                     }
 
-                    if (result.Length < 5)
+                    if (result.Payload.Length < 5)
                     {
                         return null;
                     }
 
                     result = await CommMFCAsyncType3("ER", cmdPair.Item2, token);
-                    if (res == "failed")
+                    if (res.Status == OperationResultType.Failure)
                     {
                         return null;
                     }
-                    else if (res == "canceled")
+                    else if (res.Status == OperationResultType.Canceled)
                     {
                         double[] canceledArray = new double[1];
                         canceledArray[0] = double.MaxValue;
                         return canceledArray;
                     }
 
-                    if (result.Length < 5)
+                    if (result.Payload.Length < 5)
                     {
                         return null;
                     }
@@ -1549,14 +1807,14 @@ namespace MVVM_Base.ViewModel
         {
             if (!commStatusService.IsMfcConnected)
             {
-                await messageService.ShowMessage("MFC isn't connected");
+                await messageService.ShowMessage(languageService.MfcPortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
             }
             else if (!commStatusService.IsBalanceConnected)
             {
-                await messageService.ShowMessage("Balance isn't connected");
+                await messageService.ShowMessage(languageService.BalancePortError);
                 await Task.Delay(messageFadeTime);
                 await messageService.CloseWithFade();
                 return;
@@ -1578,31 +1836,40 @@ namespace MVVM_Base.ViewModel
                 // 繰り返し処理 各流量出力において計測開始
                 // CD, VS, SW, 01000~10000
                 var res = await CommMFCAsyncType1("CD", token);
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
-                    await messageService.ShowMessage("Operation Canceled");
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
                 }
 
                 // CD送信
                 res = await CommMFCAsyncType1("VS", token);
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
-                    await messageService.ShowMessage("Operation Canceled");
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
                 }
 
                 // 流量設定
                 res = await CommMFCAsyncType3("SW", swValueList[ConfIndex - 1], token);
-                if (res == "canceled")
+                if (res.Status == OperationResultType.Canceled)
                 {
-                    await messageService.ShowMessage("Operation Canceled");
+                    await messageService.ShowMessage(languageService.OperationCanceled);
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
                 }
             }
+        }
+
+        /// <summary>
+        /// ログクリア
+        /// </summary>
+        [RelayCommand]
+        private void ClearLog()
+        {
+            Logs.Clear();
         }
 
         /// <summary>

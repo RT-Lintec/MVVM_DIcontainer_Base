@@ -16,6 +16,12 @@
         private CancellationTokenSource cts;
         private Task timerTask;
 
+        /// <summary>
+        /// 指示秒ごとにcallbackを実行する
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="intervalMs"></param>
+        /// <param name="token"></param>
         public void Start(Func<Task> callback, int intervalMs, CancellationToken token)
         {
             isRun = true;
@@ -35,8 +41,9 @@
             {
                 var sw = Stopwatch.StartNew();
                 long next = intervalTicks;
+                token.ThrowIfCancellationRequested();
 
-                while (/*!token.IsCancellationRequested || */isRun)
+                while (isRun)
                 {
                     long now = sw.ElapsedTicks;
 
@@ -49,8 +56,67 @@
                         next += intervalTicks;
                     }
 
+                    token.ThrowIfCancellationRequested();
+
                     // CPU・精度バランスの良い待ち
-                    Thread.Sleep(50);
+                    Thread.Sleep(1);
+                }
+            }, token);
+        }
+
+        /// <summary>
+        /// 毎秒　callbackPerSecも実行する
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="callbackPerSec"></param>
+        /// <param name="intervalMs"></param>
+        /// <param name="token"></param>
+        public void StartWithNotice(Func<Task> callback, Func<Task> callbackPerSec, int intervalMs, CancellationToken token)
+        {
+            isRun = true;
+
+            // 多重起動防止
+            if (cts != null)
+            {
+                return;
+            }
+
+            long intervalTicks = (long)(Stopwatch.Frequency * (intervalMs / 1000.0));
+            long oneTicks = (long)(Stopwatch.Frequency);
+
+            timerTask = Task.Run(async () =>
+            {
+                var sw = Stopwatch.StartNew();
+                long next = intervalTicks;
+                long nextOneSec = oneTicks;
+
+                while (isRun)
+                {
+                    long now = sw.ElapsedTicks;
+
+
+                    if (now >= nextOneSec)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            await callbackPerSec();
+                        }, token);
+
+                        nextOneSec += oneTicks;
+                    }
+
+                    if (now >= next)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            await callback();
+                        }, token);
+
+                        next += intervalTicks;
+                    }
+
+                    // CPU・精度バランスの良い待ち
+                    Thread.Sleep(1);
                 }
             }, token);
         }

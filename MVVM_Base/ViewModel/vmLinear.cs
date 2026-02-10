@@ -1,15 +1,19 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using MVVM_Base.Common;
 using MVVM_Base.Model;
 using System.ComponentModel;
+using System.IO;
 
 namespace MVVM_Base.ViewModel
 {
     public partial class vmLinear : ObservableObject, IViewModel
     {
         public vmLinear(ThemeService _themeService, CommStatusService _commStatusService, IMessageService _messageService,
-            ViewModelManagerService _vmService, ApplicationStatusService _appStatusService, HighPrecisionTimer _precisionTimer)
+            ViewModelManagerService _vmService, ApplicationStatusService _appStatusService, HighPrecisionTimer _precisionTimer,
+            LanguageService _languageService)
         {
-            //FlowValue = "200";
+            PropertyChanged += OnPropertyChanged;
+            
             mfcService = MfcSerialService.Instance;
 
             themeService = _themeService;
@@ -29,11 +33,13 @@ namespace MVVM_Base.ViewModel
             precisionTimer = _precisionTimer;
 
             MesurementItems = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
-            MesurementValues = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
+            MeasurementValues = new System.Collections.ObjectModel.ObservableCollection<MeasureResult>();
+
+            languageService = _languageService;
 
             // 計測結果の表を形成
             ResetMeasureResult();
-            ResetOutputResult();
+            ResetOutputResult(false);
         }
 
         public void Dispose()
@@ -44,11 +50,45 @@ namespace MVVM_Base.ViewModel
             // 終了可否チェック
             vmService.CheckCanQuit();
 
-            // 
+            // 画面遷移可否
             vmService.CanTransit = true;
         }
 
         #region 状態変更通知に対応する処理
+
+        /// <summary>
+        /// ゲイン表にフォーカスが当たった時の処理
+        /// 未保存出力データが存在する場合は、保存確認→未保存フラグ破棄
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void OnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(IsModified))
+            {
+                if (vmService.HasNonsavedOutput && isGainDirectChanged)
+                {
+                    var confirm = await messageService.ShowModalAsync(languageService.FirstConfirmBeforeTransit);
+                    if (confirm.Value)
+                    {
+                        await ExportParamsToCsv();
+                    }
+                    else
+                    {
+                        confirm = await messageService.ShowModalAsync(languageService.SecondConfirmBeforeTransit);
+                        if (confirm.Value)
+                        {
+                            await ExportParamsToCsv();
+                        }
+                    }
+                    // 未保存データを破棄したもののとして扱う
+                    vmService.HasNonsavedOutput = false;
+                }
+
+                isGainDirectChanged = false;
+            }
+        }
+
         /// <summary>
         /// カラーテーマ
         /// </summary>
@@ -67,8 +107,8 @@ namespace MVVM_Base.ViewModel
         {
             // View に依存せず ViewModel 内で処理可能
             // 例：内部フラグ更新や別プロパティ更新など
-            IsDarkTheme = newTheme == "Dark"; // フラグ例
-                                              // 必要であれば PropertyChanged 通知も出す
+            IsDarkTheme = newTheme == themeService.Dark;
+            ColorTheme = newTheme;
             OnPropertyChanged(nameof(IsDarkTheme));
         }
 
@@ -116,7 +156,6 @@ namespace MVVM_Base.ViewModel
                 }
             }
         }
-
         #endregion
 
         /// <summary>
@@ -125,30 +164,33 @@ namespace MVVM_Base.ViewModel
         /// <param name="state"></param>
         private async Task ChangeState(ProcessState state)
         {
-            curState = state;
-
-            // 状態遷移時、最終出力が失われるケースは保存確認入れる
-            if (CanExport && curState != ProcessState.Manual)
+            if (!noNeedConfirmUnsaved)
             {
-                if (!isSavedOutput)
+                // 状態遷移時、最終出力が失われるケースは保存確認入れる
+                if (CanExport && vmService.HasNonsavedOutput && state != ProcessState.Manual)
                 {
-                    var confirm = await messageService.ShowModalAsync("Would you want save the output?");
-                    if (confirm.Value)
+                    if (!isSavedOutput)
                     {
-                        await ExportParamsToCsv();
-                    }
-                    else
-                    {
-                        confirm = await messageService.ShowModalAsync("Confirmation: Do you want to save the output?");
+                        var confirm = await messageService.ShowModalAsync(languageService.FirstConfirmBeforeTransit);
                         if (confirm.Value)
                         {
                             await ExportParamsToCsv();
                         }
+                        else
+                        {
+                            confirm = await messageService.ShowModalAsync(languageService.SecondConfirmBeforeTransit);
+                            if (confirm.Value)
+                            {
+                                await ExportParamsToCsv();
+                            }
+                        }
+                        // 画面遷移を許すとデータを破棄したもののとして扱う
+                        // アプリ終了もモーダル確認はでなくなる
+                        vmService.HasNonsavedOutput = false;
                     }
-                    vmService.HasNonsavedOutput = false;
                 }
             }
-            
+
             SwitchAllbtn(false);
             UIAllFalse();
 
@@ -231,6 +273,11 @@ namespace MVVM_Base.ViewModel
                         break;
                     }
                     ;
+                case ProcessState.FiveperConf:
+                    {
+                        break;
+                    }
+                    ;
                 case ProcessState.Manual:
                     {
                         CanConfAlone = true;
@@ -244,6 +291,8 @@ namespace MVVM_Base.ViewModel
                     }
                     ;
             }
+
+            curState = state;
         }
 
         /// <summary>

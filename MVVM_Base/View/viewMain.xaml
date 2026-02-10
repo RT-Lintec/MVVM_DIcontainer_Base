@@ -43,7 +43,7 @@
                 <GroupBox Grid.Row="0" Style="{StaticResource GroupBoxStyle}" HorizontalAlignment="Left" Cursor="">
                     <GroupBox.Header>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Communication" Foreground="{DynamicResource AccentBrush}" FontSize="{Binding TitleFontSize}" FontWeight="Bold"/>
+                            <TextBlock Text="{DynamicResource CommunicationWord}" Foreground="{DynamicResource AccentBrush}" FontSize="{Binding TitleFontSize}" FontWeight="Bold"/>
                             <Icon:PackIconMaterial Kind="LanConnect"
                                            Width="{Binding IconSize}" Height="{Binding IconSize}"
                                            Margin="5,0,0,0"
@@ -140,7 +140,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Text="Port Number"
+                                    <TextBlock Text="{DynamicResource PortNumWord}"
                                                Style="{StaticResource LabelTextStyle}" 
                                                Grid.Row="0"/>
 
@@ -174,7 +174,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Text="Baud rate"
+                                    <TextBlock Text="{DynamicResource BaudRateWord}"
                                                Style="{StaticResource LabelTextStyle}" 
                                                Grid.Row="0"/>
 
@@ -193,7 +193,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Text="Data bit"
+                                    <TextBlock Text="{DynamicResource DatabitWord}"
                                                Style="{StaticResource LabelTextStyle}" 
                                                Grid.Row="0"/>
 
@@ -212,7 +212,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Text="Stop bit"
+                                    <TextBlock Text="{DynamicResource StopbitWord}"
                                                Style="{StaticResource LabelTextStyle}" 
                                                Grid.Row="0"/>
 
@@ -231,7 +231,7 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Text="Parity bit"
+                                    <TextBlock Text="{DynamicResource ParitybitWord}"
                                                Style="{StaticResource LabelTextStyle}" 
                                                Grid.Row="0"/>
 
@@ -325,8 +325,8 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    
-                                    <TextBlock Text="Port Number" 
+
+                                    <TextBlock Text="{DynamicResource PortNumWord}"
                                                Style="{StaticResource LabelTextStyle}"
                                                Grid.Row="0"/>
 
@@ -357,7 +357,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Baud rate" 
+                                    <TextBlock Text="{DynamicResource BaudRateWord}"
                                                Style="{StaticResource LabelTextStyle}"
                                                Grid.Row="0"/>
                                     <ComboBox ItemsSource="{Binding BalanceBaudrateList}"
@@ -373,7 +373,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Data bit" 
+                                    <TextBlock Text="{DynamicResource DatabitWord}"
                                                Style="{StaticResource LabelTextStyle}"
                                                Grid.Row="0"/>
                                     <ComboBox ItemsSource="{Binding BalanceDatabitList}"
@@ -389,7 +389,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Stop bit"
+                                    <TextBlock Text="{DynamicResource StopbitWord}"
                                                Style="{StaticResource LabelTextStyle}"
                                                Grid.Row="0"/>
                                     <ComboBox ItemsSource="{Binding BalanceStopbitList}"
@@ -405,7 +405,7 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="Parity bit"
+                                    <TextBlock Text="{DynamicResource ParitybitWord}"
                                                Style="{StaticResource LabelTextStyle}"
                                                Grid.Row="0"/>
                                     <ComboBox ItemsSource="{Binding BalanceParitybitList}"
@@ -440,7 +440,7 @@
                             <StackPanel Orientation="Horizontal" 
                                         VerticalAlignment="Center" 
                                         Grid.Column="0">
-                                <TextBlock Text="Status"
+                                <TextBlock Text="{DynamicResource StatusWord}"
                                            Foreground="{DynamicResource AccentBrush}" 
                                            FontSize="{Binding TitleFontSize}"
                                            FontWeight="Bold" 
@@ -469,7 +469,7 @@
                                        FontSize="{Binding TitleFontSize}"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center">
-                                <Run Text="Device Number : "/>
+                                <Run Text="{DynamicResource DeviceNumWord}"/>
                                 <Run Text="{Binding DeviceNum}"/>
                             </TextBlock>
                         </Grid>
@@ -528,7 +528,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
-                                             Content="Enable"
+                                             Content="{DynamicResource EnableWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermA"
@@ -537,7 +537,7 @@
                                              IsChecked="{Binding AlermAOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=E, Mode=TwoWay}" />
 
                                 <RadioButton Grid.Row="1"
-                                             Content="Disable"
+                                             Content="{DynamicResource DisableWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermA"
@@ -576,7 +576,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
-                                             Content="Slow"
+                                             Content="{DynamicResource SlowWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="SF"
@@ -585,7 +585,7 @@
                                              IsChecked="{Binding SFOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=S, Mode=TwoWay}" />
 
                                 <RadioButton Grid.Row="1"
-                                             Content="Fast"
+                                             Content="{DynamicResource FastWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="SF"
@@ -623,7 +623,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
-                                             Content="Analog"
+                                             Content="{DynamicResource AnalogWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AD"
@@ -633,7 +633,7 @@
                                              IsChecked="{Binding ADOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=A, Mode=TwoWay}" />
 
                                 <RadioButton Grid.Row="1"
-                                             Content="Digital"
+                                             Content="{DynamicResource DigitalWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AD"
@@ -682,7 +682,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
-                                             Content="Enable"
+                                             Content="{DynamicResource EnableWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermB"
@@ -691,7 +691,7 @@
                                              IsChecked="{Binding AlermBOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=E, Mode=TwoWay}" />
 
                                 <RadioButton Grid.Row="1"
-                                             Content="Disable"
+                                             Content="{DynamicResource DisableWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              Style="{StaticResource StatusRadioButtonStyle}" 
                                              GroupName="AlermB"
@@ -755,7 +755,7 @@
                                              IsChecked="{Binding ValveOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=0, Mode=TwoWay}"/>
 
                                 <!-- 2行目: Control と Hold -->
-                                <RadioButton Content="Control"
+                                <RadioButton Content="{DynamicResource ControlWord}"
                                              Grid.Row="1" 
                                              Grid.Column="1" 
                                              FontSize="{Binding StatusFontSize}"
@@ -765,7 +765,7 @@
                                              Command="{Binding commMFCAsyncType1WithCommand }"
                                              CommandParameter="VS"
                                              IsChecked="{Binding ValveOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=S, Mode=TwoWay}"/>
-                                <RadioButton Content="Hold" 
+                                <RadioButton Content="{DynamicResource HoldWord}"
                                              Grid.Row="1" 
                                              Grid.Column="0" 
                                              FontSize="{Binding StatusFontSize}"
@@ -801,7 +801,7 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <RadioButton Grid.Row="0"
-                                             Content="(CN)Normal" 
+                                             Content="{DynamicResource CNNormalWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              GroupName="Cmode" 
                                              Margin="3 -2 0 5" 
@@ -810,7 +810,7 @@
                                              CommandParameter="CN"
                                              IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=N, Mode=TwoWay}"/>
                                 <RadioButton Grid.Row="1"
-                                             Content="(C4)Hold" 
+                                             Content="{DynamicResource C4HoldWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              GroupName="Cmode" 
                                              Margin="3 0 0 5" 
@@ -819,7 +819,7 @@
                                              CommandParameter="C4"
                                              IsChecked="{Binding CmodeOption, Converter={StaticResource StringToBooleanConverter}, ConverterParameter=H, Mode=TwoWay}"/>
                                 <RadioButton Grid.Row="2"
-                                             Content="(C3)Close"
+                                             Content="{DynamicResource C3CloseWord}"
                                              FontSize="{Binding StatusFontSize}"
                                              GroupName="Cmode" 
                                              Margin="3 0 0 5" 

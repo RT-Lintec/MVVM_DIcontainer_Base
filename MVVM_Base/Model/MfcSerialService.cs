@@ -1,19 +1,30 @@
 ﻿using Microsoft.VisualBasic.Logging;
 using System;
+using MVVM_Base.Common;
 using System.IO;
 using System.IO.Ports;
+
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace MVVM_Base.Model
 {
     public class MfcSerialService : IMFCSerialService
     {
-        // Singleton
+        /// <summary>
+        /// Singleton
+        /// </summary>
         private static readonly Lazy<MfcSerialService> instance = new(() => new MfcSerialService());
+
+        /// <summary>
+        /// シングルトンオブジェクトのアクセスプロパティ
+        /// </summary>
         public static MfcSerialService Instance => instance.Value;
 
         private string? deviceNum;
 
+        /// <summary>
+        /// ポートオブジェクト
+        /// </summary>
         public SerialPort? Port { get; private set; }
 
         private MfcSerialService() {}
@@ -68,7 +79,8 @@ namespace MVVM_Base.Model
                 token.ThrowIfCancellationRequested();
 
                 // 兼通信テスト
-                deviceNum = await RequestDeviceNumber(token);
+                var result = await RequestDeviceNumber(token);
+                deviceNum = result.Payload;
 
                 token.ThrowIfCancellationRequested();
 
@@ -85,8 +97,10 @@ namespace MVVM_Base.Model
 
                         token.ThrowIfCancellationRequested();
 
-                        deviceNum = await RequestDeviceNumber(token);
-                        if(deviceNum != "")
+                        result = await RequestDeviceNumber(token);
+                        deviceNum = result.Payload;
+
+                        if (deviceNum != "")
                         {
                             return Port != null && Port.IsOpen;
                         }
@@ -100,9 +114,9 @@ namespace MVVM_Base.Model
                             token.ThrowIfCancellationRequested();
 
                             var num = await RequestType3Async(value.ToString(), "DR", token);
-                            if(num.IsSuccess/*num.Message != ""*/)
+                            if(num.Status == OperationResultType.Success)
                             {
-                                deviceNum = num.Message;
+                                deviceNum = num.Payload;
                                 return Port != null && Port.IsOpen;
                             }
                         }
@@ -147,22 +161,9 @@ namespace MVVM_Base.Model
         {
             if (Port == null) return;
 
-            //try
-            //{
-            //    if (Port.IsOpen)
-            //    {
-            //        Port.Close();
-            //    }
-            //}
-            //catch { }
-
-            //try { Port.Dispose(); } catch { }
-
             var portToClose = Port;
             Port = null; // アプリ側は即 null にして安全
 
-            //Task.Run(() =>
-            //{
             try
             {
                 if (portToClose.IsOpen)
@@ -302,12 +303,12 @@ namespace MVVM_Base.Model
         {
             if (Port == null)
             {
-                return OperationResult.Fail("port is null");
+                return OperationResult.Failed("port is null");
             }
 
             if (!Port.IsOpen)
             {
-                return OperationResult.Fail("port is not opened");
+                return OperationResult.Failed("port is not opened");
             }
             
             return await Task.Run(() =>
@@ -320,23 +321,23 @@ namespace MVVM_Base.Model
                 }
                 catch (TimeoutException)
                 {
-                    return OperationResult.Fail("Communicate with MFC is timeout");
+                    return OperationResult.Failed("Communicate with MFC is timeout");
                 }
                 catch (IOException ex)
                 {
-                    return OperationResult.Fail($"IO Exception: {ex.Message}");
+                    return OperationResult.Failed($"IO Exception: {ex.Message}");
                 }
                 catch (InvalidOperationException ex)
                 {
-                    return OperationResult.Fail($"Invalid Operation: {ex.Message}");
+                    return OperationResult.Failed($"Invalid Operation: {ex.Message}");
                 }
                 catch (OperationCanceledException ex)
                 {
-                    return OperationResult.Fail("canceled");
+                    return OperationResult.Failed("canceled");
                 }
                 catch (Exception ex)
                 {
-                    return OperationResult.Fail($"Unexpected error: {ex.GetType().Name} {ex.Message}");
+                    return OperationResult.Failed($"Unexpected error: {ex.GetType().Name} {ex.Message}");
                 }
             });
         }
@@ -350,12 +351,12 @@ namespace MVVM_Base.Model
         {
             if (Port == null)
             {
-                return OperationResult.Fail("Port is null.");
+                return OperationResult.Failed("Port is null.");
             }
 
             if (!Port.IsOpen)
             {
-                return OperationResult.Fail("Port is not open.");
+                return OperationResult.Failed("Port is not open.");
             }
             try
             {
@@ -368,31 +369,31 @@ namespace MVVM_Base.Model
             }
             catch(NullReferenceException)
             {
-                return OperationResult.Fail("Port is NULL.");
+                return OperationResult.Failed("Port is NULL.");
             }
             catch (TimeoutException)
             {
-                return OperationResult.Fail("Write operation timed out.");
+                return OperationResult.Failed("Write operation timed out.");
             }
             catch (IOException ex)
             {
-                return OperationResult.Fail($"IO Exception: {ex.Message}");
+                return OperationResult.Failed($"IO Exception: {ex.Message}");
             }
             catch (InvalidOperationException ex)
             {
-                return OperationResult.Fail($"Invalid Operation: {ex.Message}");
+                return OperationResult.Failed($"Invalid Operation: {ex.Message}");
             }
             catch (OperationCanceledException ex)
             {
-                return OperationResult.Fail("canceled");
+                return OperationResult.Failed("canceled");
             }
             catch (Exception ex)
             {
-                return OperationResult.Fail($"Unexpected error: {ex.GetType().Name} {ex.Message}");
+                return OperationResult.Failed($"Unexpected error: {ex.GetType().Name} {ex.Message}");
             }
         }
 
-        public async Task<string> RequestDeviceNumber(CancellationToken token)
+        public async Task<OperationResult> RequestDeviceNumber(CancellationToken token)
         {
             try
             {
@@ -400,18 +401,18 @@ namespace MVVM_Base.Model
 
                 var result = WriteLine($"AL,DR");
                 result = await ReadLineAsync(token);
-                if (result.IsSuccess)
+                if (result.Status == OperationResultType.Success)
                 {
-                    return result.Message.Substring(0, 2) ?? "";
+                    return OperationResult.Success(result.Payload.Substring(0, 2) ?? "");
                 }
                 else
                 {
-                    return "";
+                    return OperationResult.Failed();
                 }
             }
             catch(OperationCanceledException)
             {
-                return "canceled";
+                return OperationResult.Canceled();
             }
         }
 
@@ -463,27 +464,27 @@ namespace MVVM_Base.Model
                 // 機器から "デバイス番号, AK\r\n" が返るか確認
                 var first = await ReadLineAsync(token);
 
-                if (first.IsSuccess)
+                if (first.Status == OperationResultType.Success)
                 {
-                    if (first?.Message.Trim() != $"{deviceNum},AK") return null;
+                    if (first?.Payload.Trim() != $"{deviceNum},AK") return null;
 
                     token.ThrowIfCancellationRequested();
 
                     // 2回目送信
                     var result = WriteLine($"{deviceNum},{cmd2}");
 
-                    if (result.IsSuccess)
+                    if (result.Status == OperationResultType.Success)
                     {
                         token.ThrowIfCancellationRequested();
 
                         // 2回目の返信受信
                         var second = await ReadLineAsync(token);
 
-                        if (second.IsSuccess)
+                        if (second.Status == OperationResultType.Success)
                         {
                             if (cmd1 == "DW")
                             {
-                                deviceNum = second?.Message.Substring(0, 2);
+                                deviceNum = second?.Payload.Substring(0, 2);
                             }
                         }
 
@@ -501,8 +502,7 @@ namespace MVVM_Base.Model
             }
             catch(OperationCanceledException)
             {
-                OperationResult cancelOperation = new OperationResult(false, "canceled");
-                return cancelOperation;
+                return OperationResult.Canceled();
             }
         }
 
@@ -525,16 +525,16 @@ namespace MVVM_Base.Model
                 // 機器から "デバイス番号, AK\r\n" が返るか確認
                 var first = await ReadLineAsync(token);
 
-                if (first.IsSuccess)
+                if (first.Status == OperationResultType.Success)
                 {
-                    if (first?.Message.Trim() != $"{deviceNum},AK") return null;
+                    if (first?.Payload.Trim() != $"{deviceNum},AK") return null;
 
                     token.ThrowIfCancellationRequested();
 
                     // 2回目送信
                     var result = WriteLine($"{cmdPair.Item1},{cmdPair.Item2}");
 
-                    if (result.IsSuccess)
+                    if (result.Status == OperationResultType.Success)
                     {
                         token.ThrowIfCancellationRequested();
 
@@ -555,8 +555,7 @@ namespace MVVM_Base.Model
             }
             catch (OperationCanceledException)
             {
-                OperationResult cancelOperation = new OperationResult(false, "canceled");
-                return cancelOperation;
+                return OperationResult.Canceled();
             }
         }
 
@@ -577,7 +576,8 @@ namespace MVVM_Base.Model
                     !char.IsDigit(deviceNum[0]) ||
                     !char.IsDigit(deviceNum[1]))
                 {
-                    deviceNum = await RequestDeviceNumber(token);
+                    var result = await RequestDeviceNumber(token);
+                    deviceNum = result.Payload;
                 }
 
                 token.ThrowIfCancellationRequested();
@@ -586,8 +586,7 @@ namespace MVVM_Base.Model
             }
             catch (OperationCanceledException)
             {
-                OperationResult cancelOperation = new OperationResult(false, "canceled");
-                return cancelOperation;
+                return OperationResult.Canceled();
             }
         }
 
@@ -608,7 +607,8 @@ namespace MVVM_Base.Model
                     !char.IsDigit(deviceNum[0]) ||
                     !char.IsDigit(deviceNum[1]))
                 {
-                    deviceNum = await RequestDeviceNumber(token);
+                    var result = await RequestDeviceNumber(token);
+                    deviceNum = result.Payload;
                 }
 
                 token.ThrowIfCancellationRequested();
@@ -617,8 +617,7 @@ namespace MVVM_Base.Model
             }
             catch (OperationCanceledException)
             {
-                OperationResult cancelOperation = new OperationResult(false, "canceled");
-                return cancelOperation;
+                return OperationResult.Canceled();
             }
         }
 
@@ -640,7 +639,8 @@ namespace MVVM_Base.Model
                     !char.IsDigit(deviceNum[0]) ||
                     !char.IsDigit(deviceNum[1]))
                 {
-                    deviceNum = await RequestDeviceNumber(token);
+                    var result = await RequestDeviceNumber(token);
+                    deviceNum = result.Payload;
                 }
 
                 token.ThrowIfCancellationRequested();
@@ -649,8 +649,7 @@ namespace MVVM_Base.Model
             }
             catch (OperationCanceledException)
             {
-                OperationResult cancelOperation = new OperationResult(false, "canceled");
-                return cancelOperation;
+                return OperationResult.Canceled();
             }
         }
 
@@ -672,18 +671,22 @@ namespace MVVM_Base.Model
                 !char.IsDigit(deviceNum[0]) ||
                 !char.IsDigit(deviceNum[1]))
                 {
-                    deviceNum = await RequestDeviceNumber(token);
+                    var result = await RequestDeviceNumber(token);
+                    deviceNum = result.Payload;
                 }
 
                 return await SendTypeRWAsync(cmd1, cmdPair, token);
             }
             catch (OperationCanceledException)
             {
-                OperationResult cancelOperation = new OperationResult(false, "canceled");
-                return cancelOperation;
+                return OperationResult.Canceled();
             }
         }
 
+        /// <summary>
+        /// 保持するデバイス番号を返す
+        /// </summary>
+        /// <returns></returns>
         public string GetDeviceNumber()
         {
             if (deviceNum != null)

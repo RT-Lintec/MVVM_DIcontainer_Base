@@ -11,6 +11,9 @@ namespace MVVM_Base.ViewModel
 {
     public partial class vmMain : ObservableObject, IViewModel
     {
+        /// <summary>
+        /// キャンセレーショントークン
+        /// </summary>
         private CancellationTokenSource? vmCts;
 
         /// <summary>
@@ -511,7 +514,8 @@ namespace MVVM_Base.ViewModel
                     isMfcPortOpened = value;
                     OnPropertyChanged();
                     UpdateIsMfcConnected();
-                    UpdateMfcPortOpenBtnText();
+                    
+                    OnMfcConnectedChanged();
                 }
             }
         }
@@ -524,8 +528,9 @@ namespace MVVM_Base.ViewModel
             {
                 if (isMfcConnected != value)
                 {
-                    isMfcConnected = value;
+                    isMfcConnected = value;                    
                     OnPropertyChanged(); // CallerMemberName を使っている場合
+                    UpdateMfcPortOpenBtnText();
                 }
             }
         }
@@ -541,7 +546,7 @@ namespace MVVM_Base.ViewModel
         }
 
         // MFC ポートオープン/クローズボタンの表示テキスト
-        private string _mFCPortButtonText = "Open";
+        private string _mFCPortButtonText = (string)Application.Current.Resources["OpenWord"];
         public string MFCPortButtonText
         {
             get => _mFCPortButtonText;
@@ -551,14 +556,14 @@ namespace MVVM_Base.ViewModel
                 {
                     _mFCPortButtonText = value;
                     OnPropertyChanged();
-                    OnMfcConnectedChanged();
+                    //OnMfcConnectedChanged();
                 }
             }
         }
 
         private void UpdateMfcPortOpenBtnText()
         {
-            MFCPortButtonText = IsMfcPortOpened ? "Close" : "Open";
+            MFCPortButtonText = IsMfcPortOpened ? (string)Application.Current.Resources["CloseWord"] : (string)Application.Current.Resources["OpenWord"];
         }
         #endregion
 
@@ -589,6 +594,7 @@ namespace MVVM_Base.ViewModel
                     isBalancePortOpened = value;
                     OnPropertyChanged();
                     UpdateIsBalanceConnected();
+                    OnBalanceConnectedChanged();
                 }
             }
         }
@@ -619,7 +625,7 @@ namespace MVVM_Base.ViewModel
         }
 
         // 天秤ポートオープン/クローズボタンの表示テキスト
-        private string _balancePortButtonText = "Open";
+        private string _balancePortButtonText = (string)Application.Current.Resources["OpenWord"];
         public string BalancePortButtonText
         {
             get => _balancePortButtonText;
@@ -629,14 +635,14 @@ namespace MVVM_Base.ViewModel
                 {
                     _balancePortButtonText = value;
                     OnPropertyChanged();
-                    OnBalanceConnectedChanged();
+                    //OnBalanceConnectedChanged();
                 }
             }
         }
 
         private void UpdateBalancePortOpenBtnText()
         {
-            BalancePortButtonText = IsBalancePortOpened ? "Close" : "Open";
+            BalancePortButtonText = IsBalancePortOpened ? (string)Application.Current.Resources["CloseWord"] : (string)Application.Current.Resources["OpenWord"];
         }
         #endregion
 
@@ -783,6 +789,34 @@ namespace MVVM_Base.ViewModel
         }
 
         /// <summary>
+        /// コンボボックスシンボル高さ
+        /// </summary>
+        private int comboSymbolHeight = 20;
+        public int ComboSymbolHeight
+        {
+            get => comboSymbolHeight;
+            set
+            {
+                comboSymbolHeight = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// コンボボックスシンボル幅
+        /// </summary>
+        private int comboSymbolWidth = 24;
+        public int ComboSymbolWidth
+        {
+            get => comboSymbolWidth;
+            set
+            {
+                comboSymbolWidth = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
         /// コンボボックスのパディングサイズ
         /// </summary>
         private double _comboPaddingSize = 10;
@@ -841,7 +875,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// ポートボタンの幅サイズ
         /// </summary>
-        private double _portBtnSize = 50;
+        private double _portBtnSize = 60;
         public double PortBtnSize
         {
             get => _portBtnSize;
@@ -922,6 +956,16 @@ namespace MVVM_Base.ViewModel
 
         #endregion
 
+        /// <summary>
+        /// 現在のカラーテーマ
+        /// </summary>
+        private string colorTheme = "";
+        public string ColorTheme
+        {
+            get => colorTheme;
+            private set => colorTheme = value;
+        }
+
         public bool IsDebug { get; } =
 #if DEBUG
         true;
@@ -935,6 +979,8 @@ namespace MVVM_Base.ViewModel
         private readonly CommStatusService commStatusService;
         private readonly ViewModelManagerService vmService;
         private readonly ApplicationStatusService appStatusService;
+        private readonly LanguageService languageService;
+        private readonly IdentifierService identifierService;
 
         [ObservableProperty]
         private string? _readValue;
@@ -953,7 +999,8 @@ namespace MVVM_Base.ViewModel
         /// <param name="portWatcher"></param>
         /// <param name="messageService"></param>
         public vmMain(PortWatcherService _portWatcher, IMessageService _messageService, 
-            ThemeService _themeService, CommStatusService _commStatusService, ViewModelManagerService _vmService, ApplicationStatusService _appStatusService)
+            ThemeService _themeService, CommStatusService _commStatusService, ViewModelManagerService _vmService,
+            ApplicationStatusService _appStatusService, LanguageService _languageService, IdentifierService _identifierService)
         {
             InitParameter();
             RefreshAvailablePorts();            
@@ -986,7 +1033,11 @@ namespace MVVM_Base.ViewModel
 
             appStatusService = _appStatusService;
             appStatusService.PropertyChanged += AppStatusService_PropertyChanged;
-            //this.PropertyChanged += MfcConnected_PropertyChanged;
+
+            languageService = _languageService;
+            languageService.PropertyChanged += LanguageService_PropertyChanged;
+            identifierService = _identifierService;
+
             vmService.CanTransit = true;
         }
 
@@ -1051,7 +1102,6 @@ namespace MVVM_Base.ViewModel
             AdjustFontSizeByDelta(delta);
         });
 
-
         private void AdjustFontSizeByDelta(int delta)
         {
             if (delta > 0 && tcnt > 4) return;
@@ -1064,12 +1114,12 @@ namespace MVVM_Base.ViewModel
             IconSize += delta;
             StatusIconSize += delta;
 
-            GroupBoxWidth += delta * 48;
-            GroupBoxStatusWidth += delta * 16;
-            GroupBoxDebugWidthA += delta * 32;
-            GroupBoxDebugWidthB += delta * 16;
+            GroupBoxWidth += delta * 36;
+            GroupBoxStatusWidth += delta * 12;
+            GroupBoxDebugWidthA += delta * 24;
+            GroupBoxDebugWidthB += delta * 12;
 
-            ComboWidthLongSize += delta * 16;
+            ComboWidthLongSize += delta * 12;
             ComboWidthSize += delta * 4;
             ComboHeighSize += delta * 1;
             ComboPaddingSize += delta * 1;
@@ -1081,10 +1131,31 @@ namespace MVVM_Base.ViewModel
             DebugTextBoxSIze += delta * 5;
             DebugTextBoxLongSIze += delta * 8;
 
+            ComboSymbolHeight += delta;
+            ComboSymbolWidth += delta;
+
             tcnt += delta;
         }
 
         #region 状態変更通知関連
+
+        /// <summary>
+        /// ThemeServiceにイベント通知を委任しているので、プロパティ変化の通知は行わない
+        /// 行うと二重発火となり、viewEntryでのプロパティ変更イベントが二回発生する。
+        /// </summary>
+        private bool isDarkTheme;
+        public bool IsDarkTheme
+        {
+            get => isDarkTheme;
+            set
+            {
+                if (isDarkTheme != value)
+                {
+                    isDarkTheme = value;
+                }
+            }
+        }
+
         /// <summary>
         /// カラーテーマ
         /// </summary>
@@ -1103,25 +1174,23 @@ namespace MVVM_Base.ViewModel
         {
             // Viewに依存せずViewModel内で処理可能
             // 例：内部フラグ更新や別プロパティ更新など
-            IsDarkTheme = newTheme == "Dark"; // フラグ例
-                                              // 必要であれば PropertyChanged 通知も出す
+            IsDarkTheme = newTheme == themeService.Dark;
+            ColorTheme = newTheme;
             OnPropertyChanged(nameof(IsDarkTheme));
         }
 
         /// <summary>
-        /// ThemeServiceにイベント通知を委任しているので、プロパティ変化の通知は行わない
-        /// 行うと二重発火となり、viewEntryでのプロパティ変更イベントが二回発生する。
+        /// 言語
         /// </summary>
-        private bool isDarkTheme;
-        public bool IsDarkTheme
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LanguageService_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            get => isDarkTheme;
-            set
+            // 言語変更に合わせてボタン表示も変える
+            if (e.PropertyName == nameof(languageService.CurrentLanguage))
             {
-                if (isDarkTheme != value)
-                {
-                    isDarkTheme = value;
-                }
+                UpdateMfcPortOpenBtnText();
+                UpdateBalancePortOpenBtnText();
             }
         }
         #endregion
@@ -1193,7 +1262,7 @@ namespace MVVM_Base.ViewModel
                         }
                         else
                         {
-                            await messageService.ShowMessage("Failed to open the port.");
+                            await messageService.ShowMessage(languageService.PortOpenError);
                             IsMfcPortOpened = false;
                             // 3sec : シリアルポート情報更新などの安定待ち
                             // Open状態で抜き差し直後にClose→Openを連打することでnull参照
@@ -1265,9 +1334,9 @@ namespace MVVM_Base.ViewModel
                 var result = await mfcService.RequestType2Async("ST", token);
                 if (result != null)
                 {
-                    if (result.IsSuccess)
+                    if (result.Status == Common.OperationResultType.Success)
                     {
-                        var status = result.Message;
+                        var status = result.Payload;
                         status = status[3..];
                         if (status.Length > 3)
                         {
@@ -1292,7 +1361,7 @@ namespace MVVM_Base.ViewModel
                     }
                     else
                     {
-                        await messageService.ShowMessage(result.Message);
+                        await messageService.ShowMessage(result.Payload);
                         await messageService.CloseWithFade();
                     }
                 }
@@ -1349,13 +1418,13 @@ namespace MVVM_Base.ViewModel
             var result = await mfcService.RequestType1Async(cmd, token);
             if (result != null)
             {
-                if (result.IsSuccess)
+                if (result.Status == Common.OperationResultType.Success)
                 {
                     await UpdateMFCStatus(token);
                 }
                 else
                 {
-                    await messageService.ShowMessage(result.Message);
+                    await messageService.ShowMessage(result.Payload);
                     await messageService.CloseWithFade();
                 }
             }
@@ -1381,13 +1450,13 @@ namespace MVVM_Base.ViewModel
             var result = await mfcService.RequestType2Async(CommMFCType2Command, token);
             if (result != null)
             {
-                if (result.IsSuccess)
+                if (result.Status == Common.OperationResultType.Success)
                 {
-                    CommMFCType2Result = result.Message;
+                    CommMFCType2Result = result.Payload;
                 }
                 else
                 {
-                    await messageService.ShowMessage(result.Message);
+                    await messageService.ShowMessage(result.Payload);
                     await messageService.CloseWithFade();
                     return;
                 }
@@ -1414,13 +1483,13 @@ namespace MVVM_Base.ViewModel
             var result = await mfcService.RequestType3Async(CommMFCType3Command1, CommMFCType3Command2, token);
             if (result != null)
             {
-                if (result.IsSuccess)
+                if (result.Status == Common.OperationResultType.Success)
                 {
-                    CommMFCType3Result = result.Message;
+                    CommMFCType3Result = result.Payload;
                 }
                 else
                 {
-                    await messageService.ShowMessage(result.Message);
+                    await messageService.ShowMessage(result.Payload);
                     await messageService.CloseWithFade();
                     return;
                 }
@@ -1468,7 +1537,7 @@ namespace MVVM_Base.ViewModel
                         }
                         else
                         {
-                            await messageService.ShowMessage("Failed to open the port.");
+                            await messageService.ShowMessage(languageService.PortOpenError);
                             IsBalancePortOpened = false;
                             await Task.Delay(3000);
                             await messageService.CloseWithFade();
@@ -1520,13 +1589,13 @@ namespace MVVM_Base.ViewModel
             var result = await BalanceSerialService.Instance.RequestWeightAsync(token);
             if (result != null)
             {
-                if (result.IsSuccess)
+                if (result.Status == Common.OperationResultType.Success)
                 {
-                    CommBalanceValue = result.Message;
+                    CommBalanceValue = result.Payload;
                 }
                 else
                 {
-                    await messageService.ShowMessage(result.Message);
+                    await messageService.ShowMessage(result.Payload);
                     await messageService.CloseWithFade();
                 }
             }
@@ -1547,7 +1616,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private async void MessageShowAdded()
         {
-            await messageService.ShowMessage("Port reloading...");
+            await messageService.ShowMessage(languageService.PortReloading);
         }
 
         /// <summary>
@@ -1555,7 +1624,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private async void MessageShowRemoved()
         {
-            await messageService.ShowMessage("Port disconnected...");
+            await messageService.ShowMessage(languageService.PortDisconnected);
         }
 
         private void NoChangeDetected()
@@ -1691,7 +1760,6 @@ namespace MVVM_Base.ViewModel
                 }
             }
         }
-
 
         /// <summary>
         /// イベント削除

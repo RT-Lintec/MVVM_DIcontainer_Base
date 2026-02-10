@@ -1,16 +1,18 @@
-﻿using MVVM_Base.ViewModel;
+﻿using MVVM_Base.Common;
+using MVVM_Base.ViewModel;
 using Microsoft.VisualBasic.Logging;
 using System.ComponentModel;
 using System.Drawing;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using static MVVM_Base.ViewModel.vmLinear;
 using Color = System.Windows.Media.Color;
 using Point = System.Windows.Point;
-
 namespace MVVM_Base.View
 {
     /// <summary>
@@ -57,8 +59,6 @@ namespace MVVM_Base.View
         static private bool isContinueMfcIconAnim = false;
         static private bool isContinueBalanceIconAnim = false;
 
-        bool IsDark = true;
-
         public viewLinear(vmLinear _vm)
         {
             InitializeComponent();
@@ -97,7 +97,8 @@ namespace MVVM_Base.View
                         args.PropertyName == nameof(vm.IsDarkTheme) ||
                         args.PropertyName == nameof(vm.IsMfmStarted) ||
                         args.PropertyName == nameof(vm.ConfIndex) ||
-                        args.PropertyName == nameof(vm.CanEditGainData))
+                        args.PropertyName == nameof(vm.CanEditGainData) ||
+                        args.PropertyName == nameof(vm.IsMapGenerated))
                     {
                         Vm_PropertyChanged(s, args);
                     }
@@ -210,6 +211,47 @@ namespace MVVM_Base.View
                 return;
             }
 
+            if (e.PropertyName == nameof(vmLinear.IsMapGenerated))
+            {
+                string[] lowerFbs =
+                {
+                    "FB90","FB92","FB94","FB96","FB98",
+                    "FB9A","FB9C","FB9E","FBA0","FBA2","FB41"
+                };
+
+                string[] upperFbs =
+                {
+                    "FB91","FB93","FB95","FB97","FB99",
+                    "FB9B","FB9D","FB9F","FBA1","FBA3","FB42"
+                };
+
+                int lowerCnt = 0;
+                lowerFBData.Columns.Clear();
+
+                var fbProps = typeof(vmLinear)
+                    .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                    .Where(p => p.GetCustomAttribute<FbLowerCodeAttribute>() != null);
+
+                foreach (var prop in fbProps)
+                {
+                    lowerFBData.Columns.Add(CreateFbColumn(vm, lowerFbs[lowerCnt], prop));
+                    lowerCnt++;
+                }
+
+                int upperCnt = 0;
+                UpperFBData.Columns.Clear();
+
+                fbProps = typeof(vmLinear)
+                    .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                    .Where(p => p.GetCustomAttribute<FbUpperCodeAttribute>() != null);
+
+                foreach (var prop in fbProps)
+                {
+                    UpperFBData.Columns.Add(CreateFbColumn(vm, upperFbs[upperCnt], prop));
+                    upperCnt++;
+                }
+            }
+
             if (e.PropertyName == nameof(vmLinear.CanEditGainData))
             {
                 if (((vmLinear)sender).CanEditGainData)
@@ -273,22 +315,20 @@ namespace MVVM_Base.View
             // カラーテーマ変更通知に対する処理
             else if (e.PropertyName == nameof(vmLinear.IsDarkTheme))
             {
-                IsDark = ((vmLinear)sender).IsDarkTheme;
-
                 if (((vmLinear)sender).IsMfcConnected && ((vmLinear)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueMfcIconAnim);
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, isContinueBalanceIconAnim);
                 }
                 else if (((vmLinear)sender).IsMfcConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, isContinueMfcIconAnim);
                 }
                 else if (((vmLinear)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmLinear)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, isContinueBalanceIconAnim);
                 }
-                ThemeChangeCommConfButton(((vmLinear)sender).IsDarkTheme);
+                ThemeChangeCommConfButton();
             }
             // MFMコマンドが開始されたかどうか
             else if(e.PropertyName == nameof(vmLinear.IsMfmStarted))
@@ -350,6 +390,63 @@ namespace MVVM_Base.View
 
                 }
             }
+        }
+               
+        /// <summary>
+        /// ゲイン表の各セルにStyleを適用し、
+        /// 値のバインド先はPropertyInfo、アドレス自体(ラベルの参照先)は外部キー
+        /// </summary>
+        /// <param name="vm"></param>
+        /// <param name="key"></param>
+        /// <param name="prop"></param>
+        /// <returns></returns>
+        private static DataGridTextColumn CreateFbColumn(vmLinear vm, string key, PropertyInfo prop)
+        {
+            // Header 用 TextBlock（ここが重要）
+            var headerText = new TextBlock
+            {
+                Text = vm.FbMap[key].ToString(),
+                TextAlignment = TextAlignment.Center
+            };
+
+            // ベースとなるスタイルを取得
+            var baseStyle = (System.Windows.Style)Application.Current.FindResource("EditingTextBoxStyle");
+
+            // スタイルを拡張する（新しいStyleインスタンスを作成）
+            var dynamicStyle = new System.Windows.Style(typeof(TextBox), baseStyle);
+
+            // VM（行データ）の特定のプロパティ（例：IsModified）にバインドするセッターを追加
+            // もしプロパティ名が固定ならこれだけでOK
+            // EditingTextBoxStyleスタイルのxamlタグで書くべき以下内容をコードビハインドで、同様に処理している
+            // <Setter Property="local:HexCheckAssist.ChangedTrigger" Value="{Binding IsModified, Mode=TwoWay}"/>
+            dynamicStyle.Setters.Add(new Setter
+            {
+                Property = HexCheckAssist.ChangedTriggerProperty,
+                Value = new Binding("IsModified")
+                {
+                    Mode = BindingMode.TwoWay,
+                    UpdateSourceTrigger = UpdateSourceTrigger.Explicit // 自動更新しない➡明示的に更新する
+                }
+            });
+
+            // 次のxamlをコードビハインドで処理。処理はどちらか一方でOKで、こういうことも出来るというモデルケース
+            // <Setter Property="local:HexCheckAssist.Enable" Value="True"/>
+            dynamicStyle.Setters.Add(new Setter
+            {
+                Property = HexCheckAssist.EnableProperty,
+                Value = true
+            });
+
+            return new DataGridTextColumn
+            {
+                Header = headerText,
+                EditingElementStyle = dynamicStyle, // 作成したスタイルを適用
+                Binding = new Binding(prop.Name)
+                {
+                    Mode = BindingMode.TwoWay,
+                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged // 値変更を更新トリガーとする
+                }
+            };
         }
 
         /// <summary>
@@ -447,10 +544,9 @@ namespace MVVM_Base.View
         /// <summary>
         /// カラーテーマ変更時、Confirmボタンのカラー遷移アニメーション
         /// </summary>
-        /// <param name="isDark"></param>
-        private void ThemeChangeCommConfButton(bool isDark)
+        private void ThemeChangeCommConfButton()
         {
-            string theme = isDark ? "Dark" : "Light";
+            string theme = vm.ColorTheme;
 
             // 変更後カラーの取得
             var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{theme}Theme.xaml", UriKind.Relative) };
@@ -492,9 +588,9 @@ namespace MVVM_Base.View
         /// <param name="gs2"></param>
         /// <param name="newColor1"></param>
         /// <param name="newColor2"></param>
-        private void ThemeChangeCommIcon(GradientStop targetGS, string target, Storyboard animSb, Storyboard orgSb, bool isDark, bool isContinueAnimation)
+        private void ThemeChangeCommIcon(GradientStop targetGS, string target, Storyboard animSb, Storyboard orgSb, bool isContinueAnimation)
         {
-            string theme = isDark ? "Dark" : "Light";
+            string theme = vm.ColorTheme;
             // 現在色の取得
             var resources = Application.Current.Resources;
 
@@ -516,13 +612,19 @@ namespace MVVM_Base.View
             animSb.Children.Add(anim);
 
             // テーマ移行アニメーション完了と同時にテーマアニメーション開始
-            animSb.Completed += (s, e) =>
+            // 利用しているStoryboardはクラス変数のため、イベント毎にイベントハンドラを削除することで
+            // イベント多重登録を防ぐ
+            EventHandler handler = null;
+            handler = (s, e) =>
             {
+                animSb.Completed -= handler;   // ★自分自身を解除
                 if (isContinueAnimation)
                 {
                     AnimateCommIconColor(target, orgSb);
                 }
             };
+
+            animSb.Completed += handler;
 
             animSb.Begin(this);
         }
@@ -530,12 +632,11 @@ namespace MVVM_Base.View
         /// <summary>
         /// ポートクローズ時にアイコンのカラー遷移アニメーションを停止させる
         /// </summary>
-        /// <param name="isDark"></param>
-        private void StopCommIconAnimationAndReset(GradientStop target, bool isDark, bool isContinue)
+        private void StopCommIconAnimationAndReset(GradientStop target, bool isContinue)
         {
             isContinue = false;
 
-            string theme = isDark ? "Dark" : "Light";
+            string theme = vm.ColorTheme;
             // 現在色の取得
             var resources = Application.Current.Resources;
 

@@ -6,16 +6,32 @@
         Title="Entry"
         Height="850" Width="1000"
         WindowStyle="None"
-        AllowsTransparency="True"
+        AllowsTransparency="False"
         Background="Transparent"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded"
+        StateChanged="Window_StateChanged"
+        LocationChanged="Window_LocationChanged">
+    <WindowChrome.WindowChrome>
+        <WindowChrome
+            CaptionHeight="35"
+            CornerRadius="5"
+            ResizeBorderThickness="5"
+            GlassFrameThickness="0"
+            UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
 
     <Border CornerRadius="5" BorderThickness="1" BorderBrush="Gray">
         <DockPanel>
             <!-- カスタムタイトルバー -->
             <Grid Height="35" 
                   DockPanel.Dock="Top" 
-                  MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                  MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                  SnapsToDevicePixels="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
                 <Grid.Background>
                     <LinearGradientBrush StartPoint="0,0" 
                                          EndPoint="1,0">
@@ -27,16 +43,38 @@
                                       Offset="1"/>
                     </LinearGradientBrush>
                 </Grid.Background>
-                <TextBlock Text="MVVM_Base" 
-                           VerticalAlignment="Center" 
-                           Margin="10" Foreground="White" 
-                           FontSize="16"/>
-                <Border Width="60" 
-                        Height="30" 
-                        CornerRadius="15" 
-                        Background="#444" 
-                        HorizontalAlignment="Right" 
-                        Margin="0 0 10 0">
+                <TextBlock 
+                    Grid.Column="0"
+                    Text="MVVM_Base" 
+                    VerticalAlignment="Center" 
+                    Margin="10" Foreground="White" 
+                    FontSize="16"/>
+                <Border 
+                    Grid.Column="1"
+                    Width="60" 
+                    Height="30" 
+                    CornerRadius="15" 
+                    Background="#444" 
+                    HorizontalAlignment="Right" 
+                    Margin="0 0 10 0">
+                    <Canvas Width="60" 
+                            Height="30" 
+                            Background="Transparent">
+                        <Button x:Name="LanguageToggleButton" 
+                                Style="{StaticResource SlideLanguageTheme}" 
+                                Command="{Binding ChangeLanguageCommand}" 
+                                Canvas.Left="0" 
+                                Canvas.Top="0"/>
+                    </Canvas>
+                </Border>
+                <Border 
+                    Grid.Column="2"
+                    Width="60" 
+                    Height="30" 
+                    CornerRadius="15" 
+                    Background="#444" 
+                    HorizontalAlignment="Right" 
+                    Margin="0 0 10 0">
                     <Canvas Width="60" 
                             Height="30" 
                             Background="Transparent">
@@ -55,6 +93,9 @@
                     <ColumnDefinition Width="150"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
                 <!-- 左ナビ -->
                 <Grid Grid.Column="0" 
@@ -67,8 +108,6 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <!-- 上ボタン群 -->
-                            <RowDefinition Height="Auto"/>
-                            <!-- Setting ボタン -->
                             <RowDefinition Height="Auto"/>
                             <!-- End ボタン -->
                         </Grid.RowDefinitions>
@@ -84,9 +123,9 @@
                                 Command="{Binding ShowViewCommand}"
                                 CommandParameter="{x:Static local:ViewType.Main}" >
                                 <StackPanel Orientation="Horizontal">
-                                    <fa:IconImage Icon="Home" 
+                                    <fa:IconImage Icon="Home"
                                                   Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="Entry" 
+                                    <TextBlock Text="{DynamicResource EntryWord}" 
                                                Style="{StaticResource menuToggleButtonText}"/>
                                 </StackPanel>
                             </ToggleButton>
@@ -102,7 +141,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <fa:IconImage Icon="LineChart" 
                                                   Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="Linear" 
+                                    <TextBlock Text="{DynamicResource LinearWord}" 
                                                Style="{StaticResource menuToggleButtonText}"/>
                                 </StackPanel>
                             </ToggleButton>
@@ -118,41 +157,22 @@
                                 <StackPanel Orientation="Horizontal">
                                     <fa:IconImage Icon="EnvelopeOpenText" 
                                                   Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="Balw" 
-                                               Style="{StaticResource menuToggleButtonText}"/>
-                                </StackPanel>
-                            </ToggleButton>
-                        </StackPanel>
-
-                        <!-- Setting ボタン -->
-                        <StackPanel Grid.Row="1" 
-                                    Margin="0,0,0,5">
-                            <ToggleButton 
-                                PreviewMouseLeftButtonDown="NavToggleButton_Click"
-                                Checked="NavToggleButton_Check"
-                                Style="{StaticResource menuToggleButton}"
-                                IsChecked="{Binding IsHelpSelected}" 
-                                IsEnabled="{Binding CanTransit}"
-                                Command="{Binding ShowViewCommand}"
-                                CommandParameter="{x:Static local:ViewType.Help}" >
-                                <StackPanel Orientation="Horizontal">
-                                    <fa:IconImage Icon="Gear" 
-                                                  Style="{StaticResource menuToggleButtonIcon}" />
-                                    <TextBlock Text="Setting" 
+                                    <TextBlock Text="{DynamicResource BalwWord}" 
                                                Style="{StaticResource menuToggleButtonText}"/>
                                 </StackPanel>
                             </ToggleButton>
                         </StackPanel>
 
                         <!-- Endボタン -->
-                        <Border Grid.Row="2"
-                                Width="{Binding btnEndWidth, RelativeSource={RelativeSource AncestorType=Window}}"
-                                Height="{Binding btnEndHeight, RelativeSource={RelativeSource AncestorType=Window}}"
+                        <Border Grid.Row="1"
+                                Width="{Binding BtnEndWidth, RelativeSource={RelativeSource AncestorType=Window}}"
+                                Height="{Binding BtnEndHeight, RelativeSource={RelativeSource AncestorType=Window}}"
                                 CornerRadius="18" 
                                 Background="#444" 
+                                VerticalAlignment="Bottom"
                                 Margin="0,0,0,10">
-                            <Canvas Width="{Binding btnEndWidth, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    Height="{Binding btnEndHeight, RelativeSource={RelativeSource AncestorType=Window}}" 
+                            <Canvas Width="{Binding BtnEndWidth, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Height="{Binding BtnEndHeight, RelativeSource={RelativeSource AncestorType=Window}}" 
                                     Background="Transparent">
                                 <Thumb Style="{StaticResource SlideThumb}" 
                                        DragDelta="SlideThumb_DragDelta" 

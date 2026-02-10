@@ -1,6 +1,9 @@
-﻿using System.IO;
+﻿using MVVM_Base.Common;
+using System.Buffers;
+using System.IO;
 using System.IO.Ports;
 using System.Text;
+using System.Windows.Shapes;
 
 namespace MVVM_Base.Model
 {
@@ -12,7 +15,7 @@ namespace MVVM_Base.Model
         public SerialPort? Port { get; private set; }
 
         private readonly StringBuilder _buffer = new();
-        private TaskCompletionSource<string?>? lineTcs;
+        private TaskCompletionSource<OperationResult?>? lineTcs;
 
         int timeoutMilliseconds = 1000;
         /// <summary>
@@ -61,14 +64,12 @@ namespace MVVM_Base.Model
 
                 Port.Open();
 
-                //Port.DiscardInBuffer();
-                //Port.DiscardOutBuffer();
                 token.ThrowIfCancellationRequested();
 
                 // 通信テスト                
                 var result = await RequestWeightAsync(token);
 
-                if (result != null && result != null && result.IsSuccess)
+                if (result != null && result != null && result.Status == OperationResultType.Success)
                 {
                     return Port != null && Port.IsOpen;
                 }
@@ -117,15 +118,8 @@ namespace MVVM_Base.Model
             var portToClose = Port;
             Port = null; // アプリ側は即 null にして安全
 
-            //Task.Run(() =>
-            //{
             try
             {
-                //if (portToClose.IsOpen)
-                //{
-                //    // Close がブロックされても、別スレッドなら UI は止まらない
-                //    portToClose.Close();
-                //}
                 if (portToClose.IsOpen)
                 {
                     var closeTask = Task.Run(() =>
@@ -251,7 +245,6 @@ namespace MVVM_Base.Model
             {
 
             }
-            //});
         }
 
         /// <summary>
@@ -271,25 +264,22 @@ namespace MVVM_Base.Model
                 string data = port.ReadExisting();
                 _buffer.Append(data);
 
-                // 1行ごとに分割
+                // バッファに返信メッセージが格納されてからOperationResultを
+                // 作成し、payload込みでlineTcsに渡す
                 while (true)
-                {
-                    string? line = null;
-
-                    // ここも必ず port を使う（Port を直接参照しない！）
+                {                    
                     int idx = _buffer.ToString().IndexOf(port.NewLine);
-                    if (idx >= 0)
-                    {
-                        line = _buffer.ToString(0, idx);
-                        _buffer.Remove(0, idx + port.NewLine.Length);
-                    }
+                    if (idx < 0) break;
 
-                    if (line == null) break;
+                    string payload = _buffer.ToString(0, idx);
+                    _buffer.Remove(0, idx + port.NewLine.Length);
+
+                    var result = OperationResult.Success(payload);
 
                     // 待機中のタスクがあれば結果を渡す
                     if (lineTcs != null && !lineTcs.Task.IsCompleted)
                     {
-                        lineTcs.TrySetResult(line);
+                        lineTcs.TrySetResult(result);
                         lineTcs = null;
                     }
                 }
@@ -321,19 +311,17 @@ namespace MVVM_Base.Model
             }
         }
 
-
         /// <summary>
         /// 一回分の通信データを受け取るまで待機するタスクを生成
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private Task<string?> ReadLineAsync(CancellationToken token)
+        private Task<OperationResult?> ReadLineAsync(CancellationToken token)
         {
-            // TODO : 処理内容の理解が浅い
             if (Port == null || !Port.IsOpen)
-                return Task.FromResult<string?>(null);
+                return Task.FromResult<OperationResult?>(null);
 
-            var tcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var tcs = new TaskCompletionSource<OperationResult?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             // token でキャンセル
             CancellationTokenRegistration? registration = null;
@@ -363,12 +351,12 @@ namespace MVVM_Base.Model
         {
             if (Port == null)
             {
-                return OperationResult.Fail("Port is null.");
+                return OperationResult.Failed();
             }
 
             if (!Port.IsOpen)
             {
-                return OperationResult.Fail("Port is not open.");
+                return OperationResult.Failed();
             }
             try
             {
@@ -381,45 +369,45 @@ namespace MVVM_Base.Model
             }
             catch (NullReferenceException)
             {
-                return OperationResult.Fail("Port is NULL.");
+                return OperationResult.Failed("Port is NULL.");
             }
             catch (TimeoutException)
             {
-                return OperationResult.Fail("Write operation timed out.");
+                return OperationResult.Failed("Write operation timed out.");
             }
             catch (IOException ex)
             {
-                return OperationResult.Fail($"IO Exception: {ex.Message}");
+                return OperationResult.Failed($"IO Exception: {ex.Message}");
             }
             catch (InvalidOperationException ex)
             {
-                return OperationResult.Fail($"Invalid Operation: {ex.Message}");
+                return OperationResult.Failed($"Invalid Operation: {ex.Message}");
             }
             catch (OperationCanceledException ex)
             {
-                return OperationResult.Fail($"Operation canceled: {ex.Message}");
+                return OperationResult.Failed($"Operation canceled: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return OperationResult.Fail($"Unexpected error: {ex.GetType().Name} {ex.Message}");
+                return OperationResult.Failed($"Unexpected error: {ex.GetType().Name} {ex.Message}");
             }
         }
 
         /// <summary>
         /// 天秤との通信リクエストの窓口（タイムアウト対応版）
         /// </summary>
-        public async Task<OperationResult?> RequestWeightAsync(CancellationToken token)
+        public async Task<OperationResult> RequestWeightAsync(CancellationToken token)
         {
             if (Port == null || !Port.IsOpen)
             {
-                return OperationResult.Fail("Port is not connected");
+                return OperationResult.Failed();
             }
 
             _buffer.Clear(); // 古いデータを消去
 
             var result = WriteLine("Q");
 
-            if (!result.IsSuccess)
+            if (result.Status != OperationResultType.Success)
             {
                 return result;
             }
@@ -433,20 +421,19 @@ namespace MVVM_Base.Model
                 {
                     // タイムアウト対応のReadLineAsync
                     var line = await ReadLineAsync(cts.Token);
-                    if (line != null && (line.StartsWith("ST") || line.StartsWith("US")))
+                    if (line != null && (line.Payload.StartsWith("ST") || line.Payload.StartsWith("US")))
                     {
-                        return OperationResult.Success(line);
+                        return OperationResult.Success(line.Payload);
                     }                     
                 }
             }
             catch (TaskCanceledException)
             {
                 // タイムアウトもしくは外部キャンセル
-                return OperationResult.Fail("Operation canceled");
+                return OperationResult.Canceled();
             }
 
-            return OperationResult.Fail("Fail to communicate with balance.");
+            return OperationResult.Failed();
         }
-
     }
 }

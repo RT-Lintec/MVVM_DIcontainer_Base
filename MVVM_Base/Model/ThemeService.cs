@@ -8,6 +8,23 @@ namespace MVVM_Base.Model
     {
         private string currentTheme = "Dark"; // 初期テーマ
 
+        private string dark = "Dark";
+        /// <summary>
+        /// ダークモード識別子
+        /// </summary>
+        public string Dark
+        {
+            get => dark;
+        }
+        private string light = "Light";
+        /// <summary>
+        /// ライトモード識別子
+        /// </summary>
+        public string Light
+        {
+            get => light;
+        }
+
         public string CurrentTheme
         {
             get => currentTheme;

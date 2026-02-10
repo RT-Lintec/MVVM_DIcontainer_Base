@@ -115,9 +115,11 @@ namespace MVVM_Base.View
                     {
                         Application.Current.Dispatcher.BeginInvoke(() =>
                         {
-                            transitionMfcComm.Completed += (s, e) =>
+                            EventHandler handler = null;
+                            handler = (s, e) =>
                             {
-                                StopCommIconAnimationAndReset(MfcCommIconColor, ((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
+                                transitionMfcComm.Completed -= handler;
+                                StopCommIconAnimationAndReset(MfcCommIconColor, isContinueMfcIconAnim);
                             };
                         });
                     }
@@ -137,13 +139,16 @@ namespace MVVM_Base.View
                     StopTitleBarAnimation(icBalanceStoryboard);
                     if (transitionBalanceComm != null)
                     {
-                        //transitionBalanceComm.Completed += (s, e) =>
-                        //{
-                        //    StopCommIconAnimationAndReset(BalanceCommIconColor, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
-                        //};
                         Application.Current.Dispatcher.BeginInvoke(() =>
                         {
-                            StopCommIconAnimationAndReset(BalanceCommIconColor, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                            //StopCommIconAnimationAndReset(BalanceCommIconColor, isContinueBalanceIconAnim);
+
+                            EventHandler handler = null;
+                            handler = (s, e) =>
+                            {
+                                transitionMfcComm.Completed -= handler;
+                                StopCommIconAnimationAndReset(BalanceCommIconColor, isContinueBalanceIconAnim);
+                            };
                         });
                     }
                 }
@@ -153,16 +158,16 @@ namespace MVVM_Base.View
             {
                 if(((vmMain)sender).IsMfcConnected && ((vmMain)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, isContinueBalanceIconAnim);
                 }
                 else if (((vmMain)sender).IsMfcConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard,((vmMain)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, isContinueMfcIconAnim);
                 }
                 else if(((vmMain)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmMain)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, isContinueBalanceIconAnim);
                 }
             }
         }
@@ -185,6 +190,19 @@ namespace MVVM_Base.View
             Storyboard.SetTargetName(anim1, target.ToString());
             Storyboard.SetTargetProperty(anim1, new PropertyPath("Color"));
             sb.Children.Add(anim1);
+
+            // テーマ移行アニメーション完了と同時に掃除
+            //sb.Completed += (s, e) =>
+            //{
+            //    sb.Children.Clear();
+            //};
+            EventHandler handler = null;
+            handler = (s, e) =>
+            {
+                sb.Completed -= handler;
+                sb.Children.Clear();
+            };
+
             sb.Begin(this, true);
         }
 
@@ -266,9 +284,9 @@ namespace MVVM_Base.View
         /// <param name="gs2"></param>
         /// <param name="newColor1"></param>
         /// <param name="newColor2"></param>
-        private void ThemeChangeCommIcon(GradientStop targetGS, string target, Storyboard animSb, Storyboard orgSb, bool isDark, bool isContinueAnimation)
+        private void ThemeChangeCommIcon(GradientStop targetGS, string target, Storyboard animSb, Storyboard orgSb, bool isContinueAnimation)
         {
-            string theme = isDark ? "Dark" : "Light";
+            string theme = vm.ColorTheme;
             // 現在色の取得
             var resources = Application.Current.Resources;
 
@@ -290,13 +308,19 @@ namespace MVVM_Base.View
             animSb.Children.Add(anim);
 
             // テーマ移行アニメーション完了と同時にテーマアニメーション開始
-            animSb.Completed += (s, e) =>
+            // 利用しているStoryboardはクラス変数のため、イベント毎にイベントハンドラを削除することで
+            // イベント多重登録を防ぐ
+            EventHandler handler = null;
+            handler = (s, e) =>
             {
+                animSb.Completed -= handler;   // 自分自身を解除
                 if (isContinueAnimation)
                 {
                     AnimateCommIconColor(target, orgSb);
                 }
             };
+
+            animSb.Completed += handler;
 
             animSb.Begin(this);
         }
@@ -304,12 +328,11 @@ namespace MVVM_Base.View
         /// <summary>
         /// ポートクローズ時にアイコンのカラー遷移アニメーションを停止させる
         /// </summary>
-        /// <param name="isDark"></param>
-        private void StopCommIconAnimationAndReset(GradientStop target, bool isDark, bool isContinue)
+        private void StopCommIconAnimationAndReset(GradientStop target, bool isContinue)
         {
             isContinue = false;
 
-            string theme = isDark ? "Dark" : "Light";
+            string theme = vm.ColorTheme;
             // 現在色の取得
             var resources = Application.Current.Resources;
 

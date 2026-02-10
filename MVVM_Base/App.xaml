@@ -13,9 +13,12 @@
                 <ResourceDictionary Source="Style/ToggleButtonText.xaml" />
                 <ResourceDictionary Source="Style/ButtonEnd.xaml" />
                 <ResourceDictionary Source="Style/ButtonColorTheme.xaml" />
+                <ResourceDictionary Source="Style/ButtonLanguage.xaml" />
 
                 <!-- テーマスロット経由で読み込む（構造は維持） -->
                 <ResourceDictionary Source="Theme/DarkTheme.xaml" />
+                <ResourceDictionary Source="Theme/JapaneseWord.xaml" />
+                <ResourceDictionary Source="Language/Japanese.xaml" />
 
             </ResourceDictionary.MergedDictionaries>
 
@@ -23,16 +26,16 @@
             <ResourceDictionary x:Key="ThemeResources">
                 <ResourceDictionary.MergedDictionaries>
                     <ResourceDictionary Source="Theme/DarkTheme.xaml" />
+                    <ResourceDictionary Source="Theme/JapaneseWord.xaml" />
                 </ResourceDictionary.MergedDictionaries>
             </ResourceDictionary>
 
-            <!-- デバッグ用フラグのコンバータ -->
+            <!-- デバッグ用フラグのコンバータ関連 インスタンスを生成➡Application.Resourceに格納する -->
             <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <local:PositiveIntegerBehavior x:Key="PositiveIntegerBehavior"/>
             <local:FpNumberBehavior x:Key="FpNumberBehavior"/>
             <local:EqualityConverter x:Key="EqualityConverter"/>
-            <local:HexCheckAssist x:Key="HexCheckAssist"/>
-            <!--<local:StringToBooleanConverter x:Key="StringToBooleanConverter"/>-->
+            <local:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter"/>
 
             <!-- 共通ボタンスタイル（ホバー・押下色だけ） -->
             <Style x:Key="HoverButtonStyle" TargetType="Button">
@@ -255,7 +258,7 @@
 
                                 <!-- ドロップダウンボタン -->
                                 <ToggleButton x:Name="DropDownToggle"
-                                              Width="24" Height="20"
+                                              Width="{Binding ComboSymbolWidth}" Height="{Binding ComboSymbolHeight}"
                                               Background="Transparent"
                                               HorizontalAlignment="Right"
                                               VerticalAlignment="Center"
@@ -508,6 +511,13 @@
                 </Setter>
             </Style>
 
+            <!-- 編集時 TextBox の背景色 -->
+            <Style x:Key="EditingTextBoxStyle" TargetType="TextBox">
+                <Setter Property="Background" Value="{DynamicResource ButtonThemeColorBrush2}" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="FontSize" Value="{Binding DataGridFontSize}" />
+            </Style>
+
             <!-- 11行出力のひな形 -->
             <ItemsPanelTemplate x:Key="11RowGridPanel">
                 <Grid>
@@ -525,9 +535,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                 </Grid>
-            </ItemsPanelTemplate>
-
-            
+            </ItemsPanelTemplate>            
 
         </ResourceDictionary>
     </Application.Resources>

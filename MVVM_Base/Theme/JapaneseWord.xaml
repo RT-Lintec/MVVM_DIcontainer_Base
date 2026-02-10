@@ -1,0 +1,85 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- 共通 -->
+    <sys:String x:Key="LogWord">ログ</sys:String>
+    <sys:String x:Key="SecWord">(秒)</sys:String>
+    <sys:String x:Key="CountWord">(回)</sys:String>
+    <sys:String x:Key="CsvExportWord">CSV出力</sys:String>
+    <sys:String x:Key="MeasureWord">測定</sys:String>
+    <sys:String x:Key="OutputWord">出力</sys:String>
+    <sys:String x:Key="CommWord">通信</sys:String>
+    <sys:String x:Key="IntervalWord">間隔</sys:String>
+    <sys:String x:Key="StopWord">停止</sys:String>
+
+    <!-- Entry画面 -->
+    <sys:String x:Key="EntryWord">エントリー</sys:String>
+    <sys:String x:Key="LinearWord">リニア</sys:String>
+    <sys:String x:Key="BalwWord">バルゥ</sys:String>
+
+    <!-- メイン画面 -->
+    <sys:String x:Key="CommunicationWord">通信</sys:String>
+    <sys:String x:Key="PortNumWord">ポート番号</sys:String>
+    <sys:String x:Key="BaudRateWord">ボーレート</sys:String>
+    <sys:String x:Key="DatabitWord">データビット</sys:String>
+    <sys:String x:Key="StopbitWord">ストップビット</sys:String>
+    <sys:String x:Key="ParitybitWord">パリティビット</sys:String>
+    <sys:String x:Key="OpenWord">オープン</sys:String>
+    <sys:String x:Key="CloseWord">クローズ</sys:String>
+    <sys:String x:Key="StatusWord">ステータス</sys:String>
+    <sys:String x:Key="DeviceNumWord">デバイス番号 :</sys:String>
+    <sys:String x:Key="EnableWord">有効</sys:String>
+    <sys:String x:Key="DisableWord">無効</sys:String>
+    <sys:String x:Key="SlowWord">低速</sys:String>
+    <sys:String x:Key="FastWord">高速</sys:String>
+    <sys:String x:Key="AnalogWord">アナログ</sys:String>
+    <sys:String x:Key="DigitalWord">デジタル</sys:String>
+    <sys:String x:Key="HoldWord">保持</sys:String>
+    <sys:String x:Key="ControlWord">制御</sys:String>
+    <sys:String x:Key="CNNormalWord">(CN)通常</sys:String>
+    <sys:String x:Key="C4HoldWord">(C4)保持</sys:String>
+    <sys:String x:Key="C3CloseWord">(C3)クローズ</sys:String>
+
+    <!-- リニア画面 -->
+
+    <sys:String x:Key="FlowWord">流量(ml)</sys:String>
+    <sys:String x:Key="OtherSettingWord">その他設定</sys:String>
+    <sys:String x:Key="VersionWord">バージョン</sys:String>
+    <sys:String x:Key="IncrementWord">増加率</sys:String>
+    <sys:String x:Key="InvariableWord">不変</sys:String>
+    <sys:String x:Key="VariableWord">可変</sys:String>
+    <sys:String x:Key="NormalWord">通常</sys:String>
+    <sys:String x:Key="MeasureSettingWord">測定設定</sys:String>
+    <sys:String x:Key="AttemptWord">回数</sys:String>
+    <sys:String x:Key="VtempIntervalWord">Vtemp間隔</sys:String>
+    <sys:String x:Key="StableOSWord">安定待ち</sys:String>
+    <sys:String x:Key="WaitOSWord">捨て待ち</sys:String>
+    <sys:String x:Key="GainMatrixWord">ゲイン値表</sys:String>
+    <sys:String x:Key="ReadWord">読み込み</sys:String>
+    <sys:String x:Key="WriteWord">書き込み</sys:String>
+    <sys:String x:Key="CommandWord">コマンド</sys:String>
+    <sys:String x:Key="CalculateWord">計算</sys:String>
+    <sys:String x:Key="ConfirmWord">確認</sys:String>
+    <sys:String x:Key="CalcAndConfWord">計算&amp;確認</sys:String>
+    <sys:String x:Key="ManualWord">手動</sys:String>
+    <sys:String x:Key="ExecuteWord">実行</sys:String>
+    <sys:String x:Key="ZeroAdjustWord">ゼロ調整</sys:String>
+    <sys:String x:Key="ZeroSend">ゼロ送信</sys:String>
+    <sys:String x:Key="FinishWord">完了</sys:String>
+    <sys:String x:Key="FlowOutputWord">流量出力</sys:String>
+    <sys:String x:Key="SpanAdjustWord">スパン調整</sys:String>
+    <sys:String x:Key="VtempCalWord">Vtemp(計算時)下位/上位</sys:String>
+    <sys:String x:Key="VtempConfWord">Vtemp(確認時)下位/上位</sys:String>
+    <sys:String x:Key="CalcGainWord">ゲイン計算</sys:String>
+    <sys:String x:Key="FivePerMeasureWord">5%刻み確認</sys:String>
+    
+    <!-- Balw画面 -->
+    <sys:String x:Key="TimerSettingsWord">タイマー設定</sys:String>
+    <sys:String x:Key="MinuteWord">(分)</sys:String>
+    <sys:String x:Key="StartWord">開始</sys:String>
+    <sys:String x:Key="MarkWord">マーク</sys:String>
+    <sys:String x:Key="ResponceWord">応答[g]</sys:String>
+    <sys:String x:Key="ClearWord">クリア</sys:String>
+
+</ResourceDictionary>

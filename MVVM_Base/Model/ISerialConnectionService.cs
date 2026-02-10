@@ -1,25 +1,8 @@
 ﻿using System.IO.Ports;
+using MVVM_Base.Common;
 
 namespace MVVM_Base.Model
 {
-    /// <summary>
-    /// 通信成功可否
-    /// </summary>
-    public class OperationResult
-    {
-        public bool IsSuccess { get; }
-        public string Message { get; }
-
-        public OperationResult(bool isSuccess, string message)
-        {
-            IsSuccess = isSuccess;
-            Message = message;
-        }
-
-        public static OperationResult Success(string message = "") => new(true, message);
-        public static OperationResult Fail(string message) => new(false, message);
-    }
-
     /// <summary>
     /// 共通接続・切断操作
     /// </summary>
@@ -81,6 +64,6 @@ namespace MVVM_Base.Model
         /// <summary>
         /// 天秤から重量取得要求 "Q\r\n" を送り、応答を受信する
         /// </summary>
-        Task<OperationResult?> RequestWeightAsync(CancellationToken token);
+        Task<OperationResult> RequestWeightAsync(CancellationToken token);
     }
 }

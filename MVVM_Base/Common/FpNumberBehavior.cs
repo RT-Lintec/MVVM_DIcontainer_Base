@@ -139,9 +139,10 @@ namespace MVVM_Base.Common
 
             bool isNeedDelete = true;
 
-            // 空欄
+            // 空欄チェック
             if (text == "")
             {
+                textBox.Text = MinValue.ToString();
                 return;
             }
 
@@ -253,22 +254,28 @@ namespace MVVM_Base.Common
             {
                 // 不正な小数の例：末尾ピリオドを削除
                 textBox.Text = text.Trim('.');
-                return;
+                //return;
             }
 
             // . ピリオドから始まる場合は、先頭に0を追加して終了
             if (text.StartsWith('.'))
             {
                 textBox.Text = '0' + text;
-                return;
+                //return;
             }
 
-            if (double.TryParse(text, out double value))
+            // 最大値・最小値チェック
+            if (int.TryParse(text, out int value))
             {
                 if (value > MaxValue)
                 {
                     textBox.Text = MaxValue.ToString();
-                    e.Handled = true;
+                    return;
+                }
+                else if (value < MinValue)
+                {
+                    textBox.Text = MinValue.ToString();
+                    return;
                 }
             }
 
@@ -299,17 +306,17 @@ namespace MVVM_Base.Common
                 var tb = AssociatedObject;
 
                 // 最大値チェック
-                if (double.TryParse(pasteText, out double v))
-                {
-                    if (v > MaxValue)
-                    {
-                        e.CancelCommand();
-                        tb.Text = MaxValue.ToString();
+                //if (double.TryParse(pasteText, out double v))
+                //{
+                //    if (v > MaxValue)
+                //    {
+                //        e.CancelCommand();
+                //        tb.Text = MaxValue.ToString();
 
-                        // キャレットを末尾へ
-                        tb.CaretIndex = tb.Text.Length;
-                    }
-                }
+                //        // キャレットを末尾へ
+                //        tb.CaretIndex = tb.Text.Length;
+                //    }
+                //}
 
                 // 選択テキストを取得
                 string selected = AssociatedObject.SelectedText;

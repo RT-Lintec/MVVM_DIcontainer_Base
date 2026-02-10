@@ -57,14 +57,24 @@ namespace MVVM_Base.View
         static private bool isContinueMfcIconAnim = false;
         static private bool isContinueBalanceIconAnim = false;
 
-        bool IsDark = true;
-
         public viewBalw(vmBalw _vm)
         {
             InitializeComponent();
 
             this.DataContextChanged += View_DataContextChanged;
             DataContext = _vm;
+
+            // ログ更新で最下部を表示する
+            _vm.Logs.CollectionChanged += (_, __) =>
+            {
+                Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    if (LogListBox.Items.Count > 0)
+                    {
+                        LogListBox.ScrollIntoView(LogListBox.Items[^1]);
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Background);
+            };
         }
 
         private void View_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -74,9 +84,6 @@ namespace MVVM_Base.View
             if (e.NewValue is vmBalw _vm)
             {
                 vm = _vm;
-
-                this.Loaded += (s, e) => vm.OnViewLoaded();
-                this.Unloaded += (s, e) => vm.OnViewUnloaded();
 
                 vm.PropertyChanged += (s, args) =>
                 {
@@ -145,26 +152,6 @@ namespace MVVM_Base.View
                 {
                     isContinueMfcIconAnim = false;
                     StopTitleBarAnimation(icMfcStoryboard);
-
-                    //Application.Current.Dispatcher.BeginInvoke(() =>
-                    //{
-                    //    UpperFBData.ItemsSource = new List<UpperFBModel>
-                    //    {
-                    //        new UpperFBModel {
-                    //            Fb90="00", Fb92="00", Fb94="00", Fb96="00", Fb98="00",
-                    //            Fb9a="00", Fb9c="00", Fb9e="00", Fba0="00", Fba2="00", Fb41="00"
-                    //        }
-                    //    };
-
-                    //    lowerFBData.ItemsSource = new List<LowerFBModel>
-                    //    {
-                    //        new LowerFBModel {
-                    //            Fb91="00", Fb93="00", Fb95="00", Fb97="00", Fb99="00",
-                    //            Fb9b="00", Fb9d="00", Fb9f="00", Fba1="00", Fba3="00", Fb42="00"
-                    //        }
-                    //    };
-                    //});
-
                 }
             }
             // 天秤ポート接続状態の通知に対する処理
@@ -183,20 +170,18 @@ namespace MVVM_Base.View
             // カラーテーマ変更通知に対する処理
             else if (e.PropertyName == nameof(vmBalw.IsDarkTheme))
             {
-                IsDark = ((vmBalw)sender).IsDarkTheme;
-
                 if (((vmBalw)sender).IsMfcConnected && ((vmBalw)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueMfcIconAnim);
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, isContinueBalanceIconAnim);
                 }
                 else if (((vmBalw)sender).IsMfcConnected)
                 {
-                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueMfcIconAnim);
+                    ThemeChangeCommIcon(MfcCommIconColor, nameof(MfcCommIconColor), transitionMfcComm, icMfcStoryboard, isContinueMfcIconAnim);
                 }
                 else if (((vmBalw)sender).IsBalanceConnected)
                 {
-                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, ((vmBalw)sender).IsDarkTheme, isContinueBalanceIconAnim);
+                    ThemeChangeCommIcon(BalanceCommIconColor, nameof(BalanceCommIconColor), transitionBalanceComm, icBalanceStoryboard, isContinueBalanceIconAnim);
                 }
             }
         }
@@ -300,9 +285,9 @@ namespace MVVM_Base.View
         /// <param name="gs2"></param>
         /// <param name="newColor1"></param>
         /// <param name="newColor2"></param>
-        private void ThemeChangeCommIcon(GradientStop targetGS, string target, Storyboard animSb, Storyboard orgSb, bool isDark, bool isContinueAnimation)
+        private void ThemeChangeCommIcon(GradientStop targetGS, string target, Storyboard animSb, Storyboard orgSb, bool isContinueAnimation)
         {
-            string theme = isDark ? "Dark" : "Light";
+            string theme = vm.ColorTheme;
             // 現在色の取得
             var resources = Application.Current.Resources;
 
@@ -324,39 +309,21 @@ namespace MVVM_Base.View
             animSb.Children.Add(anim);
 
             // テーマ移行アニメーション完了と同時にテーマアニメーション開始
-            animSb.Completed += (s, e) =>
+            // 利用しているStoryboardはクラス変数のため、イベント毎にイベントハンドラを削除することで
+            // イベント多重登録を防ぐ
+            EventHandler handler = null;
+            handler = (s, e) =>
             {
+                animSb.Completed -= handler;
                 if (isContinueAnimation)
                 {
                     AnimateCommIconColor(target, orgSb);
                 }
             };
 
+            animSb.Completed += handler;
+
             animSb.Begin(this);
-        }
-
-        /// <summary>
-        /// ポートクローズ時にアイコンのカラー遷移アニメーションを停止させる
-        /// </summary>
-        /// <param name="isDark"></param>
-        private void StopCommIconAnimationAndReset(GradientStop target, bool isDark, bool isContinue)
-        {
-            isContinue = false;
-
-            string theme = isDark ? "Dark" : "Light";
-            // 現在色の取得
-            var resources = Application.Current.Resources;
-
-            // 変更後カラーの取得
-            var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{theme}Theme.xaml", UriKind.Relative) };
-
-            Color orgColor = (Color)newDict["CommIconColorFrom"];
-
-            // アニメーションを完全に除去
-            target.BeginAnimation(GradientStop.ColorProperty, null);
-
-            // 色を戻す
-            target.Color = orgColor;
         }
 
         private void ScrollViewer_ScrollChanged(object sender, EventArgs e)

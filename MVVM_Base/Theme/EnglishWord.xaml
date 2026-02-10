@@ -1,0 +1,86 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- 共通 -->
+    <sys:String x:Key="LogWord">Log</sys:String>
+    <sys:String x:Key="SecWord">[Sec]</sys:String>
+    <sys:String x:Key="CountWord">[Count]</sys:String>
+    <sys:String x:Key="CsvExportWord">CSV Export</sys:String>
+    <sys:String x:Key="MeasureWord">Measure</sys:String>
+    <sys:String x:Key="OutputWord">Output</sys:String>
+    <sys:String x:Key="CommWord">Comm</sys:String>
+    <sys:String x:Key="IntervalWord">Interval</sys:String>
+    <sys:String x:Key="StopWord">Stop</sys:String>
+    
+    <!-- Entry画面 -->
+    <sys:String x:Key="EntryWord">Entry</sys:String>
+    <sys:String x:Key="LinearWord">Linear</sys:String>
+    <sys:String x:Key="BalwWord">Balw</sys:String>
+
+    <!-- メイン画面 -->
+    <sys:String x:Key="CommunicationWord">Communication</sys:String>
+    <sys:String x:Key="PortNumWord">Port Number</sys:String>
+    <sys:String x:Key="BaudRateWord">Baud rate</sys:String>
+    <sys:String x:Key="DatabitWord">Data bit</sys:String>
+    <sys:String x:Key="StopbitWord">Stop bit</sys:String>
+    <sys:String x:Key="ParitybitWord">Parity bit</sys:String>
+    <sys:String x:Key="OpenWord">Open</sys:String>
+    <sys:String x:Key="CloseWord">Close</sys:String>    
+    <sys:String x:Key="StatusWord">Status</sys:String>
+    <sys:String x:Key="DeviceNumWord">Device Number :</sys:String>
+    <sys:String x:Key="EnableWord">Enable</sys:String>
+    <sys:String x:Key="DisableWord">Disable</sys:String>
+    <sys:String x:Key="SlowWord">Slow</sys:String>
+    <sys:String x:Key="FastWord">Fast</sys:String>
+    <sys:String x:Key="AnalogWord">Analog</sys:String>
+    <sys:String x:Key="DigitalWord">Digital</sys:String>
+    <sys:String x:Key="HoldWord">Hold</sys:String>
+    <sys:String x:Key="ControlWord">Control</sys:String>
+    <sys:String x:Key="CNNormalWord">(CN)Normal</sys:String>
+    <sys:String x:Key="C4HoldWord">(C4)Hold</sys:String>
+    <sys:String x:Key="C3CloseWord">(C3)Close</sys:String>
+
+    <!-- リニア画面 -->
+
+    <sys:String x:Key="FlowWord">Flow[ml]</sys:String>
+    <sys:String x:Key="OtherSettingWord">Other Settings</sys:String>
+    <sys:String x:Key="VersionWord">Version</sys:String>
+    <sys:String x:Key="IncrementWord">Increment</sys:String>
+    <sys:String x:Key="InvariableWord">Invariable</sys:String>
+    <sys:String x:Key="VariableWord">Variable</sys:String>
+    <sys:String x:Key="NormalWord">Normal</sys:String>
+    <sys:String x:Key="MeasureSettingWord">Measure Settings</sys:String>
+    <sys:String x:Key="AttemptWord">Attempts</sys:String>
+    <sys:String x:Key="VtempIntervalWord">Vtemp Interval</sys:String>
+    <sys:String x:Key="StableOSWord">Stable OS</sys:String>
+    <sys:String x:Key="WaitOSWord">Wait OS</sys:String>
+    <sys:String x:Key="GainMatrixWord">Gain Matrix</sys:String>
+    <sys:String x:Key="ReadWord">Read</sys:String>
+    <sys:String x:Key="WriteWord">Write</sys:String>
+    <sys:String x:Key="CommandWord">Command</sys:String>
+    <sys:String x:Key="CalculateWord">Calculate</sys:String>
+    <sys:String x:Key="ConfirmWord">Confirm</sys:String>
+    <sys:String x:Key="CalcAndConfWord">Calc &amp; Conf</sys:String>
+    <sys:String x:Key="ManualWord">Manual</sys:String>
+    <sys:String x:Key="ExecuteWord">Execute</sys:String>
+    <sys:String x:Key="ZeroAdjustWord">Zero Adjust</sys:String>
+    <sys:String x:Key="ZeroSend">Zero Send</sys:String>
+    <sys:String x:Key="FinishWord">Finish</sys:String>
+    <sys:String x:Key="FlowOutputWord">Flow Output</sys:String>
+    <sys:String x:Key="SpanAdjustWord">Span Adjust</sys:String>
+    <sys:String x:Key="VtempCalWord">Vtemp(Cal)   Low/Upper</sys:String>
+    <sys:String x:Key="VtempConfWord">Vtemp(Conf) Low/Upper</sys:String>
+    <sys:String x:Key="CalcGainWord">Calc Gain</sys:String>   
+    <sys:String x:Key="FivePerMeasureWord">5% Measure</sys:String>
+
+    <!-- Balw画面 -->
+    <sys:String x:Key="TimerSettingsWord">Timer Settings</sys:String>
+    <sys:String x:Key="MinuteWord">[min]</sys:String>
+    <sys:String x:Key="StartWord">Start</sys:String>
+    <sys:String x:Key="MarkWord">Mark</sys:String>
+    <sys:String x:Key="ResponceWord">Res[g]</sys:String>
+    <sys:String x:Key="ClearWord">Clear</sys:String>
+
+
+</ResourceDictionary>

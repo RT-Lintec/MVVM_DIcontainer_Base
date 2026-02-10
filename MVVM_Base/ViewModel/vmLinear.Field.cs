@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using MVVM_Base.Common;
 using MVVM_Base.Model;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -17,6 +18,9 @@ namespace MVVM_Base.ViewModel
         private readonly ApplicationStatusService appStatusService;
         private readonly HighPrecisionTimer precisionTimer;
         private readonly IMessageService messageService;
+        private readonly LanguageService languageService;
+        //private readonly HexCheckBehavior hexCheckBehavior;
+
         #endregion
 
         #region 測定設定
@@ -108,10 +112,10 @@ namespace MVVM_Base.ViewModel
 
         #region 通知対応プロパティ
 
+        private bool isMfcConnected = false;
         /// <summary>
         /// MFC接続状態
         /// </summary>
-        private bool isMfcConnected = false;
         public bool IsMfcConnected
         {
             get => isMfcConnected;
@@ -125,10 +129,10 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        private bool isBalanceConnected = false;
         /// <summary>
         /// 天秤接続状態
         /// </summary>
-        private bool isBalanceConnected = false;
         public bool IsBalanceConnected
         {
             get => isBalanceConnected;
@@ -142,11 +146,11 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        private bool isDarkTheme;
         /// <summary>
         /// ThemeServiceにイベント通知を委任しているので、プロパティ変化の通知は行わない
         /// 行うと二重発火となり、viewEntryでのプロパティ変更イベントが二回発生する。
         /// </summary>
-        private bool isDarkTheme;
         public bool IsDarkTheme
         {
             get => isDarkTheme;
@@ -159,10 +163,10 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        private string serialNum;
         /// <summary>
         /// MFCシリアルナンバー
         /// </summary>
-        private string serialNum;
         public string SerialNum
         {
             get => serialNum;
@@ -176,10 +180,10 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        private int confIndex = -1;
         /// <summary>
         /// 押下したConfirmボタンのインデクス
         /// </summary>
-        private int confIndex = -1;
         public int ConfIndex
         {
             get => confIndex;
@@ -192,6 +196,78 @@ namespace MVVM_Base.ViewModel
                 }
             }
         }
+
+        private bool isMapGenerated = false;
+        /// <summary>
+        /// FBラベルマップが生成されたかどうか。
+        /// </summary>
+        public bool IsMapGenerated
+        {
+            get => isMapGenerated;
+            set
+            {
+                if (isMapGenerated != value)
+                {
+                    isMapGenerated = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isHexChanged = false;
+        /// <summary>
+        /// ゲイン値が変更されたか
+        /// </summary>
+        public bool IsHexChanged
+        {
+            get => isHexChanged;
+            set
+            {
+                if (isHexChanged != value)
+                {
+                    isHexChanged = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isModified;
+        /// <summary>
+        /// ゲイン値を直接変更したかどうか
+        /// </summary>
+        public bool IsModified
+        {
+            get => isModified;
+            set
+            {
+                if (isModified != value)
+                {
+                    isModified = value;
+                    if (!isGainDirectChanged)
+                    {
+                        isGainDirectChanged = true;
+                    }
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isGainDirectChanged = false;
+        /// <summary>
+        /// ゲイン値が直接変更された場合はtrue
+        /// </summary>
+        //public bool IsGainDirectChanged
+        //{
+        //    get => isGainDirectChanged;
+        //    set
+        //    {
+        //        if (isGainDirectChanged != value)
+        //        {
+        //            isGainDirectChanged = value;
+        //            OnPropertyChanged();
+        //        }
+        //    }
+        //}
 
         #endregion
 
@@ -354,7 +430,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// グループボックス幅 750
         /// </summary>
-        private double _groupBoxHeight250 = 250;
+        private double _groupBoxHeight250 = 280;
         public double GroupBoxHeight250
         {
             get => _groupBoxHeight250;
@@ -460,6 +536,20 @@ namespace MVVM_Base.ViewModel
             set
             {
                 unitFontSize = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Vtemp Intervalフォントサイズ
+        /// </summary>
+        private float vtFontSize = 13;
+        public float VtFontSize
+        {
+            get => vtFontSize;
+            set
+            {
+                vtFontSize = value;
                 OnPropertyChanged();
             }
         }
@@ -666,7 +756,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         ///　ログ高さ
         /// </summary>
-        private float logHeightSize = 770;
+        private float logHeightSize = 528;
         public float LogHeightSize
         {
             get => logHeightSize;
@@ -675,6 +765,23 @@ namespace MVVM_Base.ViewModel
                 if (logHeightSize != value)
                 {
                     logHeightSize = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　5%刻み高さ
+        /// </summary>
+        private float fivePerHeightSize = 280;
+        public float FivePerHeightSize
+        {
+            get => fivePerHeightSize;
+            set
+            {
+                if (fivePerHeightSize != value)
+                {
+                    fivePerHeightSize = value;
                     OnPropertyChanged();
                 }
             }
@@ -700,7 +807,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         ///　他設定高さ
         /// </summary>
-        private float unitTextboxWidth = 100;
+        private float unitTextboxWidth = 120;
         public float UnitTextboxWidth
         {
             get => unitTextboxWidth;
@@ -726,6 +833,23 @@ namespace MVVM_Base.ViewModel
                 if (measureColumNameWidth != value)
                 {
                     measureColumNameWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        ///　5%幅
+        /// </summary>
+        private float fivePerMatrixWidth = 70;
+        public float FivePerMatrixWidth
+        {
+            get => fivePerMatrixWidth;
+            set
+            {
+                if (fivePerMatrixWidth != value)
+                {
+                    fivePerMatrixWidth = value;
                     OnPropertyChanged();
                 }
             }
@@ -765,26 +889,57 @@ namespace MVVM_Base.ViewModel
             }
         }
 
-        #endregion
-
-        #region UIテキスト
         /// <summary>
-        /// ゼロ調整　ZS送信ボタンのテキスト
+        ///　Vtemp出力ボックス幅
         /// </summary>
-        private string zStext = "Zero Send";
-        public string ZStext
+        private int vTempOutputBoxWidth = 60;
+        public int VTempOutputBoxWidth
         {
-            get => zStext;
+            get => vTempOutputBoxWidth;
             set
             {
-                if (zStext != value)
+                if (vTempOutputBoxWidth != value)
                 {
-                    zStext = value;
+                    vTempOutputBoxWidth = value;
+                    OnPropertyChanged();
                 }
+            }
+        }
+
+        /// <summary>
+        ///　Vtemp出力ボックス幅
+        /// </summary>
+        private int measureSettingTextBoxWidth = 50;
+        public int MeasureSettingTextBoxWidth
+        {
+            get => measureSettingTextBoxWidth;
+            set
+            {
+                if (measureSettingTextBoxWidth != value)
+                {
+                    measureSettingTextBoxWidth = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// ボタン幅
+        /// </summary>
+        private int mesureBtnSize = 60;
+        public int MesureBtnSize
+        {
+            get => mesureBtnSize;
+            set
+            {
+                mesureBtnSize = value;
                 OnPropertyChanged();
             }
         }
 
+        #endregion
+
+        #region UIテキスト
         /// <summary>
         /// 流量出力値
         /// </summary>
@@ -921,16 +1076,16 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// Calculateボタンの押下可否
         /// </summary>
-        private bool canConform = true;
+        private bool canConfirm = true;
         [CanBeforeMFMAttribute("Conf")]
-        public bool CanConform
+        public bool CanConfirm
         {
-            get => canConform;
+            get => canConfirm;
             set
             {
-                if (canConform != value)
+                if (canConfirm != value)
                 {
-                    canConform = value;
+                    canConfirm = value;
                     OnPropertyChanged();
                 }
             }
@@ -1145,13 +1300,40 @@ namespace MVVM_Base.ViewModel
         }
         #endregion
 
-        #region FBデータ
+        #region FBデータ値保持
 
+        /// <summary>
+        /// upper, lower
+        /// </summary>
         [AttributeUsage(AttributeTargets.Property)]
         public class FbCodeAttribute : Attribute
         {
             public string Code { get; }
             public FbCodeAttribute(string code)
+            {
+                Code = code;
+            }
+        }
+        /// <summary>
+        /// upper
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Property)]
+        public class FbUpperCodeAttribute : Attribute
+        {
+            public string Code { get; }
+            public FbUpperCodeAttribute(string code)
+            {
+                Code = code;
+            }
+        }
+        /// <summary>
+        /// low
+        /// </summary>
+        [AttributeUsage(AttributeTargets.Property)]
+        public class FbLowerCodeAttribute : Attribute
+        {
+            public string Code { get; }
+            public FbLowerCodeAttribute(string code)
             {
                 Code = code;
             }
@@ -1162,6 +1344,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb90;
         [FbCode("FB90")]
+        [FbLowerCode("FB90")]
         public string Fb90
         {
             get => fb90;
@@ -1180,6 +1363,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb91;
         [FbCode("FB91")]
+        [FbUpperCode("FB91")]
         public string Fb91
         {
             get => fb91;
@@ -1198,6 +1382,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb92;
         [FbCode("FB92")]
+        [FbLowerCode("FB92")]
         public string Fb92
         {
             get => fb92;
@@ -1216,6 +1401,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb93;
         [FbCode("FB93")]
+        [FbUpperCode("FB93")]
         public string Fb93
         {
             get => fb93;
@@ -1234,6 +1420,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb94;
         [FbCode("FB94")]
+        [FbLowerCode("FB94")]
         public string Fb94
         {
             get => fb94;
@@ -1252,6 +1439,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb95;
         [FbCode("FB95")]
+        [FbUpperCode("FB95")]
         public string Fb95
         {
             get => fb95;
@@ -1270,6 +1458,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb96;
         [FbCode("FB96")]
+        [FbLowerCode("FB96")]
         public string Fb96
         {
             get => fb96;
@@ -1288,6 +1477,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb97;
         [FbCode("FB97")]
+        [FbUpperCode("FB97")]
         public string Fb97
         {
             get => fb97;
@@ -1306,6 +1496,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb98;
         [FbCode("FB98")]
+        [FbLowerCode("FB98")]
         public string Fb98
         {
             get => fb98;
@@ -1324,6 +1515,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb99;
         [FbCode("FB99")]
+        [FbUpperCode("FB99")]
         public string Fb99
         {
             get => fb99;
@@ -1342,6 +1534,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb9a;
         [FbCode("FB9A")]
+        [FbLowerCode("FB9A")]
         public string Fb9a
         {
             get => fb9a;
@@ -1360,6 +1553,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb9b;
         [FbCode("FB9B")]
+        [FbUpperCode("FB9B")]
         public string Fb9b
         {
             get => fb9b;
@@ -1378,6 +1572,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb9c;
         [FbCode("FB9C")]
+        [FbLowerCode("FB9C")]
         public string Fb9c
         {
             get => fb9c;
@@ -1396,6 +1591,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb9d;
         [FbCode("FB9D")]
+        [FbUpperCode("FB9D")]
         public string Fb9d
         {
             get => fb9d;
@@ -1414,6 +1610,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb9e;
         [FbCode("FB9E")]
+        [FbLowerCode("FB9E")]
         public string Fb9e
         {
             get => fb9e;
@@ -1432,6 +1629,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb9f;
         [FbCode("FB9F")]
+        [FbUpperCode("FB9F")]
         public string Fb9f
         {
             get => fb9f;
@@ -1450,6 +1648,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fba0;
         [FbCode("FBA0")]
+        [FbLowerCode("FBA0")]
         public string Fba0
         {
             get => fba0;
@@ -1468,6 +1667,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fba1;
         [FbCode("FBA1")]
+        [FbUpperCode("FBA1")]
         public string Fba1
         {
             get => fba1;
@@ -1486,6 +1686,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fba2;
         [FbCode("FBA2")]
+        [FbLowerCode("FBA2")]
         public string Fba2
         {
             get => fba2;
@@ -1504,6 +1705,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fba3;
         [FbCode("FBA3")]
+        [FbUpperCode("FBA3")]
         public string Fba3
         {
             get => fba3;
@@ -1522,6 +1724,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb41;
         [FbCode("FB41")]
+        [FbLowerCode("FB41")]
         public string Fb41
         {
             get => fb41;
@@ -1540,6 +1743,7 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         private string fb42;
         [FbCode("FB42")]
+        [FbUpperCode("FB42")]
         public string Fb42
         {
             get => fb42;
@@ -1553,6 +1757,75 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        #endregion
+
+        #region データラベル
+
+        ///// <summary>
+        ///// FBゲイン
+        ///// </summary>
+        //private readonly Dictionary<string, string> fbMap = new();
+        //public Dictionary<string, string> FbMap => fbMap;
+        //public string this[string logicalFb]
+        //{
+        //    get => fbMap.TryGetValue(logicalFb, out var v) ? v : string.Empty;
+        //    set
+        //    {
+        //        fbMap[logicalFb] = value;
+        //        OnPropertyChanged($"Item[{logicalFb}]");
+        //    }
+        //}
+
+        ///// <summary>
+        ///// 閾値
+        ///// </summary>
+        //private readonly Dictionary<string, string> thresholdMap = new();
+        //public Dictionary<string, string> ThresholdMap => thresholdMap;
+        //public string this[string logicalFb]
+        //{
+        //    get => thresholdMap.TryGetValue(logicalFb, out var v) ? v : string.Empty;
+        //    set
+        //    {
+        //        thresholdMap[logicalFb] = value;
+        //        OnPropertyChanged($"Item[{logicalFb}]");
+        //    }
+        //}
+
+        /// <summary>
+        /// ゲイン・閾値のマップクラス
+        /// </summary>
+        public class IndexedStringMap : ObservableObject
+        {
+            private readonly Dictionary<string, string> map = new();
+
+            public int Count => map.Count;
+            public IEnumerable<string> Keys => map.Keys;
+
+            public string this[string key]
+            {
+                get => map.TryGetValue(key, out var v) ? v : string.Empty;
+                set
+                {
+                    map[key] = value;
+                    OnPropertyChanged($"Item[{key}]");
+                }
+            }
+
+            public bool TryGetValue(string key, out string value)
+            {
+                return map.TryGetValue(key, out value);
+            }
+        }
+
+        /// <summary>
+        /// ゲイン
+        /// </summary>
+        public IndexedStringMap FbMap { get; } = new();
+
+        /// <summary>
+        /// 閾値
+        /// </summary>
+        public IndexedStringMap ThresholdMap { get; } = new();
         #endregion
 
         #region Version, BP, 5%刻み設定
@@ -1742,11 +2015,13 @@ namespace MVVM_Base.ViewModel
             AfterCalcAndConf,
             Measurement,
             Manual,
+            FiveperConf,
             Transit
         }
 
         ProcessState curState = ProcessState.Initial;
-
+        ProcessState lastState = ProcessState.Initial;
+        private bool noNeedConfirmUnsaved = false;
         private bool isSavedOutput = false;
 
         /// <summary>
@@ -1769,7 +2044,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         /// 計測結果の値格納先
         /// </summary>
-        public ObservableCollection<MeasureResult> MesurementValues { get; set; }
+        public ObservableCollection<MeasureResult> MeasurementValues { get; set; }
 
         /// <summary>
         /// 天秤との通信回数
@@ -1799,6 +2074,8 @@ namespace MVVM_Base.ViewModel
         #region 出力関連
 
         public ObservableCollection<string> SetPointArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
+        public ObservableCollection<string> SetPointBelow50PercentArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
+        public ObservableCollection<string> SetPointAbove50PercentArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
         public ObservableCollection<string> TrueValueArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
@@ -1821,6 +2098,10 @@ namespace MVVM_Base.ViewModel
 
         public ObservableCollection<ReadingValue> ReadingValueArray { get; }
             = new ObservableCollection<ReadingValue>(Enumerable.Range(0, 11).Select(_ => new ReadingValue()));
+
+        public ObservableCollection<string> ReadingValueBelow50Array { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
+
+        public ObservableCollection<string> ReadingValueAbove50Array { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
         public ObservableCollection<string> InitialVoArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
@@ -1862,6 +2143,58 @@ namespace MVVM_Base.ViewModel
                 => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
+
+        /// <summary>
+        /// vtemp Cal
+        /// </summary>
+        private string vtempValueCal = "";
+        public string VtempValueCal
+        {
+            get => vtempValueCal;
+            set
+            {
+                if (vtempValueCal != value)
+                {
+                    vtempValueCal = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// vtemp Conf
+        /// </summary>
+        private string vtempValueConf = "";
+        public string VtempValueConf
+        {
+            get => vtempValueConf;
+            set
+            {
+                if (vtempValueConf != value)
+                {
+                    vtempValueConf = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// vtempインターバル
+        /// </summary>
+        private string vtempInterval = "5";
+        public string VtempInterval
+        {
+            get => vtempInterval;
+            set
+            {
+                if (vtempInterval != value)
+                {
+                    vtempInterval = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         #endregion
 
         #region キャンセレーショントークン
@@ -1886,6 +2219,15 @@ namespace MVVM_Base.ViewModel
         private CancellationTokenSource? _calculateCts;
         #endregion
 
+        /// <summary>
+        /// 現在のカラーテーマ
+        /// </summary>
+        private string colorTheme = "";
+        public string ColorTheme
+        {
+            get => colorTheme;
+            private set => colorTheme = value;
+        }
 
         /// <summary>
         /// ログ

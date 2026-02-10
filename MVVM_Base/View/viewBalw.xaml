@@ -19,9 +19,6 @@
     </i:Interaction.Triggers>
 
     <UserControl.Resources>
-        <converter:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
-        <converter:InverseBoolConverter x:Key="InverseBoolConverter" />
-
         <Style x:Key="MeasureTextCenterStyle" TargetType="TextBlock">
             <Setter Property="FontSize" 
                     Value="{Binding DataContext.LogFontSize, RelativeSource={RelativeSource AncestorType=ItemsControl}}"/>
@@ -141,21 +138,21 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="GroupBox">
                         <Border 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="2" 
-                                CornerRadius="5" 
-                                Background="Transparent" 
-                                SnapsToDevicePixels="True">
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="2" 
+                            CornerRadius="5" 
+                            Background="Transparent" 
+                            SnapsToDevicePixels="True">
 
                             <DockPanel>
                                 <!-- ★ 下線つきヘッダーをテンプレートで差し替える -->
                                 <ContentPresenter 
-                                        x:Name="HeaderContent"
-                                        ContentSource="Header" 
-                                        RecognizesAccessKey="True"
-                                        Margin="5"
-                                        DockPanel.Dock="Top"
-                                        ContentTemplate="{TemplateBinding HeaderTemplate}"/>
+                                    x:Name="HeaderContent"
+                                    ContentSource="Header" 
+                                    RecognizesAccessKey="True"
+                                    Margin="5"
+                                    DockPanel.Dock="Top"
+                                    ContentTemplate="{TemplateBinding HeaderTemplate}"/>
 
                                 <ContentPresenter Margin="{TemplateBinding Padding}"/>
                             </DockPanel>
@@ -164,7 +161,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
     </UserControl.Resources>
 
     <!-- 全体Grid -->
@@ -228,7 +224,7 @@
                                 <GroupBox.Header>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock 
-                                        Text="Comm" 
+                                        Text="{DynamicResource CommWord}"
                                         Foreground="{DynamicResource AccentBrush}" 
                                         FontSize="{Binding TitleFontSize}" 
                                         FontWeight="Bold"/>
@@ -258,8 +254,7 @@
                                             Width="{Binding IconSize}" 
                                             Height="{Binding IconSize}"
                                             Margin="10,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Visibility="{Binding IsMfcPortSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            VerticalAlignment="Center">
                                             <Icon:PackIconMaterial.Foreground>
                                                 <LinearGradientBrush 
                                                 StartPoint="0,0" 
@@ -291,8 +286,7 @@
                                             Width="{Binding IconSize}" 
                                             Height="{Binding IconSize}"
                                             Margin="10,0,0,0"
-                                            VerticalAlignment="Center"
-                                            Visibility="{Binding IsBalancePortSelected, Converter={StaticResource BoolToVisibilityConverter}}" Cursor="">
+                                            VerticalAlignment="Center">
                                             <Icon:PackIconMaterial.Foreground>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                                     <GradientStop x:Name="BalanceCommIconColor" Color="{DynamicResource CommIconColorFrom}" Offset="0"/>
@@ -311,19 +305,15 @@
                                 <GroupBox.Header>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock 
-                                        Text="Timer Settings" 
+                                        Text="{DynamicResource TimerSettingsWord}"
                                         Foreground="{DynamicResource AccentBrush}" 
                                         FontSize="{Binding TitleFontSize}" 
                                         FontWeight="Bold"/>
                                     </StackPanel>
                                 </GroupBox.Header>
 
-                                <Grid VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0 0 0 0">
+                                <Grid VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10 0 0 0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="{Binding UnitTextboxWidth}"/>
-                                        <ColumnDefinition Width="10"/>
-                                        <ColumnDefinition Width="{Binding UnitTextboxWidth}"/>
-                                        <ColumnDefinition Width="30"/>
                                         <ColumnDefinition Width="{Binding UnitTextboxWidth}"/>
                                         <ColumnDefinition Width="10"/>
                                         <ColumnDefinition Width="{Binding UnitTextboxWidth}"/>
@@ -338,8 +328,8 @@
                                     <Label 
                                         Grid.Column="0"
                                         Grid.Row="0"
-                                        Margin="0 10 0 0"
-                                        Content="Interval"
+                                        Margin="0 0 0 0"
+                                        Content="{DynamicResource IntervalWord}"
                                         Foreground="{DynamicResource AccentBrush}"
                                         FontSize="{Binding TitleFontSize}">
                                     </Label>
@@ -358,18 +348,18 @@
                                             Grid.Row="1"
                                             Style="{StaticResource UnderlineTextBoxStyle}" 
                                             Margin="0 -12 0 0"
-                                            Text="{Binding IntervalValue, UpdateSourceTrigger=PropertyChanged}"
+                                            Text="{Binding IntervalMinValue, UpdateSourceTrigger=PropertyChanged}"
                                             FontSize="{Binding TitleFontSize}"
-                                            IsEnabled="{Binding MSettingEnable}">
+                                            IsEnabled="{Binding SettingEnable}">
                                             <i:Interaction.Behaviors>
-                                                <local:PositiveIntegerBehavior MaxValue="1000"/>
+                                                <local:PositiveIntegerBehavior MaxValue="1000" MinValue="0"/>
                                             </i:Interaction.Behaviors>
                                         </TextBox>
 
                                         <TextBlock 
                                             Grid.Column="1"
                                             Grid.Row="1"
-                                            Text="(min)" 
+                                            Text="{DynamicResource MinuteWord}" 
                                             Margin="0 0 0 0"
                                             Foreground="{DynamicResource AccentBrush}" 
                                             FontSize="{Binding UnitFontSize}" 
@@ -390,91 +380,22 @@
                                             Grid.Row="0"
                                             Style="{StaticResource UnderlineTextBoxStyle}" 
                                             Margin="0 -12 0 0"
-                                            Text="{Binding StableOSValue, UpdateSourceTrigger=PropertyChanged}"
+                                            Text="{Binding IntervalSecValue, UpdateSourceTrigger=PropertyChanged}"
                                             FontSize="{Binding TitleFontSize}"
-                                            IsEnabled="{Binding MSettingEnable}">
+                                            IsEnabled="{Binding SettingEnable}">
                                             <i:Interaction.Behaviors>
-                                                <local:PositiveIntegerBehavior MaxValue="1000"/>
+                                                <local:PositiveIntegerBehavior MaxValue="1000" MinValue="1"/>
                                             </i:Interaction.Behaviors>
                                         </TextBox>
                                         <TextBlock 
                                             Grid.Column="1"
                                             Grid.Row="1"
-                                            Text="(Sec)" 
+                                            Text="{DynamicResource SecWord}"
                                             Margin="0 0 0 0"
                                             Foreground="{DynamicResource AccentBrush}" 
                                             FontSize="{Binding UnitFontSize}" 
                                             FontWeight="Bold"/>
-                                    </Grid>
-
-                                    <Label 
-                                        Grid.Column="4"
-                                        Grid.Row="0"
-                                        Content="End Time"
-                                        Margin="0 10 0 0"
-                                        Foreground="{DynamicResource AccentBrush}"
-                                        FontSize="{Binding TitleFontSize}">
-                                    </Label>
-                                    <Grid Grid.Column="4" Grid.Row="1">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <TextBox 
-                                            Grid.Column="0"
-                                            Grid.Row="3"
-                                            Style="{StaticResource UnderlineTextBoxStyle}" 
-                                            Margin="0 -12 0 0"
-                                            Text="{Binding AttemptsValue, UpdateSourceTrigger=PropertyChanged}"
-                                            FontSize="{Binding TitleFontSize}"
-                                            IsEnabled="{Binding MSettingEnable}">
-                                            <i:Interaction.Behaviors>
-                                                <local:PositiveIntegerBehavior MaxValue="100"/>
-                                            </i:Interaction.Behaviors>
-                                        </TextBox>
-                                        <TextBlock 
-                                            Grid.Column="1"
-                                            Grid.Row="1"
-                                            Text="(min)" 
-                                            Margin="0 0 0 0"
-                                            Foreground="{DynamicResource AccentBrush}" 
-                                            FontSize="{Binding UnitFontSize}" 
-                                            FontWeight="Bold"/>
-                                    </Grid>
-
-                                    <Grid Grid.Column="6" Grid.Row="1">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <TextBox
-                                            Grid.Column="0"
-                                            Grid.Row="0"
-                                            Style="{StaticResource UnderlineTextBoxStyle}" 
-                                            Margin="0 -12 0 0"
-                                            Text="{Binding StableOSValue, UpdateSourceTrigger=PropertyChanged}"
-                                            FontSize="{Binding TitleFontSize}"
-                                            IsEnabled="{Binding MSettingEnable}">
-                                            <i:Interaction.Behaviors>
-                                                <local:PositiveIntegerBehavior MaxValue="1000"/>
-                                            </i:Interaction.Behaviors>
-                                        </TextBox>
-                                        <TextBlock 
-                                            Grid.Column="1"
-                                            Grid.Row="1"
-                                            Text="(Sec)" 
-                                            Margin="0 0 0 0"
-                                            Foreground="{DynamicResource AccentBrush}" 
-                                            FontSize="{Binding UnitFontSize}" 
-                                            FontWeight="Bold"/>
-                                    </Grid>
+                                    </Grid>                                    
                                 </Grid>
                             </GroupBox>
                         </Grid>
@@ -497,7 +418,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock 
                                         Grid.Column="0"
-                                        Text="Output" 
+                                        Text="{DynamicResource OutputWord}"
                                         Foreground="{DynamicResource AccentBrush}" 
                                         FontSize="{Binding TitleFontSize}" 
                                         FontWeight="Bold"/>
@@ -507,13 +428,13 @@
                                         Background="Transparent"
                                         Foreground="{DynamicResource AccentBrush}"
                                         BorderBrush="{DynamicResource AccentBrush}"
-                                        Content="Export CSV"
-                                        Width="{Binding OutputBtnSIze}"
+                                        Content="{DynamicResource CsvExportWord}"
+                                        Width="{Binding OutputBtnSize}"
                                         Cursor="Hand"
-                                        Command="{Binding CalculateGainCommand}"
-                                        FontSize="{Binding LabelFontSize}"
-                                        Margin="0 0 0 0"
-                                        IsEnabled="{Binding CanCalcGain}"
+                                        Command="{Binding ExportCsvCommand}"
+                                        FontSize="{Binding ButtonFontSize}"
+                                        Margin="0 0 20 0"
+                                        IsEnabled="{Binding CanExport}"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center" />
                                 </Grid>
@@ -528,45 +449,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <Grid Margin="0 10 0 0" Cursor="">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <Button 
-                                        Grid.Row="0"
-                                        Grid.Column="2"
-                                        Style="{StaticResource HoverButtonStyle}"
-                                        Background="Transparent"
-                                        Foreground="{DynamicResource AccentBrush}"
-                                        BorderBrush="{DynamicResource AccentBrush}"
-                                        Content="Mark"
-                                        Width="{Binding OutputBtnSIze}"
-                                        Cursor="Hand"
-                                        Command="{Binding ExportParamsToCsvCommand}"
-                                        FontSize="{Binding LabelFontSize}"
-                                        Margin="30 0 5 0"
-                                        IsEnabled="{Binding CanExport}"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center" />
-                                    <TextBox 
-                                        Grid.Column="3"
-                                        Grid.Row="0"
-                                        Style="{StaticResource UnderlineTextBoxStyle}" 
-                                        Text="{Binding IntervalValue, UpdateSourceTrigger=PropertyChanged}"
-                                        FontSize="{Binding TitleFontSize}"
-                                        Width="120"
-                                        Margin="10 0 0 0"
-                                        IsEnabled="{Binding MSettingEnable}">
-                                        <i:Interaction.Behaviors>
-                                            <local:PositiveIntegerBehavior MaxValue="1000"/>
-                                        </i:Interaction.Behaviors>
-                                    </TextBox>
-                                </Grid>
+                                
 
                                 <!-- ▼ 測定結果グループ -->
                                 <Grid Grid.Row="1" HorizontalAlignment="Center" Margin="0 10 0 0" >
@@ -585,19 +468,20 @@
                                         Height="{Binding MeasureBoxHeight}">
                                         <GroupBox.Header>
                                             <StackPanel 
-                                            Orientation="Horizontal" 
-                                            VerticalAlignment="Center">
+                                                Orientation="Horizontal" 
+                                                VerticalAlignment="Center">
                                                 <TextBlock 
-                                                Text="Measure" 
-                                                Foreground="{DynamicResource AccentBrush}" 
-                                                FontSize="{Binding TitleFontSize}" 
-                                                FontWeight="Bold"/>
+                                                    Text="{DynamicResource MeasureWord}"
+                                                    Foreground="{DynamicResource AccentBrush}" 
+                                                    FontSize="{Binding TitleFontSize}" 
+                                                    FontWeight="Bold"/>
                                             </StackPanel>
                                         </GroupBox.Header>
 
-                                        <Grid Margin="2" VerticalAlignment="Center">
-                                            <!-- 行定義（11行） -->
+                                        <Grid Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="">
+                                            <!-- 行定義 -->
                                             <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
@@ -606,138 +490,209 @@
                                             <!-- 列定義 -->
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Grid Grid.Row="0" Cursor="">
+                                            <Grid Grid.Row="0" HorizontalAlignment="Center" Margin="0 0 0 10" >
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="{Binding MarginStartStop}"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <Button 
+                                                <Button
                                                     Grid.Row="0"
                                                     Grid.Column="0"
                                                     Style="{StaticResource HoverButtonStyle}"
                                                     Background="Transparent"
                                                     Foreground="{DynamicResource AccentBrush}"
                                                     BorderBrush="{DynamicResource AccentBrush}"
-                                                    Content="Start"
-                                                    Width="{Binding OutputBtnSIze}"
+                                                    Content="{DynamicResource StartWord}"
+                                                    Width="{Binding MesureBtnSize}"
                                                     Cursor="Hand"
-                                                    Command="{Binding CalculateGainCommand}"
-                                                    FontSize="{Binding LabelFontSize}"
-                                                    Margin="0,0,5,0"
-                                                    IsEnabled="{Binding CanCalcGain}"
+                                                    Command="{Binding ManualCommand}"
+                                                    FontSize="{Binding ButtonFontSize}"
+                                                    Margin="0,0,0,0"
+                                                    IsEnabled="{Binding CanMeasure}"
                                                     VerticalAlignment="Center" />
                                                 <Button 
                                                     Grid.Row="0"
-                                                    Grid.Column="1"
+                                                    Grid.Column="2"
                                                     Style="{StaticResource HoverButtonStyle}"
                                                     Background="Transparent"
                                                     Foreground="{DynamicResource AccentBrush}"
                                                     BorderBrush="{DynamicResource AccentBrush}"
-                                                    Content="Stop"
-                                                    Width="{Binding OutputBtnSIze}"
+                                                    Content="{DynamicResource StopWord}"
+                                                    Width="{Binding MesureBtnSize}"
                                                     Cursor="Hand"
-                                                    Command="{Binding ExportParamsToCsvCommand}"
-                                                    FontSize="{Binding LabelFontSize}"
-                                                    Margin="15,0,5,0"
-                                                    IsEnabled="{Binding CanExport}"
+                                                    Command="{Binding StopCommand}"
+                                                    FontSize="{Binding ButtonFontSize}"
+                                                    Margin="0 0 0 0"
+                                                    IsEnabled="{Binding CanMeasure}"
                                                     VerticalAlignment="Center" />
                                             </Grid>
-                                            <!-- ===== Column 0 ===== -->
-                                            <ItemsControl 
-                                                Grid.Row="2"
-                                            Grid.Column="0"
-                                            ItemsSource="{Binding MesurementItems}"
-                                            AlternationCount="11">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border Style="{StaticResource MeasureCellBorderStyle}"
-                                                        Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
-                                                        Path=(ItemsControl.AlternationIndex)}">
-                                                            <TextBlock Text="{Binding Value}"
-                                                        Style="{StaticResource MeasureTextCenterStyle}"/>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
 
-                                            <!-- ===== Column 1 ===== -->
-                                            <ItemsControl 
-                                                Grid.Row="2"
-                                            Grid.Column="1"
-                                            ItemsSource="{Binding MesurementValues}"
-                                            AlternationCount="11">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border 
-                                                        Style="{StaticResource MeasureCellBorderStyle}"
-                                                        Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
-                                                        Path=(ItemsControl.AlternationIndex)}">
-                                                            <TextBlock 
-                                                            Text="{Binding Value}"         
-                                                            FontSize="{Binding DataContext.LogFontSize,
-                                                            RelativeSource={RelativeSource AncestorType=ItemsControl}}">
-                                                                <TextBlock.Style>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="Opacity" Value="1"/>
-                                                                        <Style.Triggers>
+                                            <Grid HorizontalAlignment="Center" Grid.Row="1" Margin="0 10 0 0" Cursor="">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="{Binding MarginMark}"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
-                                                                            <!-- 明滅トリガー -->
-                                                                            <DataTrigger Binding="{Binding IsUpdate}" Value="True">
-                                                                                <DataTrigger.EnterActions>
-                                                                                    <BeginStoryboard x:Name="BlinkStoryboard">
-                                                                                        <Storyboard>
-                                                                                            <DoubleAnimation
-                                                                                        Storyboard.TargetProperty="Opacity"
-                                                                                        From="1"
-                                                                                        To="0.3"
-                                                                                        Duration="0:0:0.25"
-                                                                                        AutoReverse="True"
-                                                                                        RepeatBehavior="Forever"/>
-                                                                                        </Storyboard>
-                                                                                    </BeginStoryboard>
-                                                                                </DataTrigger.EnterActions>
+                                                <Button
+                                                    Grid.Row="0"
+                                                    Grid.Column="0"
+                                                    Style="{StaticResource HoverButtonStyle}"
+                                                    Background="Transparent"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    BorderBrush="{DynamicResource AccentBrush}"
+                                                    Content="{DynamicResource MarkWord}"
+                                                    Width="{Binding MesureBtnSize}"
+                                                    Cursor="Hand"
+                                                    Command="{Binding MarkCommand}"
+                                                    FontSize="{Binding ButtonFontSize}"
+                                                    Margin="0 0 0 0"
+                                                    IsEnabled="{Binding CanMeasure}"
+                                                    VerticalAlignment="Center" />
+                                                <TextBox 
+                                                    Grid.Column="2"
+                                                    Grid.Row="0"
+                                                    Style="{StaticResource UnderlineTextBoxStyle}" 
+                                                    Text="{Binding MarkValue, 
+                                                    Converter={StaticResource TimeSpanToStringConverter},
+                                                    UpdateSourceTrigger=PropertyChanged}"
+                                                    FontSize="{Binding UnitFontSize}"
+                                                    Width="{Binding MarkWidth}"
+                                                    Margin="0 0 0 0"
+                                                    IsEnabled="false" Cursor="">
 
-                                                                                <!-- 終了時に確実に元に戻す -->
-                                                                                <DataTrigger.ExitActions>
-                                                                                    <BeginStoryboard>
-                                                                                        <Storyboard>
-                                                                                            <DoubleAnimation
-                                                                                        Storyboard.TargetProperty="Opacity"
-                                                                                        To="1"
-                                                                                        Duration="0"/>
-                                                                                        </Storyboard>
-                                                                                    </BeginStoryboard>
-                                                                                </DataTrigger.ExitActions>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </TextBlock.Style>
-                                                            </TextBlock>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                                </TextBox>
+                                            </Grid>
+
+                                            <Grid Grid.Row="2" HorizontalAlignment="Center" Margin="0 10 0 15" Cursor="">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="{Binding MarginReading}"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Label 
+                                                    Grid.Column="0"
+                                                    Grid.Row="0"
+                                                    Margin="0 0 0 0"
+                                                    Content="{DynamicResource ResponceWord}"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    FontSize="{Binding ButtonFontSize}" Cursor="">
+                                                </Label>
+                                                <TextBox 
+                                                    Grid.Column="2"
+                                                    Grid.Row="0"
+                                                    Style="{StaticResource UnderlineTextBoxStyle}" 
+                                                    Text="{Binding ReadValue}"
+                                                    FontSize="{Binding UnitFontSize}"
+                                                    Width="{Binding MarkWidth}"
+                                                    Margin="0 0 0 0"
+                                                    TextAlignment="Center"
+                                                    IsEnabled="false" Cursor="">
+                                                </TextBox>
+                                            </Grid>
+
+                                            <Grid Grid.Row="3" HorizontalAlignment="Center" Cursor="">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="{Binding CelWidth}"/>
+                                                    <ColumnDefinition Width="{Binding CelWidth}"/>
+                                                </Grid.ColumnDefinitions>
+                                                <ItemsControl 
+                                                    Grid.Row="0"
+                                                    Grid.Column="0"
+                                                    ItemsSource="{Binding MesurementItems}"
+                                                    AlternationCount="11">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Style="{StaticResource MeasureCellBorderStyle}"
+                                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                                                Path=(ItemsControl.AlternationIndex)}">
+                                                                <TextBlock Text="{Binding Value}"
+                                                                    Style="{StaticResource MeasureTextCenterStyle}"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
+                                                <!-- ===== Column 1 ===== -->
+                                                <ItemsControl 
+                                                    Grid.Row="0"
+                                                    Grid.Column="1"
+                                                    ItemsSource="{Binding MeasurementValues}"
+                                                    AlternationCount="11">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border 
+                                                                Style="{StaticResource MeasureCellBorderStyle}"
+                                                                Grid.Row="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter},
+                                                                Path=(ItemsControl.AlternationIndex)}">
+                                                                <TextBlock 
+                                                                    Text="{Binding Value}"
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="{Binding DataContext.LogFontSize,
+                                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Opacity" Value="1"/>
+                                                                            <Style.Triggers>
+
+                                                                                <!-- 明滅トリガー -->
+                                                                                <DataTrigger Binding="{Binding IsUpdate}" Value="True">
+                                                                                    <DataTrigger.EnterActions>
+                                                                                        <BeginStoryboard x:Name="BlinkStoryboard">
+                                                                                            <Storyboard>
+                                                                                                <DoubleAnimation
+                                                                                                Storyboard.TargetProperty="Opacity"
+                                                                                                From="1"
+                                                                                                To="0.3"
+                                                                                                Duration="0:0:0.25"
+                                                                                                AutoReverse="True"
+                                                                                                RepeatBehavior="Forever"/>
+                                                                                            </Storyboard>
+                                                                                        </BeginStoryboard>
+                                                                                    </DataTrigger.EnterActions>
+
+                                                                                    <!-- 終了時に確実に元に戻す -->
+                                                                                    <DataTrigger.ExitActions>
+                                                                                        <BeginStoryboard>
+                                                                                            <Storyboard>
+                                                                                                <DoubleAnimation
+                                                                                                Storyboard.TargetProperty="Opacity"
+                                                                                                To="1"
+                                                                                                Duration="0"/>
+                                                                                            </Storyboard>
+                                                                                        </BeginStoryboard>
+                                                                                    </DataTrigger.ExitActions>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Grid>
                                         </Grid>
                                     </GroupBox>
 
                                     <!-- ロググループ -->
                                     <GroupBox 
-                                    Grid.Row="2"
-                                    Grid.Column="1"
-                                    Style="{StaticResource LogGroupBoxStyle}"
-                                    Width="{Binding LogBoxWidth}"
-                                    Height="{Binding LogBoxHeight}">
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        Style="{StaticResource LogGroupBoxStyle}"
+                                        Width="{Binding LogBoxWidth}"
+                                        Height="{Binding LogBoxHeight}">
 
                                         <GroupBox.Header>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <TextBlock 
-                                                Text="Log"
-                                                Foreground="{DynamicResource AccentBrush}"
-                                                FontSize="{Binding TitleFontSize}"
-                                                FontWeight="Bold"/>
+                                                    Text="{DynamicResource LogWord}"
+                                                    Foreground="{DynamicResource AccentBrush}"
+                                                    FontSize="{Binding TitleFontSize}"
+                                                    FontWeight="Bold"/>
                                             </StackPanel>
                                         </GroupBox.Header>
 
@@ -748,14 +703,14 @@
                                             </Grid.RowDefinitions>
 
                                             <ListBox x:Name="LogListBox"
-                                             ItemsSource="{Binding Logs}"
-                                             Foreground="{DynamicResource AccentBrush}"
-                                             Background="Transparent"
-                                             BorderThickness="0"
-                                             FontFamily="Consolas"
-                                             FontSize="{Binding LogFontSize}"
-                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                                ItemsSource="{Binding Logs}"
+                                                Foreground="{DynamicResource AccentBrush}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                FontFamily="Consolas"
+                                                FontSize="{Binding LogFontSize}"
+                                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
                                                 <ListBox.ItemsPanel>
                                                     <ItemsPanelTemplate>
@@ -768,21 +723,21 @@
                                 </Grid>
 
                                 <Button 
-                                        Grid.Row="2"
-                                        Grid.Column="0"
-                                        Style="{StaticResource HoverButtonStyle}"
-                                        Background="Transparent"
-                                        Foreground="{DynamicResource AccentBrush}"
-                                        BorderBrush="{DynamicResource AccentBrush}"
-                                        Content="Clear"
-                                        Width="{Binding OutputBtnSIze}"
-                                        Cursor="Hand"
-                                        Command="{Binding CalculateGainCommand}"
-                                        FontSize="{Binding LabelFontSize}"
-                                        Margin="0 10 0 0"
-                                        IsEnabled="{Binding CanCalcGain}"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center" />
+                                    Grid.Row="2"
+                                    Grid.Column="0"
+                                    Style="{StaticResource HoverButtonStyle}"
+                                    Background="Transparent"
+                                    Foreground="{DynamicResource AccentBrush}"
+                                    BorderBrush="{DynamicResource AccentBrush}"
+                                    Content="{DynamicResource ClearWord}"
+                                    Width="{Binding MesureBtnSize}"
+                                    Cursor="Hand"
+                                    Command="{Binding ClearLogCommand}"
+                                    FontSize="{Binding ButtonFontSize}"
+                                    Margin="0 10 0 0"
+                                    IsEnabled="{Binding CanMeasure}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" />
                             </Grid>
                         </GroupBox>
                     </Grid>
@@ -801,6 +756,5 @@
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
             Visibility="Collapsed"/>
-
     </Grid>
 </UserControl>

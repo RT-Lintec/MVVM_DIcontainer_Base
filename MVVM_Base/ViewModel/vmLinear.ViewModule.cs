@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -37,7 +38,11 @@ namespace MVVM_Base.ViewModel
             AdjustFontSizeByDelta(delta);
         });
 
-
+        /// <summary>
+        /// UI拡縮
+        /// 現合のため全てマジックナンバー
+        /// </summary>
+        /// <param name="delta"></param>
         private void AdjustFontSizeByDelta(int delta)
         {
             if (delta > 0 && tcnt > 4) return;
@@ -49,10 +54,11 @@ namespace MVVM_Base.ViewModel
             DataGridFontSize += delta;
             StatusFontSize += delta;
             LogFontSize += (float)delta * 0.5f;
+            VtFontSize += (float)delta;
             ConfHeightSize += (float)delta * 0.68f;
             ConfBtnFontSize += (float)delta * 0.5f;
             OtherSettingFontSize += delta;
-            //ComboFontSize += delta;
+
             RadioBtnSIze += delta;
             IconSize += delta;
             CmdBtnSIze += delta * 6;
@@ -60,43 +66,31 @@ namespace MVVM_Base.ViewModel
             ZaBtnSIze += delta * 6;
             SpanGainSIze += delta * 2;
             OutputBtnSIze += delta * 4;
-            //StatusIconSize += delta;
+            MesureBtnSize += delta * 4;
+
             GroupBoxWidth90 += delta * 4;
             GroupBoxWidth100 += delta * 4;
             SmallGBWidth += delta * 14;
             MiddleGBWidth += delta * 18;
             LargeGBWidth += delta * 18;
-            GroupBoxWidth700 += delta * 32;
+            GroupBoxWidth700 += delta * 37;
             GroupBoxWidth150 += delta * 8;
-            GroupBoxWidth500 += delta * 24;
+            GroupBoxWidth500 += delta * 29;
             GroupBoxWidth245 += delta * 14;
-            GroupBoxWidth200 += delta * 10;
-            UnitTextboxWidth += delta * 5;
+            GroupBoxWidth200 += delta * 15;
+            UnitTextboxWidth += delta * 8;
             MeasureColumNameWidth += delta * 4;
             SpanInputWidth += delta * 3;
             FlowOutputBoxWidth += delta * 5;
 
             MiddleGBHeight += delta * 8;
-            GroupBoxHeight250 += delta * 9;
-            LogHeightSize += delta * 29;
-            //GainMatrixWidth += delta * 3;
-            //GainMatrixTotalWidth += delta * 33;
-            //GroupBoxStatusWidth += delta * 16;
-            //GroupBoxDebugWidthA += delta * 32;
-            //GroupBoxDebugWidthB += delta * 16;
+            GroupBoxHeight250 += delta * 10;
+            LogHeightSize += (float)delta * 21.5f;
+            FivePerHeightSize += (float)delta * 10.2f;
+            FivePerMatrixWidth += (float)delta * 3f;
 
-            //ComboWidthLongSize += delta * 16;
-            //ComboWidthSize += delta * 4;
-            //ComboHeighSize += delta * 1;
-            //ComboPaddingSize += delta * 1;
-
-            //PortBtnSize += delta * 3;
-            //RadioBtnSIze += delta * 1;
-            //RadioBtnBloomSIze += delta * 1;
-
-            //DebugTextBoxSIze += delta * 5;
-            //DebugTextBoxLongSIze += delta * 8;
-
+            VTempOutputBoxWidth += delta * 2;
+            MeasureSettingTextBoxWidth += delta * 3;
             tcnt += delta;
         }
 
@@ -131,6 +125,31 @@ namespace MVVM_Base.ViewModel
         /// </summary>
         public async void OnViewLoaded()
         {
+            // FBアドレスの読み込み
+            string baseDir = AppContext.BaseDirectory;
+            baseDir = Directory.GetParent(AppContext.BaseDirectory)!.Parent!.Parent!.Parent!.FullName;
+            string csv = System.IO.Path.Combine(baseDir, "FB\\FB_Address.csv");
+
+
+            if (!File.Exists(csv))
+            {
+                await messageService.ShowMessage(languageService.AddressCsvNotfound);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+
+                return;
+            }
+
+            if (!LoadFromCsv(csv))
+            {
+                await messageService.ShowMessage(languageService.AddressCsvFormatError);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+
+                return;
+            }
+;
+            IsMapGenerated = true; // 初回起動時のみ
             // 計算を何もしていない場合
             if (!isCalculated && !isCalcedAndConfed)
             {
@@ -145,8 +164,10 @@ namespace MVVM_Base.ViewModel
 
                 if (commStatusService.IsMfcConnected)
                 {
-                    SerialNum = await ReadSerialNumber(_loadCts.Token);
-                    var res = await FBDataRead(_loadCts.Token);
+                    var res = await ReadSerialNumber(_loadCts.Token);
+                    SerialNum = res.Payload;
+                    res = await FBDataRead(_loadCts.Token);
+                    IsMapGenerated = false; // 初回起動時のみ
                 }
 
                 // MFM必須コマンド以外を有効化(Initial状態)
@@ -163,7 +184,139 @@ namespace MVVM_Base.ViewModel
             else if (isCalculated && isCalcedAndConfed)
             {
                 await ChangeState(ProcessState.AfterCalcAndConf);
+            }           
+        }
+
+        /// <summary>
+        /// 10点調整ゲインアドレスを取得する
+        /// </summary>
+        /// <param name="path"></param>
+        /// <exception cref="InvalidDataException"></exception>
+        public bool LoadFromCsv(string path)
+        {
+            try
+            {
+                var lines = File.ReadAllLines(path)
+                    .Select(Clean)
+                    .Where(l => !string.IsNullOrWhiteSpace(l))
+                    .ToArray();
+
+                int gainLineNum = 0;
+                int gainLineEndNum = gainLineNum + 5;
+
+                // ゲイン
+                for (int i = gainLineNum; i < gainLineEndNum;)
+                {
+                    var header = lines[i++];
+
+                    var logicals = lines[i++]
+                        .Split(',')
+                        .Select(Clean)
+                        .Where(x => x.Length > 0)
+                        .ToArray();
+
+                    var actuals = lines[i++]
+                        .Split(',')
+                        .Select(Clean)
+                        .Where(x => x.Length > 0)
+                        .ToArray();
+
+                    // 長さが違う = 内容・形式が異なる
+                    if (logicals.Length != actuals.Length)
+                    {
+                        return false;
+                    }
+
+                    // 重複チェック
+                    bool hasDuplicate = logicals.Length != logicals.Distinct().Count();
+                    if (hasDuplicate)
+                    {
+                        return false;
+                    }
+
+                    hasDuplicate = actuals.Length != actuals.Distinct().Count();
+                    if (hasDuplicate)
+                    {
+                        return false;
+                    }
+
+                    // キーとバリューのセット
+                    for (int j = 0; j < logicals.Length; j++)
+                    {
+                        FbMap[logicals[j]] = actuals[j];
+                    }
+                }
+
+                // UI 更新
+                foreach (var key in FbMap.Keys)
+                    OnPropertyChanged($"Item[{key}]");
+
+                // 10点リニア閾値
+                int thresholdLineNum = gainLineEndNum + 1;
+                int thresholdLineEndNum = gainLineEndNum + 5;
+                
+                for (int i = thresholdLineNum; i < thresholdLineEndNum;)
+                {
+                    var header = lines[i++];
+
+                    var logicals = lines[i++]
+                        .Split(',')
+                        .Select(Clean)
+                        .Where(x => x.Length > 0)
+                        .ToArray();
+
+                    var actuals = lines[i++]
+                        .Split(',')
+                        .Select(Clean)
+                        .Where(x => x.Length > 0)
+                        .ToArray();
+
+                    // 長さが違う = 内容・形式が異なる
+                    if (logicals.Length != actuals.Length)
+                    {
+                        return false;
+                    }
+
+                    // 重複チェック
+                    bool hasDuplicate = logicals.Length != logicals.Distinct().Count();
+                    if (hasDuplicate)
+                    {
+                        return false;
+                    }
+
+                    hasDuplicate = actuals.Length != actuals.Distinct().Count();
+                    if (hasDuplicate)
+                    {
+                        return false;
+                    }
+
+                    // キーとバリューのセット
+                    for (int j = 0; j < logicals.Length; j++)
+                    {
+                        ThresholdMap[logicals[j]] = actuals[j];
+                    }
+                }
+
+                return true;
             }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 不要な文字を削除する
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        static string Clean(string s)
+        {
+            return s
+                .Replace("\"", "")
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Trim();
         }
 
         /// <summary>
@@ -207,7 +360,7 @@ namespace MVVM_Base.ViewModel
 
                         MeasureResult temp2 = new MeasureResult();
                         temp2.Value = ($"");
-                        MesurementValues.Add(temp2);
+                        MeasurementValues.Add(temp2);
 
                         dateList[i] = new DateTime();
                         continue;
@@ -220,10 +373,12 @@ namespace MVVM_Base.ViewModel
 
                     MeasureResult m = new MeasureResult();
                     m.Value = ($"");
-                    MesurementValues.Add(m);
+                    MeasurementValues.Add(m);
 
                     SetPointArray[i] = (i * 10).ToString();
-                    
+
+                    SetPointBelow50PercentArray[i] = (i * 5).ToString();
+                    SetPointAbove50PercentArray[i] = (i * 5 + 50).ToString();
                 }
             }
             // 値を全て初期化
@@ -231,23 +386,31 @@ namespace MVVM_Base.ViewModel
             {
                 for (int i = 0; i < 11; i++)
                 {
-                    MesurementValues[i].Value = "";                    
+                    MeasurementValues[i].Value = "";                    
                 }
             }            
         }
 
+        /// <summary>
+        /// 初回出力かどうかを判定。出力結果表の項目書き込みを一回のみ行うため。
+        /// </summary>
         bool isInitOutput = false;
         /// <summary>
         /// 出力結果の表をリセットする
         /// </summary>
-        private void ResetOutputResult()
+        private void ResetOutputResult(bool isFiveper)
         {
             // 計測結果の表を新規形成
             if (!isInitOutput)
             {
                 SetPointArray[0] = "Set Point";
+                SetPointBelow50PercentArray[0] = "Set Point";
+                SetPointAbove50PercentArray[0] = "Set Point";
                 TrueValueArray[0] = "True_V";
                 ReadingValueArray[0].Value = "Reading_V";
+                ReadingValueBelow50Array[0] = "Reading_V";
+                ReadingValueAbove50Array[0] = "Reading_V";
+
                 InitialVoArray[0] = "Initial VO";
                 CorrectDataArray[0] = "C_Data";
                 VoutArray[0] = "VOUT";
@@ -258,13 +421,26 @@ namespace MVVM_Base.ViewModel
             // 値を全て初期化
             else
             {
-                for (int i = 1; i < 11; i++)
+                // 通常の出力表のみ
+                if (!isFiveper)
                 {
-                    ReadingValueArray[i].Value = "";
-                    InitialVoArray[i] = "";
-                    CorrectDataArray[i] = "";
-                    VoutArray[i] = "";
-                    VOArray[i] = "";
+                    for (int i = 1; i < 11; i++)
+                    {
+                        ReadingValueArray[i].Value = "";
+                        InitialVoArray[i] = "";
+                        CorrectDataArray[i] = "";
+                        VoutArray[i] = "";
+                        VOArray[i] = "";
+                    }
+                }
+                // 5%刻みのみ
+                else
+                {
+                    for (int i = 1; i < 11; i++)
+                    {
+                        ReadingValueBelow50Array[i] = "";
+                        ReadingValueAbove50Array[i] = "";
+                    }
                 }
             }
         }
@@ -341,36 +517,56 @@ namespace MVVM_Base.ViewModel
             for (int i = 0; i < props.Count; i++)
             {
                 string value = (string)props[i].Property.GetValue(this);
-                string code = props[i].Attr.Code;
+                string code = FbMap[props[i].Attr.Code];
 
                 fbPairs.Add(Tuple.Create(code, value));
             }
 
             // Vtemp 基準1を取得
-            var res = await CommMFCAsyncType3("ER", "FB22", _loadCts.Token);
-            if (res == "failed" || res == "canceled")
-            {
-                return;
-            }
+            var vTempLowerCal = VtempValueCal.Substring(0, 2);
+            var vTempUpperCal = VtempValueCal.Substring(3, 2);
+            var vTempLowerConf = VtempValueConf.Substring(0, 2);
+            var vTempUpperConf = VtempValueConf.Substring(3, 2);
 
             var sb = new StringBuilder();
-            sb.AppendLine("VO,True,Reading,Vout,Vtemp lower, Vtemp upper");
+            sb.AppendLine("Initial VO,C_Data,True,Reading,Vout,VO,Vtemp lower(Cal), Vtemp upper(Cal),Vtemp lower(Conf), Vtemp upper(Conf)");
 
             for (int i = 1; i < VOArray.Count; i++)
             {
                 var line = new StringBuilder();
-                line.Append($"=\"{VOArray[i]}\",=\"{TrueValueArray[i]}\",=\"{ReadingValueArray[i].Value}\",=\"{VoutArray[i]}\"");
+                line.Append($"=\"{InitialVoArray[i]}\",=\"{CorrectDataArray[i]}\",=\"{TrueValueArray[i]}\",=\"{ReadingValueArray[i].Value}\",=\"{VoutArray[i]}\",=\"{VOArray[i]}\"");
                 if (i == 1)
                 {
-                    line.Append($",=\"{res.Substring(0, 2)}\"");
-                    line.Append($",=\"{res.Substring(3, 2)}\"");
+                    line.Append($",=\"{vTempLowerCal}\"");
+                    line.Append($",=\"{vTempUpperCal}\"");
+                    line.Append($",=\"{vTempLowerConf}\"");
+                    line.Append($",=\"{vTempUpperConf}\"");
                 }
                 sb.AppendLine(line.ToString());
             }
 
             sb.AppendLine("");
-            sb.AppendLine("FB90,FB91,FB92,FB93,FB94,FB95,FB96,FB97,FB98,FB99," +
-                "FB9A,FB9B,FB9C,FB9D,FB9E,FB9F,FBA0,FBA1,FBA2,FBA3,FB41,FB42");
+
+            string[] fbsList =
+            {
+                    "FB90","FB91","FB92","FB93","FB94","FB95","FB96","FB97","FB98","FB99",
+                    "FB9A","FB9B","FB9C","FB9D","FB9E","FB9F","FBA0","FBA1","FBA2","FBA3","FB41","FB42"
+            };
+
+            string l = "";
+            for (int i = 0; i < FbMap.Count; i++)
+            {
+                if (i != FbMap.Count - 1)
+                {
+                     l += FbMap[fbsList[i]] + ",";                    
+                }
+                else
+                {
+                    l += FbMap[fbsList[i]];
+                }
+            }
+
+            sb.AppendLine(l);
 
             var line2 = new StringBuilder();
             for (int j = 0; j < fbPairs.Count; j++)
@@ -388,11 +584,12 @@ namespace MVVM_Base.ViewModel
             }
 
             string now = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var fileName = "\\"+ SerialNum + "_" + now + "_Parameters.csv";
+            var fileName = "\\"+ "SN" + SerialNum + "_" + now + "_Parameters.csv";
             string path = csvDir + fileName;
 
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             isSavedOutput = true;
+            vmService.HasNonsavedOutput = false;
         }
 
         /// <summary>
@@ -451,6 +648,11 @@ namespace MVVM_Base.ViewModel
             SwitchBeforeMFMBtn(enable);
             SwitchZeroBtn(enable);
             SwitchSpanBtn(enable);
+
+            if (vmService.HasNonsavedOutput)
+            {
+                CanExport = true;
+            }
         }
 
         /// <summary>

@@ -12,6 +12,9 @@ namespace MVVM_Base.Common
     /// </summary>
     public class PositiveIntegerBehavior : Behavior<TextBox>
     {
+        /// <summary>
+        /// 最大値
+        /// </summary>
         public int MaxValue
         {
             get => (int)GetValue(MaxValueProperty);
@@ -19,12 +22,29 @@ namespace MVVM_Base.Common
         }
 
         public static readonly DependencyProperty MaxValueProperty =
-            DependencyProperty.Register(
-                nameof(MaxValue),
-                typeof(int),
-                typeof(PositiveIntegerBehavior),
-                new PropertyMetadata(0)
-            );
+        DependencyProperty.Register(
+            nameof(MaxValue),
+            typeof(int),
+            typeof(PositiveIntegerBehavior),
+            new PropertyMetadata(0)
+        );
+
+        /// <summary>
+        /// 最小値
+        /// </summary>
+        public int MinValue
+        {
+            get => (int)GetValue(MinValueProperty);
+            set => SetValue(MinValueProperty, value);
+        }
+
+        public static readonly DependencyProperty MinValueProperty =
+        DependencyProperty.Register(
+            nameof(MinValue),
+            typeof(int),
+            typeof(PositiveIntegerBehavior),
+            new PropertyMetadata(0)
+        );
 
         protected override void OnAttached()
         {
@@ -35,6 +55,7 @@ namespace MVVM_Base.Common
 
             AssociatedObject.PreviewTextInput += OnPreviewTextInput;
             AssociatedObject.PreviewKeyDown += OnPreviewKeyDown;
+            AssociatedObject.LostFocus += AssociatedObject_LostFocus;
             DataObject.AddPastingHandler(AssociatedObject, OnPaste);
         }
 
@@ -43,6 +64,7 @@ namespace MVVM_Base.Common
             base.OnDetaching();
             AssociatedObject.PreviewTextInput -= OnPreviewTextInput;
             AssociatedObject.PreviewKeyDown -= OnPreviewKeyDown;
+            AssociatedObject.LostFocus -= AssociatedObject_LostFocus;
             DataObject.RemovePastingHandler(AssociatedObject, OnPaste);
         }
 
@@ -88,7 +110,7 @@ namespace MVVM_Base.Common
                 // 選択テキストが無い状態のデリート
                 if (selected == "")
                 {
-                    string newText = tb.Text.Substring(0, start-1) + tb.Text.Substring(end);
+                    string newText = tb.Text.Substring(0, start - 1) + tb.Text.Substring(end);
 
                     // 0は許容する。0からから始まる0以上の数値は禁止する。
                     if (newText != "0" && newText.StartsWith("0"))
@@ -104,7 +126,7 @@ namespace MVVM_Base.Common
                 // 選択テキストが有る状態のデリート
                 else
                 {
-                    string newText = tb.Text.Substring(0,start) + tb.Text.Substring(end);
+                    string newText = tb.Text.Substring(0, start) + tb.Text.Substring(end);
 
                     // 0は許容する。0からから始まる0以上の数値は禁止する。
                     if (newText != "0" && newText.StartsWith("0"))
@@ -236,6 +258,7 @@ namespace MVVM_Base.Common
                 }
             }
 
+            // 桁あふれ防止のため最大値のみ制限
             if (int.TryParse(newText, out int value))
             {
                 if (value > MaxValue)
@@ -270,19 +293,6 @@ namespace MVVM_Base.Common
 
                 var tb = AssociatedObject;
 
-                // 最大値チェック
-                if (int.TryParse(pasteText, out int v))
-                {
-                    if (v > MaxValue)
-                    {
-                        e.CancelCommand();
-                        tb.Text = MaxValue.ToString();
-
-                        // キャレットを末尾へ
-                        tb.CaretIndex = tb.Text.Length;
-                    }
-                }
-
                 // 選択テキストを取得
                 string selected = AssociatedObject.SelectedText;
 
@@ -300,7 +310,7 @@ namespace MVVM_Base.Common
                     bool isAllZero = true;
                     foreach (char tex in newText)
                     {
-                        if(tex != '0')
+                        if (tex != '0')
                         {
                             isAllZero = false;
                             break;
@@ -308,7 +318,7 @@ namespace MVVM_Base.Common
                     }
 
                     // 全て0なら0に書き変え
-                    if (isAllZero) 
+                    if (isAllZero)
                     {
                         tb.Text = "0";
                         e.CancelCommand();
@@ -317,9 +327,9 @@ namespace MVVM_Base.Common
                     // 全て0でなければ先頭から0以外の数字が見つかるまで0を消す
                     else
                     {
-                        foreach(char tex in newText)
+                        foreach (char tex in newText)
                         {
-                            if(tex == '0')
+                            if (tex == '0')
                             {
                                 newText = newText.Substring(1, newText.Length - 1);
                             }
@@ -335,7 +345,7 @@ namespace MVVM_Base.Common
                     return;
                 }
 
-                // 最大値を超えていないかチェック
+                // 桁あふれ防止のため最大値のみ制限
                 if (int.TryParse(newText, out int value))
                 {
                     if (value > MaxValue)
@@ -350,6 +360,39 @@ namespace MVVM_Base.Common
             else
             {
                 e.CancelCommand();
+            }
+        }
+
+        /// <summary>
+        /// フォーカスロスト時の処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AssociatedObject_LostFocus(object sender, System.Windows.RoutedEventArgs e)
+        {
+            // フォーカスが外れたときに行いたい処理
+            var textBox = (TextBox)sender;
+            string text = textBox.Text;
+
+            if (text == "")
+            {
+                textBox.Text = MinValue.ToString();
+                return;
+            }
+
+            // 最大値・最小値チェック
+            if (int.TryParse(text, out int value))
+            {
+                if (value > MaxValue)
+                {
+                    textBox.Text = MaxValue.ToString();
+                    return;
+                }
+                else if (value < MinValue)
+                {
+                    textBox.Text = MinValue.ToString();
+                    return;
+                }
             }
         }
     }

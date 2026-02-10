@@ -1,6 +1,8 @@
 ﻿using MVVM_Base.ViewModel;
 using System.ComponentModel;
+using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
+using System.Security.RightsManagement;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -10,7 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Windows.Shell;
 using System.Windows.Threading;
+using WinForms = System.Windows.Forms;
 
 namespace MVVM_Base.View
 {
@@ -48,20 +52,36 @@ namespace MVVM_Base.View
         /// <summary>
         /// アプリケーション終了ボタン枠の幅
         /// </summary>
-        public int btnEndWidth { get; set; }
+        private int btnEndWidth = 100;
+        public int BtnEndWidth
+        {
+            get => btnEndWidth;
+            private set => btnEndWidth = value;
+        }
 
         /// <summary>
         /// アプリケーション終了ボタン枠の高さ
         /// </summary>
-        public int btnEndHeight { get; set; }
+        private int btnEndHeight = 36;
+
+        public int BtnEndHeight
+        {
+            get => btnEndHeight;
+            private set => btnEndHeight = value;
+        }
 
         /// <summary>
-        /// 初期値はダークモード
+        /// カラーテーマボタンが右端にいるならtrue
         /// </summary>
-        //private bool isDark = true;
-        private bool isOn = false;
+        private bool isColorBtnOnRight = false;
+
+        /// <summary>
+        /// 言語ボタンが右端にいるならtrue
+        /// </summary>
+        private bool isLanguageBtnOnRight = false;
+
         private int tBarAnimInterval = 5;
-        private int tBarAnimTransition = 1;
+        private int animTransInterval = 1;
 
         #region Win32 定数
         private const int WM_NCHITTEST = 0x0084;
@@ -130,11 +150,13 @@ namespace MVVM_Base.View
             InitializeComponent();
             DataContext = vmEntry;
 
-            btnEndColor = new SolidColorBrush(Color.FromRgb(r_Thumb, g_Thumb, b_Thumb));
-            btnEndWidth = 100;
-            btnEndHeight = 36;
+            // vmにイベント登録　カラーテーマ変更処理
+            vm = vmEntry;
+            vm.PropertyChanged += Vm_PropertyChanged;
 
-            ApplyTheme("Dark");
+            btnEndColor = new SolidColorBrush(Color.FromRgb(r_Thumb, g_Thumb, b_Thumb));
+
+            ApplyTheme(vm.ColorTheme);
 
             this.SourceInitialized += (s, e) =>
             {
@@ -248,6 +270,7 @@ namespace MVVM_Base.View
             }
         }
 
+        bool isSpawnRegistered = false;
         /// <summary>
         /// クリックエフェクト：波紋
         /// </summary>
@@ -261,8 +284,7 @@ namespace MVVM_Base.View
             {
                 Width = 5,
                 Height = 5,
-                //Stroke = Brushes.DeepSkyBlue,
-                Stroke = brush,//Brushes.Coral,
+                Stroke = brush,
                 StrokeThickness = 1,
                 Opacity = 0.6
             };
@@ -302,7 +324,6 @@ namespace MVVM_Base.View
             if (!CanTransit)
             {
                 return;
-                //btn = lastBtn;
             }
 
             ToggleButton btn = _btn;
@@ -447,8 +468,28 @@ namespace MVVM_Base.View
         /// <param name="e"></param>
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // シングルクリック＆ドラッグ
             if (e.LeftButton == MouseButtonState.Pressed)
-                this.DragMove();
+            {
+                // 最大化中なら、まず元に戻す
+                if (WindowState == WindowState.Maximized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+
+                DragMove();
+            }
+
+            // ダブルクリック：最大化⇔通常
+            if (e.ClickCount == 2)
+            {
+                if (WindowState == WindowState.Maximized)
+                    WindowState = WindowState.Normal;
+                else
+                    WindowState = WindowState.Maximized;
+
+                return;
+            }
         }
 
         /// <summary>
@@ -458,14 +499,45 @@ namespace MVVM_Base.View
         /// <param name="e"></param>
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // vmにイベント登録　カラーテーマ変更処理
-            if (DataContext is vmEntry _vm)
-            {
-                vm = _vm;
-                vm.PropertyChanged += Vm_PropertyChanged;
-            }
+            // カスタムタイトルバーにおいて、ボタンクリック判定を有効化して
+            // ダブルクリックに優先してコマンドを実行するようにする
+            WindowChrome.SetIsHitTestVisibleInChrome(ThemeToggleButton, true);
+            WindowChrome.SetIsHitTestVisibleInChrome(LanguageToggleButton, true);
 
             AnimateTitleBar();
+
+            var workingArea = SystemParameters.WorkArea;
+            this.MaxHeight = workingArea.Height;
+            this.MaxWidth = workingArea.Width;
+        }
+
+        private void Window_StateChanged(object sender, EventArgs e)
+        {
+            // 現在のウィンドウがあるスクリーンを取得
+            var screen = System.Windows.Forms.Screen.FromHandle(new WindowInteropHelper(this).Handle);
+
+            // そのスクリーンの作業領域に合わせて最大値を設定
+            this.MaxHeight = screen.WorkingArea.Height;
+            this.MaxWidth = screen.WorkingArea.Width;
+        }
+
+        private void Window_LocationChanged(object sender, EventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+            {
+                var screen = System.Windows.Forms.Screen.FromHandle(
+                    new WindowInteropHelper(this).Handle);
+
+                // 最大化前に一度元に戻す
+                this.WindowState = WindowState.Normal;
+
+                // 最大化に合わせてサイズ設定
+                this.MaxHeight = screen.WorkingArea.Height;
+                this.MaxWidth = screen.WorkingArea.Width;
+
+                // 再最大化
+                this.WindowState = WindowState.Maximized;
+            }
         }
 
         /// <summary>
@@ -475,10 +547,17 @@ namespace MVVM_Base.View
         /// <param name="e"></param>
         private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(vmEntry.IsDarkTheme))
+            // カラーテーマ
+            if (e.PropertyName == nameof(vmEntry.IsJapanese))
             {
                 // フラグ変化時にアニメーションや UI 更新
-                ThemeChanged(vm.IsDarkTheme);
+                LanguageChanged(vm.IsJapanese);
+            }
+            // カラーテーマ
+            else if (e.PropertyName == nameof(vmEntry.IsDarkTheme))
+            {
+                // フラグ変化時にアニメーションや UI 更新
+                ThemeChanged();
             }
             else if (e.PropertyName == nameof(vmEntry.CanTransit))
             {
@@ -576,9 +655,11 @@ namespace MVVM_Base.View
         {
             if (res is Color c) return c;
             if (res is SolidColorBrush b) return b.Color;
+
             // 文字列等で定義しているケースがあれば TryParse してみる
             if (res is string s && ColorConverter.ConvertFromString(s) is Color parsed)
                 return parsed;
+
             return fallback;
         }
 
@@ -639,7 +720,6 @@ namespace MVVM_Base.View
         {
             var thumb = (Thumb)sender;
             thumb.Background = new SolidColorBrush(Color.FromRgb(r_Thumb, g_Thumb, b_Thumb));
-            //var tt = (TranslateTransform)thumb.RenderTransform;
             if (thumb.RenderTransform is not TranslateTransform tt)
             {
                 tt = new TranslateTransform();
@@ -655,8 +735,6 @@ namespace MVVM_Base.View
 
             if (finalX >= threshold)
             {
-                //Application.Current.Shutdown();
-
                 vm?.OnThumbSlideCompleted();
             }
 
@@ -747,21 +825,55 @@ namespace MVVM_Base.View
         }
 
         /// <summary>
+        /// 言語切替処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LanguageChanged(bool isJapanese)
+        {
+            var btn = LanguageToggleButton;
+
+            if (btn.Tag.ToString() == "language")
+            {
+                btn.IsEnabled = false;
+                isLanguageBtnOnRight = !isLanguageBtnOnRight;
+
+                // スライド位置変更
+                double targetLeft = isLanguageBtnOnRight ? 30 : 0;
+                var anim = new DoubleAnimation
+                {
+                    To = targetLeft,
+                    Duration = TimeSpan.FromMilliseconds(200),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+                };
+
+                anim.Completed += (s, e) =>
+                {
+                    btn.IsEnabled = true;
+                };
+
+                btn.BeginAnimation(Canvas.LeftProperty, anim);
+
+                string theme = isJapanese ? "Japanese" : "English";
+            }
+        }
+
+        /// <summary>
         /// カラーモード切替処理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ThemeChanged(bool isDark)
+        private void ThemeChanged()
         {
             var btn = ThemeToggleButton;
 
             if (btn.Tag.ToString() == "theme")
             {
                 btn.IsEnabled = false;
-                isOn = !isOn;
+                isColorBtnOnRight = !isColorBtnOnRight;
 
                 // スライド位置変更
-                double targetLeft = isOn ? 30 : 0;
+                double targetLeft = isColorBtnOnRight ? 30 : 0;
                 var anim = new DoubleAnimation
                 {
                     To = targetLeft,
@@ -770,8 +882,7 @@ namespace MVVM_Base.View
                 };
                 btn.BeginAnimation(Canvas.LeftProperty, anim);
 
-                //isDark = !isDark;
-                string theme = isDark ? "Dark" : "Light";
+                string theme = vm.ColorTheme;
 
                 ApplyTheme(theme);
                 ThemeChangeProcess(btn, theme);
@@ -801,6 +912,7 @@ namespace MVVM_Base.View
 
                 // カラーテーマ変更ボタンのアニメーション
                 ThemeChangeButton(ThemeToggleButton, oldThemeColor, newThemeColor);
+                ThemeChangeButton(LanguageToggleButton, oldThemeColor, newThemeColor);
             }
         }
 
@@ -814,14 +926,13 @@ namespace MVVM_Base.View
         /// <param name="newColor2"></param>
         private void ThemeChangeTB(Button button, GradientStop gs1, GradientStop gs2, Color newColor1, Color newColor2)
         {
-            // Storyboard をフィールドに保持
             Storyboard tbStoryboard = new Storyboard();
 
             var anim1 = new ColorAnimation
             {
                 From = gs1.Color,
                 To = newColor1,
-                Duration = TimeSpan.FromSeconds(tBarAnimTransition),
+                Duration = TimeSpan.FromSeconds(animTransInterval),
                 AutoReverse = false
             };
 
@@ -833,7 +944,7 @@ namespace MVVM_Base.View
             {
                 From = gs2.Color,
                 To = newColor2,
-                Duration = TimeSpan.FromSeconds(tBarAnimTransition),
+                Duration = TimeSpan.FromSeconds(animTransInterval),
                 AutoReverse = false
             };
             Storyboard.SetTargetName(anim2, "TitleBarGradientStop2");
@@ -844,10 +955,6 @@ namespace MVVM_Base.View
             tbStoryboard.Completed += (s, e) =>
             {
                 AnimateTitleBar();
-                if (button != null)
-                {
-                    button.IsEnabled = true;
-                }
             };
 
             tbStoryboard.Begin(this);
@@ -870,8 +977,15 @@ namespace MVVM_Base.View
             {
                 From = oldColor,
                 To = newColor,
-                Duration = TimeSpan.FromSeconds(1),
+                Duration = TimeSpan.FromSeconds(animTransInterval),
                 AutoReverse = false
+            };
+
+            // テーマ移行アニメーション完了と同時にボタン有効化
+            // ボタン連打によるカラーテーマ変更通知の連続発生防止
+            anim.Completed += (s, e) =>
+            {
+                button.IsEnabled = true;
             };
 
             brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
@@ -943,20 +1057,14 @@ namespace MVVM_Base.View
                         break;
                     }
 
-                // --- リサイズ開始 ---
-                //case WM_NCLBUTTONDOWN:
-                //    {
-                //        break;
-                //    }
-
-                // --- サイズ変更モードに入った瞬間（マウスドラッグ開始確定） ---
+                // サイズ変更モードに入った瞬間(マウスドラッグ開始確定)
                 case WM_ENTERSIZEMOVE:
                     isResizing = true;
                     EffectCanvas_tb.Children.Clear();
 
                     break;
 
-                // --- サイズ変更完了（マウスボタン離した） ---
+                // サイズ変更完了（マウスボタン離した)
                 case WM_EXITSIZEMOVE:
                     if (isResizing)
                     {

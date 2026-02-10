@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MVVM_Base.Common;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,17 +13,17 @@ namespace MVVM_Base.Model
     /// </summary>
     public class HighPrecisionDelay
     {
-        public async Task<string> WaitAsync(int milliseconds, CancellationToken token)
+        public async Task<OperationResult> WaitAsync(int milliseconds, CancellationToken token)
         {
             try
             {
                 token.ThrowIfCancellationRequested();
                 await Task.Delay(milliseconds, token);
-                return "";
+                return OperationResult.Success();
             }
             catch(OperationCanceledException)
             {
-                return "canceled";
+                return OperationResult.Canceled();
             }
         }
     }
