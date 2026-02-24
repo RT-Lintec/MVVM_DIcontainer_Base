@@ -505,38 +505,31 @@ namespace MVVM_Base.View
             WindowChrome.SetIsHitTestVisibleInChrome(LanguageToggleButton, true);
 
             AnimateTitleBar();
-
-            var workingArea = SystemParameters.WorkArea;
-            this.MaxHeight = workingArea.Height;
-            this.MaxWidth = workingArea.Width;
         }
 
+        /// <summary>
+        /// 最小化・最大化・元に戻す のすべてで呼ばれる
+        /// パワーボタンの最大化時マージンを調整して、画面下端にめり込むのを防ぐ
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_StateChanged(object sender, EventArgs e)
         {
-            // 現在のウィンドウがあるスクリーンを取得
-            var screen = System.Windows.Forms.Screen.FromHandle(new WindowInteropHelper(this).Handle);
+            var screen = System.Windows.Forms.Screen
+            .FromHandle(new WindowInteropHelper(this).Handle);
 
-            // そのスクリーンの作業領域に合わせて最大値を設定
-            this.MaxHeight = screen.WorkingArea.Height;
-            this.MaxWidth = screen.WorkingArea.Width;
-        }
+            var workArea = screen.WorkingArea;
 
-        private void Window_LocationChanged(object sender, EventArgs e)
-        {
-            if (this.WindowState == WindowState.Maximized)
+            double bottomGap =
+                screen.Bounds.Height - workArea.Height;
+
+            if (WindowState == WindowState.Maximized)
             {
-                var screen = System.Windows.Forms.Screen.FromHandle(
-                    new WindowInteropHelper(this).Handle);
-
-                // 最大化前に一度元に戻す
-                this.WindowState = WindowState.Normal;
-
-                // 最大化に合わせてサイズ設定
-                this.MaxHeight = screen.WorkingArea.Height;
-                this.MaxWidth = screen.WorkingArea.Width;
-
-                // 再最大化
-                this.WindowState = WindowState.Maximized;
+                thumbBorder.Margin = new Thickness(0, 0, 0, bottomGap);
+            }
+            else
+            {
+                thumbBorder.Margin = new Thickness(0, 0, 0, 30);
             }
         }
 
@@ -1003,60 +996,7 @@ namespace MVVM_Base.View
         private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             switch (msg)
-            {
-                // --- リサイズ可能領域の判定 ---
-                case WM_NCHITTEST:
-                    {
-                        Point p = GetMousePosition();
-                        var rect = new Rect(this.Left, this.Top, this.Width, this.Height);
-                        handled = true;
-
-                        if (p.Y >= rect.Top && p.Y < rect.Top + RESIZE_BORDER)
-                        {
-                            if (p.X < rect.Left + RESIZE_BORDER)
-                            {
-                                return (IntPtr)HTTOPLEFT;
-                            }
-                            else if (p.X > rect.Right - RESIZE_BORDER)
-                            {
-                                return (IntPtr)HTTOPRIGHT;
-                            }
-                            else
-                            {
-                                return (IntPtr)HTTOP;
-                            }
-                        }
-                        else if (p.Y <= rect.Bottom && p.Y > rect.Bottom - RESIZE_BORDER)
-                        {
-                            if (p.X < rect.Left + RESIZE_BORDER)
-                            {
-                                return (IntPtr)HTBOTTOMLEFT;
-                            }
-                            else if (p.X > rect.Right - RESIZE_BORDER)
-                            {
-                                return (IntPtr)HTBOTTOMRIGHT;
-                            }
-                            else
-                            {
-                                return (IntPtr)HTBOTTOM;
-                            }
-                        }
-                        else if (p.X >= rect.Left && p.X < rect.Left + RESIZE_BORDER)
-                        {
-                            return (IntPtr)HTLEFT;
-                        }
-                        else if (p.X <= rect.Right && p.X > rect.Right - RESIZE_BORDER)
-                        {
-                            return (IntPtr)HTRIGHT;
-                        }
-                        else
-                        {
-                            handled = false;
-                        }
-                        
-                        break;
-                    }
-
+            { 
                 // サイズ変更モードに入った瞬間(マウスドラッグ開始確定)
                 case WM_ENTERSIZEMOVE:
                     isResizing = true;
@@ -1088,15 +1028,6 @@ namespace MVVM_Base.View
         [StructLayout(LayoutKind.Sequential)]
         private struct POINT { public int X; public int Y; }
 
-        /// <summary>
-        /// マウス位置取得
-        /// </summary>
-        /// <returns></returns>
-        private Point GetMousePosition()
-        {
-            GetCursorPos(out POINT p);
-            return new Point(p.X, p.Y);
-        }
         #endregion
     }
 }

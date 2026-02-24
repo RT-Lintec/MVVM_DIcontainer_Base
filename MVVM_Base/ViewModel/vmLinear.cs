@@ -203,6 +203,7 @@ namespace MVVM_Base.ViewModel
                         SwitchBeforeMFMBtn(true);
                         CanEditGainData = true;
                         CanReadWriteGain = true;
+                        CanEditTrueList = true;
                         break;
                     }
                     ;
@@ -228,6 +229,7 @@ namespace MVVM_Base.ViewModel
                 case ProcessState.AfterMFM:
                     {
                         CanReadWriteGain = true;
+                        CanEditTrueList = true;
                         IsMfmStarted = false;
                         isFinishedMFM = true;
                         CanMFM = true;
@@ -243,6 +245,7 @@ namespace MVVM_Base.ViewModel
                 case ProcessState.AfterCalc:
                     {
                         CanReadWriteGain = true;
+                        CanEditTrueList = true;
                         CanMFM = true;
                         CanEditGainData = true;
                         isFinishedMFM = false;
@@ -257,6 +260,7 @@ namespace MVVM_Base.ViewModel
                 case ProcessState.AfterCalcAndConf:
                     {
                         CanReadWriteGain = true;
+                        CanEditTrueList = true;
                         CanMFM = true;
                         CanEditGainData = true;
                         CanExport = true;
@@ -330,6 +334,7 @@ namespace MVVM_Base.ViewModel
         {
             CanMFM = false;
             CanEditReadingList = false;
+            CanEditTrueList = false;
             CanCalcGain = false;
             CanConfAlone = false;
             CanEditGainData = false;

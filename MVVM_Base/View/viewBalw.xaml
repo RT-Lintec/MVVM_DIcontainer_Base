@@ -384,7 +384,7 @@
                                             FontSize="{Binding TitleFontSize}"
                                             IsEnabled="{Binding SettingEnable}">
                                             <i:Interaction.Behaviors>
-                                                <local:PositiveIntegerBehavior MaxValue="1000" MinValue="1"/>
+                                                <local:PositiveIntegerBehavior MaxValue="1000" MinValue="0"/>
                                             </i:Interaction.Behaviors>
                                         </TextBox>
                                         <TextBlock 

@@ -94,6 +94,7 @@ namespace MVVM_Base.ViewModel
             // Calc
             try
             {
+                IsCalcAndConfirming = true;
                 res = await CalculateCoreAsync(Calc, _calculateCts.Token);
             }
             catch (OperationCanceledException)
@@ -110,23 +111,23 @@ namespace MVVM_Base.ViewModel
                     await Task.Delay(messageFadeTime);
                     await messageService.CloseWithFade();
 
-                    await ChangeState(/*ProcessState.AfterMFM*/lastState);
+                    await ChangeState(lastState);
                 }
                 else if (res.Status == OperationResultType.Failure)
                 {
                     // VC
                     await CommMFCAsyncType1("VC", _calculateCts.Token);
-                    await ChangeState(/*ProcessState.AfterMFM*/lastState);
+                    await ChangeState(lastState);
                 }
                 else
                 {                    
-                    ExportReadingCsv();
-                    //await ChangeState(ProcessState.AfterCalc);                    
+                    ExportReadingCsv();                
                 }
             }
 
             if(_calculateCts.IsCancellationRequested)
             {
+                IsCalcAndConfirming = false;
                 return;
             }
 
@@ -183,6 +184,7 @@ namespace MVVM_Base.ViewModel
             vmService.CanTransit = true;
             _calculateCts?.Dispose();
             _calculateCts = null;
+            IsCalcAndConfirming = false;
         }
 
         [RelayCommand]
@@ -206,12 +208,14 @@ namespace MVVM_Base.ViewModel
 
             // read
             if (mode == "r")
-            {             
+            {   
+                IsReading = true;
                 res = await FBDataRead(_fbRWCts.Token);
             }
             // write
             else if(mode == "w")
             {
+                IsWriting = true;
                 res = await FBDataWrite(_fbRWCts.Token);
 
                 // 表のゲインとEEPROMのゲインは同一である
@@ -226,6 +230,8 @@ namespace MVVM_Base.ViewModel
             }
 
             await ChangeState(lastState);
+            IsReading = false;
+            IsWriting = false;
             noNeedConfirmUnsaved = false;
         }
 
@@ -265,6 +271,8 @@ namespace MVVM_Base.ViewModel
 
             bool isSame = true;
             noNeedConfirmUnsaved = true;
+
+            IsManualOperating = true;
             // 天秤との定期通信開始
             var res = await StartTimerWIthBalCom(_calculateCts.Token);
 
@@ -332,6 +340,7 @@ namespace MVVM_Base.ViewModel
             await CommMFCAsyncType1("VC", _calculateCts.Token);
             vmService.CanTransit = true;
             noNeedConfirmUnsaved = false;
+            IsManualOperating = false;
             return;
         }
 
@@ -448,6 +457,8 @@ namespace MVVM_Base.ViewModel
                 await ChangeState(ProcessState.Initial);
             }
 
+            await FBDataRead(_calculateCts.Token);
+
             // VC
             await CommMFCAsyncType1("VC", _calculateCts.Token);
             vmService.CanTransit = true;
@@ -480,9 +491,14 @@ namespace MVVM_Base.ViewModel
             {
                 isCalculated = false;
                 isCalcedAndConfed = false;
+                IsCalculating = true;
+            }
+            else
+            {
+                IsConfirming = true;
             }
 
-            vmService.CanTransit = false;
+                vmService.CanTransit = false;
 
             lastState = curState;
             // 5%刻みとの状態遷移を分ける
@@ -504,6 +520,7 @@ namespace MVVM_Base.ViewModel
                 // 5%刻みのConfのみ別
                 if (mode == conf && IncrementValue == IncerementType.FivePercent)
                 {
+                    IsConfirming = true;
                     res = await ConfBy5Per(mode, _calculateCts.Token);
                 }                 
                 else
@@ -579,6 +596,9 @@ namespace MVVM_Base.ViewModel
                 _calculateCts?.Dispose();
                 _calculateCts = null;
                 noNeedConfirmUnsaved = false;
+
+                IsCalculating = false;
+                IsConfirming = false;
             }
         }
 
@@ -593,7 +613,7 @@ namespace MVVM_Base.ViewModel
             OperationResult res;
 
             if (mode == Calc)
-            {
+            {                
                 ResetOutputResult(false);
             }
             else
@@ -609,16 +629,21 @@ namespace MVVM_Base.ViewModel
             int outputIndex = 1;
             foreach (var swValue in swValueList) 
             {
-                // OSさせる
-                Logging("Waiting for OS.", false);
+                // OSさせる                
                 res = await DoOverShoot(token);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
-                }
+                }                
 
                 // オーバーシュート後の安定待ち
-                await WaitUntilStableAfterOS(token);
+                int stableTime = int.Parse(StableOSValue) * 1000;
+                Logging("Waiting for OS.", false);
+                res = await WaitForDispose(stableTime, token);
+                if (res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
                 Logging("Finished OS.", false);
 
                 // 繰り返し処理 各流量出力において計測開始
@@ -646,7 +671,7 @@ namespace MVVM_Base.ViewModel
                 // 捨て待ち
                 int waitTime = int.Parse(waitOSValue) * 1000;
                 Logging("Start purge wait.", false);
-                res = await WaitForDispose(waitTime, token);
+                res = await WaitForDispose(waitTime, token);                
                 if (res.Status == OperationResultType.Canceled)
                 {
                     return res;
@@ -894,16 +919,21 @@ namespace MVVM_Base.ViewModel
             int outputIndex = 1;
             foreach (var swValue in swValueList)
             {
-                // OSさせる
-                Logging("Waiting for OS.", false);
+                // OSさせる                
                 res = await DoOverShoot(token);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
                 {
                     return res;
                 }
-
+                
                 // オーバーシュート後の安定待ち
-                await WaitUntilStableAfterOS(token);
+                int stableTime = int.Parse(StableOSValue) * 1000;
+                Logging("Waiting for OS.", false);
+                res = await WaitForDispose(stableTime, token);
+                if (res.Status == OperationResultType.Canceled)
+                {
+                    return res;
+                }
                 Logging("Finished OS.", false);
 
                 // 繰り返し処理 各流量出力において計測開始
@@ -1171,18 +1201,7 @@ namespace MVVM_Base.ViewModel
         }
 
         /// <summary>
-        /// オーバーシュート後の待ち
-        /// </summary>
-        /// <returns></returns>
-        private async Task WaitUntilStableAfterOS(CancellationToken token)
-        {
-            int stableTime = int.Parse(StableOSValue) * 1000;
-            var stableOS = new HighPrecisionDelay();
-            await stableOS.WaitAsync(stableTime, token);
-        }
-
-        /// <summary>
-        /// オーバーシュート後、計測前の捨て待ち
+        /// オーバーシュート後の安定待ち、計測前の捨て待ち
         /// </summary>
         /// <param name="waitTime"></param>
         /// <returns></returns>
@@ -1433,28 +1452,28 @@ namespace MVVM_Base.ViewModel
 
         List<string> test = new List<string>()
         {
-            //"",
-            //"14.5567",
-            //"25.918",
-            //"53.2634",
-            //"67.4411",
-            //"111.911",
-            //"159.11222",
-            //"180.1222",
-            //"245.9924",
-            //"309.12455",
-            //"400.1213"
             "",
-            "-687.3",
-            "-1002.5",
-            "2051",
-            "-45",
-            "342.2",
-            "-2663.9",
-            "1757.4",
-            "-441",
-            "6456.8",
-            "-750.2"
+            "14.5567",
+            "25.918",
+            "53.2634",
+            "67.4411",
+            "111.911",
+            "159.11222",
+            "180.1222",
+            "245.9924",
+            "309.12455",
+            "400.1213"
+            //"",
+            //"-687.3",
+            //"-1002.5",
+            //"2051",
+            //"-45",
+            //"342.2",
+            //"-2663.9",
+            //"1757.4",
+            //"-441",
+            //"6456.8",
+            //"-750.2"
         };
 
         /// <summary>
@@ -1527,15 +1546,13 @@ namespace MVVM_Base.ViewModel
                         {
                             if (i == 1)
                             {
-                                double temp = double.Parse(ReadingValueArray[i].Value) / double.Parse(TrueValueArray[i]);
-                                //noMulInitialGainList.Add(temp);
+                                double temp = double.Parse(ReadingValueArray[i].Value) / double.Parse(TrueValueArray[i].Value);
                                 newGain = initialGain * temp;
                             }
                             else
                             {
                                 double temp = (double.Parse(ReadingValueArray[i].Value) - double.Parse(ReadingValueArray[i - 1].Value)) /
-                                              (double.Parse(TrueValueArray[i]) - double.Parse(TrueValueArray[i - 1]));
-                                //noMulInitialGainList.Add(temp);
+                                              (double.Parse(TrueValueArray[i].Value) - double.Parse(TrueValueArray[i - 1].Value));
                                 newGain = initialGain * temp;
                             }
 
@@ -1742,10 +1759,22 @@ namespace MVVM_Base.ViewModel
                 var readingList = ReadingValueArray; // test;
 
                 // 5次多項式の係数計算のための数学アルゴリズム検証
-                double[] xData = {0.1d, 0.2d, 0.3d, 0.4d, 0.5d, 0.6d, 0.7d, 0.8d, 0.9d, 1d};
+                double fullScaleTrue = double.Parse(TrueValueArray[10].Value);
+                double[] xData =                
+                {
+                    double.Parse(TrueValueArray[1].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[2].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[3].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[4].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[5].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[6].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[7].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[8].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[9].Value)  / fullScaleTrue,
+                    double.Parse(TrueValueArray[10].Value) / fullScaleTrue
+                };
 
                 double fullScaleOutput = double.Parse(readingList[10].Value);
-
                 double[] yData =
                 {
                     double.Parse(readingList[1].Value)  / fullScaleOutput * 100d,
@@ -1963,6 +1992,9 @@ namespace MVVM_Base.ViewModel
             }
         }
 
+        /// <summary>
+        /// Qコマンド送信ログ
+        /// </summary>
         private void LogQ()
         {
             if (languageService.CurrentLanguage == LanguageType.Japanese)
@@ -1999,7 +2031,7 @@ namespace MVVM_Base.ViewModel
                 
                 // ホーナー法による計算量抑制　O(150)
                 var ans = ((((mid * coeffs[4] + coeffs[3]) * mid + coeffs[2]) * mid + coeffs[1]) * mid + coeffs[0]) * mid;
-                // 多項式そのまま計算した場合　計算量はO(450)で三倍　O(N)なので最軽量ではある
+                // 以下のように多項式そのまま計算した場合　計算量はO(450)で三倍　O(N)なので最軽量ではある
                 //var ans = Math.Pow(mid, 5) * coeffs[4] + Math.Pow(mid, 4) * coeffs[3] + Math.Pow(mid, 3) * coeffs[2] + Math.Pow(mid, 2) * coeffs[1] + mid * coeffs[0];
                 
                 if (ans < target)

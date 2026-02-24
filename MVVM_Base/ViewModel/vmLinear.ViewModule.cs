@@ -85,7 +85,7 @@ namespace MVVM_Base.ViewModel
 
             MiddleGBHeight += delta * 8;
             GroupBoxHeight250 += delta * 10;
-            LogHeightSize += (float)delta * 21.5f;
+            LogHeightSize += (float)delta * 18f;
             FivePerHeightSize += (float)delta * 10.2f;
             FivePerMatrixWidth += (float)delta * 3f;
 
@@ -129,7 +129,6 @@ namespace MVVM_Base.ViewModel
             string baseDir = AppContext.BaseDirectory;
             baseDir = Directory.GetParent(AppContext.BaseDirectory)!.Parent!.Parent!.Parent!.FullName;
             string csv = System.IO.Path.Combine(baseDir, "FB\\FB_Address.csv");
-
 
             if (!File.Exists(csv))
             {
@@ -184,7 +183,7 @@ namespace MVVM_Base.ViewModel
             else if (isCalculated && isCalcedAndConfed)
             {
                 await ChangeState(ProcessState.AfterCalcAndConf);
-            }           
+            }     
         }
 
         /// <summary>
@@ -336,7 +335,10 @@ namespace MVVM_Base.ViewModel
         {
             for (int i = 1; i < TrueValueArray.Count; i++)
             {
-                TrueValueArray[i] = (float.Parse(FlowValue) / 10f * (float)i).ToString("F2");
+                if (TrueValueArray[i].Value == null) 
+                {
+                    TrueValueArray[i].Value = (float.Parse(FlowValue) / 10f * (float)i).ToString("F2");
+                }
             }
         }
 
@@ -406,7 +408,7 @@ namespace MVVM_Base.ViewModel
                 SetPointArray[0] = "Set Point";
                 SetPointBelow50PercentArray[0] = "Set Point";
                 SetPointAbove50PercentArray[0] = "Set Point";
-                TrueValueArray[0] = "True_V";
+                TrueValueArray[0].Value = "True_V";
                 ReadingValueArray[0].Value = "Reading_V";
                 ReadingValueBelow50Array[0] = "Reading_V";
                 ReadingValueAbove50Array[0] = "Reading_V";
@@ -477,7 +479,7 @@ namespace MVVM_Base.ViewModel
             // True値
             foreach (var val in TrueValueArray)
             {
-                if (val == "")
+                if (val.Value == "")
                 {
                     return;
                 }

@@ -315,6 +315,19 @@ namespace MVVM_Base.Model
             };
         }
 
+        /// <summary>
+        /// 測定間隔ゼロエラー
+        /// </summary>
+        public string ZeroIntervalError
+        {
+            get => CurrentLanguage switch
+            {
+                LanguageType.Japanese => "測定間隔を0より大きな値にしてください。",
+                LanguageType.English => "Please set the measurement interval to a value greater than 0.",
+                _ => ""
+            };
+        }
+
         #endregion
     }
 }

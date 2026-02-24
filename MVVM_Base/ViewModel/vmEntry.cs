@@ -95,6 +95,20 @@ namespace MVVM_Base.ViewModel
             set => SetProperty(ref isEndSelected, value);
         }
 
+        private Thickness bottomMargin = new Thickness(0, 0, 0, 0);
+        public Thickness BottomMargin
+        {
+            get => bottomMargin;
+            set
+            {
+                if (bottomMargin != value)
+                {
+                    bottomMargin = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         /// <summary>
         /// 選択されたViewタイプと一致するbooleanをtrueにする→Viewに通知がいく
         /// </summary>

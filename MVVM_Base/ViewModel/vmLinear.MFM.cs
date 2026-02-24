@@ -14,6 +14,7 @@ namespace MVVM_Base.ViewModel
             {
                 _mfmCts.Cancel();
             }
+            IsMfmRunning = false;
         }
 
         // 初期化したかどうか
@@ -48,6 +49,8 @@ namespace MVVM_Base.ViewModel
 
             await ChangeState(ProcessState.MFMStarted);
             _mfmCts = new CancellationTokenSource();
+
+            IsMfmRunning = true;
 
             OperationResult res = new OperationResult(OperationResultType.Success, null, null);
 
@@ -110,6 +113,7 @@ namespace MVVM_Base.ViewModel
                 vmService.CanTransit = true;
                 _mfmCts?.Dispose();
                 _mfmCts = null;
+                IsMfmRunning = false;
             }
         }
 
@@ -330,21 +334,27 @@ namespace MVVM_Base.ViewModel
 
                 // ゼロ調整実行
                 await ChangeState(ProcessState.ZeroAdjust);
+                IsZARunning = true;
                 res = await ZeroAdjust(token);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
-                {                    
+                {
+                    IsZARunning = false;
                     return res;
                 }
+                IsZARunning = false;
 
                 token.ThrowIfCancellationRequested();
 
                 //Span合わせ
                 await ChangeState(ProcessState.Span);
+                IsSpanRunning = true;
                 res = await SpanAdjust(linearValues, token);
                 if (res.Status == OperationResultType.Failure || res.Status == OperationResultType.Canceled)
-                {                    
+                {
+                    IsSpanRunning = false;
                     return res;
                 }
+                IsSpanRunning = false;
             }
             catch (OperationCanceledException)
             {                

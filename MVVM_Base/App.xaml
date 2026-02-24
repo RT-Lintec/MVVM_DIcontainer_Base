@@ -48,8 +48,11 @@
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     Padding="2"
                                     CornerRadius="3">
-                                <ContentPresenter HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"/>
+                                <ContentPresenter 
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    RecognizesAccessKey="True"
+                                    TextElement.Foreground="{TemplateBinding Foreground}"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" 

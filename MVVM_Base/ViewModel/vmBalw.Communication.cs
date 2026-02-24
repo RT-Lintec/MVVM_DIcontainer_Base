@@ -34,6 +34,15 @@ namespace MVVM_Base.ViewModel
                 return;
             }
 
+            // 測定間隔ゼロは中断
+            if (IntervalSecValue == "0" && IntervalMinValue == "0")
+            {
+                await messageService.ShowMessage(languageService.ZeroIntervalError);
+                await Task.Delay(messageFadeTime);
+                await messageService.CloseWithFade();
+                return;
+            }
+
             ChangeState(ProcessState.Measurement);
 
             isStop = false;
@@ -82,6 +91,14 @@ namespace MVVM_Base.ViewModel
             // →天秤とインターバル値間隔で通信
             // →結果をテキストボックスに表示
             precisionTimer.StartWithNotice(
+            async () =>
+            {
+                cntBalCom++;
+                LogQ();
+                var res = await Gn5GnComm(index, token);
+                Logging(res, false);
+                index++;
+            },
             async () =>
             {
                 cntBalCom++;

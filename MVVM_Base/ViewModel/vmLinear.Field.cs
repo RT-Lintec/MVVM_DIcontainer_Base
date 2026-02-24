@@ -248,27 +248,15 @@ namespace MVVM_Base.ViewModel
                     {
                         isGainDirectChanged = true;
                     }
-                    OnPropertyChanged();
+                    if (isMfcConnected)
+                    {
+                        OnPropertyChanged();
+                    }                    
                 }
             }
         }
 
         private bool isGainDirectChanged = false;
-        /// <summary>
-        /// ゲイン値が直接変更された場合はtrue
-        /// </summary>
-        //public bool IsGainDirectChanged
-        //{
-        //    get => isGainDirectChanged;
-        //    set
-        //    {
-        //        if (isGainDirectChanged != value)
-        //        {
-        //            isGainDirectChanged = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
 
         #endregion
 
@@ -757,7 +745,7 @@ namespace MVVM_Base.ViewModel
         /// <summary>
         ///　ログ高さ
         /// </summary>
-        private float logHeightSize = 528;
+        private float logHeightSize = 470;
         public float LogHeightSize
         {
             get => logHeightSize;
@@ -770,6 +758,8 @@ namespace MVVM_Base.ViewModel
                 }
             }
         }
+
+        private const float logConstHeight = 528;
 
         /// <summary>
         ///　5%刻み高さ
@@ -1264,6 +1254,24 @@ namespace MVVM_Base.ViewModel
         #endregion
 
         #region UI編集可否フラグ
+        /// <summary>
+        /// True Listの編集可否
+        /// </summary>
+        private bool canEditTrueList = false;
+
+        public bool CanEditTrueList
+        {
+            get => canEditTrueList;
+            set
+            {
+                if (canEditTrueList != value)
+                {
+                    canEditTrueList = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         /// <summary>
         /// Reading Listの編集可否
         /// </summary>
@@ -1762,36 +1770,6 @@ namespace MVVM_Base.ViewModel
 
         #region データラベル
 
-        ///// <summary>
-        ///// FBゲイン
-        ///// </summary>
-        //private readonly Dictionary<string, string> fbMap = new();
-        //public Dictionary<string, string> FbMap => fbMap;
-        //public string this[string logicalFb]
-        //{
-        //    get => fbMap.TryGetValue(logicalFb, out var v) ? v : string.Empty;
-        //    set
-        //    {
-        //        fbMap[logicalFb] = value;
-        //        OnPropertyChanged($"Item[{logicalFb}]");
-        //    }
-        //}
-
-        ///// <summary>
-        ///// 閾値
-        ///// </summary>
-        //private readonly Dictionary<string, string> thresholdMap = new();
-        //public Dictionary<string, string> ThresholdMap => thresholdMap;
-        //public string this[string logicalFb]
-        //{
-        //    get => thresholdMap.TryGetValue(logicalFb, out var v) ? v : string.Empty;
-        //    set
-        //    {
-        //        thresholdMap[logicalFb] = value;
-        //        OnPropertyChanged($"Item[{logicalFb}]");
-        //    }
-        //}
-
         /// <summary>
         /// ゲイン・閾値のマップクラス
         /// </summary>
@@ -2005,6 +1983,135 @@ namespace MVVM_Base.ViewModel
         private bool isSpanOK = false;
         #endregion
 
+        #region 文字アニメーションフラグ
+        private bool isMfmRunning;
+        public bool IsMfmRunning
+        {
+            get => isMfmRunning;
+            set
+            {
+                if (isMfmRunning != value)
+                {
+                    isMfmRunning = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isZARunning;
+        public bool IsZARunning
+        {
+            get => isZARunning;
+            set
+            {
+                if (isZARunning != value)
+                {
+                    isZARunning = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+
+        private bool isSpanRunning;
+        public bool IsSpanRunning
+        {
+            get => isSpanRunning;
+            set
+            {
+                if (isSpanRunning != value)
+                {
+                    isSpanRunning = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isCalculating;
+        public bool IsCalculating
+        {
+            get => isCalculating;
+            set
+            {
+                if (isCalculating != value)
+                {
+                    isCalculating = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isConfirming;
+        public bool IsConfirming
+        {
+            get => isConfirming;
+            set
+            {
+                if (isConfirming != value)
+                {
+                    isConfirming = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isCalcAndConfirming;
+        public bool IsCalcAndConfirming
+        {
+            get => isCalcAndConfirming;
+            set
+            {
+                if (isCalcAndConfirming != value)
+                {
+                    isCalcAndConfirming = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isManualOperating;
+        public bool IsManualOperating
+        {
+            get => isManualOperating;
+            set
+            {
+                if (isManualOperating != value)
+                {
+                    isManualOperating = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isReading;
+        public bool IsReading
+        {
+            get => isReading;
+            set
+            {
+                if (isReading != value)
+                {
+                    isReading = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool isWriting;
+        public bool IsWriting
+        {
+            get => isWriting;
+            set
+            {
+                if (isWriting != value)
+                {
+                    isWriting = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        #endregion
+
         enum ProcessState
         {
             Initial,
@@ -2078,7 +2185,25 @@ namespace MVVM_Base.ViewModel
         public ObservableCollection<string> SetPointBelow50PercentArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
         public ObservableCollection<string> SetPointAbove50PercentArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
 
-        public ObservableCollection<string> TrueValueArray { get; } = new ObservableCollection<string>(Enumerable.Repeat("", 11));
+        public class TrueValue : INotifyPropertyChanged
+        {
+            private string? _value;
+            public string? Value
+            {
+                get => _value;
+                set
+                {
+                    if (_value == value) return;
+                    _value = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+        }
+
+        public ObservableCollection<TrueValue> TrueValueArray { get; } 
+            = new ObservableCollection<TrueValue>(Enumerable.Range(0, 11).Select(_ => new TrueValue()));
 
         public class ReadingValue : INotifyPropertyChanged
         {

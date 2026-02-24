@@ -144,23 +144,12 @@ namespace MVVM_Base.View
 
                 lowerFBData.ItemsSource = new List<vmLinear> { vm };
             }
+            // MFC未接続状態での編集→通知バインドエラー防止のため、空にする
             else
             {
-                UpperFBData.ItemsSource = new List<UpperFBModel>
-                {
-                    new UpperFBModel {
-                        Fb90="00", Fb92="00", Fb94="00", Fb96="00", Fb98="00",
-                        Fb9a="00", Fb9c="00", Fb9e="00", Fba0="00", Fba2="00", Fb41="00"
-                    }
-                };
+                UpperFBData.ItemsSource = new List<UpperFBModel> { };
 
-                lowerFBData.ItemsSource = new List<LowerFBModel>
-                {
-                    new LowerFBModel {
-                        Fb91="00", Fb93="00", Fb95="00", Fb97="00", Fb99="00",
-                        Fb9b="00", Fb9d="00", Fb9f="00", Fba1="00", Fba3="00", Fb42="00"
-                    }
-                };
+                lowerFBData.ItemsSource = new List<LowerFBModel> { };
             }
         }
 
@@ -199,6 +188,7 @@ namespace MVVM_Base.View
             public string Fba3 { get; set; }
             public string Fb42 { get; set; }
         }
+
         /// <summary>
         /// vmからのプロパティ値変更イベント通知時の処理
         /// </summary>
@@ -278,23 +268,12 @@ namespace MVVM_Base.View
                     isContinueMfcIconAnim = false;
                     StopTitleBarAnimation(icMfcStoryboard);
 
+                    // MFC未接続状態での編集→通知バインドエラー防止のため、空にする
                     Application.Current.Dispatcher.BeginInvoke(() =>
                     {
-                        UpperFBData.ItemsSource = new List<UpperFBModel>
-                        {
-                            new UpperFBModel {
-                                Fb90="00", Fb92="00", Fb94="00", Fb96="00", Fb98="00",
-                                Fb9a="00", Fb9c="00", Fb9e="00", Fba0="00", Fba2="00", Fb41="00"
-                            }
-                        };
+                        UpperFBData.ItemsSource = new List<UpperFBModel> { };
 
-                        lowerFBData.ItemsSource = new List<LowerFBModel>
-                        {
-                            new LowerFBModel {
-                                Fb91="00", Fb93="00", Fb95="00", Fb97="00", Fb99="00",
-                                Fb9b="00", Fb9d="00", Fb9f="00", Fba1="00", Fba3="00", Fb42="00"
-                            }
-                        };
+                        lowerFBData.ItemsSource = new List<LowerFBModel> { };
                     });
 
                 }
@@ -345,7 +324,7 @@ namespace MVVM_Base.View
                 }
             }
             // Fix me：使わないなら消す
-            // confインデクスが変更された場合
+            // confインデクスが変更された場合のアニメ―ショントリガーなどに使う
             if (e.PropertyName == nameof(vmLinear.ConfIndex))
             {
                 // conf1
@@ -627,29 +606,6 @@ namespace MVVM_Base.View
             animSb.Completed += handler;
 
             animSb.Begin(this);
-        }
-
-        /// <summary>
-        /// ポートクローズ時にアイコンのカラー遷移アニメーションを停止させる
-        /// </summary>
-        private void StopCommIconAnimationAndReset(GradientStop target, bool isContinue)
-        {
-            isContinue = false;
-
-            string theme = vm.ColorTheme;
-            // 現在色の取得
-            var resources = Application.Current.Resources;
-
-            // 変更後カラーの取得
-            var newDict = new ResourceDictionary { Source = new Uri($"/Theme/{theme}Theme.xaml", UriKind.Relative) };
-
-            Color orgColor = (Color)newDict["CommIconColorFrom"];
-
-            // アニメーションを完全に除去
-            target.BeginAnimation(GradientStop.ColorProperty, null);
-
-            // 色を戻す
-            target.Color = orgColor;
         }
 
         private void ScrollViewer_ScrollChanged(object sender, EventArgs e)

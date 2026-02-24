@@ -80,9 +80,6 @@
                 return;
             }
 
-            //cts = new CancellationTokenSource();
-            //CancellationToken token = cts.Token;
-
             long intervalTicks = (long)(Stopwatch.Frequency * (intervalMs / 1000.0));
 
             timerTask = Task.Run(async () =>
@@ -119,7 +116,7 @@
         /// <param name="callbackPerSec"></param>
         /// <param name="intervalMs"></param>
         /// <param name="token"></param>
-        public void StartWithNotice(Func<Task> callback, Func<Task> callbackPerSec, int intervalMs, CancellationToken token)
+        public void StartWithNotice(Func<Task> callback1, Func<Task> callback2, Func<Task> callbackPerSec, int intervalMs, CancellationToken token)
         {
             isRun = true;
 
@@ -137,6 +134,8 @@
                 var sw = Stopwatch.StartNew();
                 long next = intervalTicks;
                 long nextOneSec = oneTicks;
+                token.ThrowIfCancellationRequested();
+                await callback1();
 
                 while (isRun)
                 {
@@ -157,7 +156,7 @@
                     {
                         _ = Task.Run(async () =>
                         {
-                            await callback();
+                            await callback2();
                         }, token);
 
                         next += intervalTicks;
